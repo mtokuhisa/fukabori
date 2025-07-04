@@ -2113,29 +2113,7 @@ const ErrorHandler = {
 // CORE FUNCTIONS - 基本機能
 // =================================================================================
 
-function showMessage(type, message) {
-    console.log(`📢 ${type}: ${message}`);
-    
-    // 簡易的なメッセージ表示（実際のUIがあれば置き換え）
-    const messageTypes = {
-        'success': '✅',
-        'error': '❌',
-        'info': '💡',
-        'warning': '⚠️'
-    };
-    
-    const icon = messageTypes[type] || '📢';
-    
-    // コンソール出力（開発用）
-    console.log(`${icon} ${message}`);
-    
-    // 将来的にはUIでのメッセージ表示を実装
-    // 現在は一時的にalertで表示（本番では削除予定）
-    if (type === 'error') {
-        // エラーの場合のみalertで表示
-        setTimeout(() => alert(`${icon} ${message}`), 100);
-    }
-}
+// showMessage関数はapp/utils.jsに移動しました
 
 // プロンプト取得関数
 function getCharacterPrompt(character) {
