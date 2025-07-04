@@ -14,7 +14,8 @@
 1. app/utils.js          - ユーティリティ関数
 2. app/file-processing.js - ファイル処理システム
 3. app/knowledge-management.js - 知見管理システム
-4. app/script.js         - メインスクリプト
+4. app/api-key-setup.js  - APIキー設定モーダル
+5. app/script.js         - メインスクリプト
 ```
 
 ---
@@ -95,7 +96,20 @@ window.encryptApiKey = encryptApiKey;
 - `QualityAssessmentSystem` - 品質評価
 - `downloadAllKnowledge()` - 全知見DL
 
-### **4. app/script.js**
+### **4. app/api-key-setup.js**
+**外部依存**:
+- `window.getSavedApiKeyCount()` （script.js）
+- `window.saveEncryptedApiKey()` （utils.js）
+- `window.showMessage()` （utils.js）
+
+**提供機能**:
+- `ApiKeySetupModule` - APIキー設定モーダル
+- Step0システム（初回ユーザー向け）
+- APIキーテスト機能
+- パスワード設定機能
+- ヘルプモーダル
+
+### **5. app/script.js**
 **外部依存**:
 - utils.js の全機能
 - file-processing.js の`FileProcessingInterface`
