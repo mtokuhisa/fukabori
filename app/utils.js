@@ -35,7 +35,28 @@ function showMessage(type, message) {
     }
 }
 
+/**
+ * テキストファイルをダウンロードする関数
+ * @param {string} content - ファイルの内容
+ * @param {string} filename - ダウンロードするファイル名
+ */
+function downloadTextFile(content, filename) {
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    URL.revokeObjectURL(url);
+}
+
 // グローバルに公開
 window.FukaboriUtils.showMessage = showMessage;
+window.FukaboriUtils.downloadTextFile = downloadTextFile;
 // 互換性のため直接も公開（段階的に削除予定）
-window.showMessage = showMessage; 
+window.showMessage = showMessage;
+window.downloadTextFile = downloadTextFile; 
