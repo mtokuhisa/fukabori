@@ -4497,36 +4497,7 @@ function generateMarkdownReport() {
 // CRYPTO UTILITIES - 暗号化ユーティリティ
 // =================================================================================
 
-function encryptApiKey(apiKey, password) {
-    let encrypted = '';
-    for (let i = 0; i < apiKey.length; i++) {
-        encrypted += String.fromCharCode(apiKey.charCodeAt(i) ^ password.charCodeAt(i % password.length));
-    }
-    return btoa(encrypted);
-}
-
-function decryptApiKey(encryptedKey, password) {
-    try {
-        const encrypted = atob(encryptedKey);
-        let decrypted = '';
-        for (let i = 0; i < encrypted.length; i++) {
-            decrypted += String.fromCharCode(encrypted.charCodeAt(i) ^ password.charCodeAt(i % password.length));
-        }
-        return decrypted;
-    } catch (error) {
-        throw new Error('復号化に失敗しました');
-    }
-}
-
-function hashPassword(password) {
-    let hash = 0;
-    for (let i = 0; i < password.length; i++) {
-        const char = password.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-    }
-    return Math.abs(hash).toString(36);
-}
+// 暗号化関連の基本関数（encryptApiKey, decryptApiKey, hashPassword）はapp/utils.jsに移動しました
 
 function saveEncryptedApiKey(apiKey, password) {
     const encrypted = encryptApiKey(apiKey, password);

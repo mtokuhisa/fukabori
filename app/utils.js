@@ -59,4 +59,66 @@ window.FukaboriUtils.showMessage = showMessage;
 window.FukaboriUtils.downloadTextFile = downloadTextFile;
 // 互換性のため直接も公開（段階的に削除予定）
 window.showMessage = showMessage;
-window.downloadTextFile = downloadTextFile; 
+window.downloadTextFile = downloadTextFile;
+
+// =================================================================================
+// CRYPTO UTILITIES - 暗号化ユーティリティ
+// =================================================================================
+
+/**
+ * APIキーを暗号化する関数
+ * @param {string} apiKey - 暗号化するAPIキー
+ * @param {string} password - 暗号化に使用するパスワード
+ * @returns {string} Base64エンコードされた暗号化文字列
+ */
+function encryptApiKey(apiKey, password) {
+    let encrypted = '';
+    for (let i = 0; i < apiKey.length; i++) {
+        encrypted += String.fromCharCode(apiKey.charCodeAt(i) ^ password.charCodeAt(i % password.length));
+    }
+    return btoa(encrypted);
+}
+
+/**
+ * 暗号化されたAPIキーを復号化する関数
+ * @param {string} encryptedKey - Base64エンコードされた暗号化文字列
+ * @param {string} password - 復号化に使用するパスワード
+ * @returns {string} 復号化されたAPIキー
+ * @throws {Error} 復号化に失敗した場合
+ */
+function decryptApiKey(encryptedKey, password) {
+    try {
+        const encrypted = atob(encryptedKey);
+        let decrypted = '';
+        for (let i = 0; i < encrypted.length; i++) {
+            decrypted += String.fromCharCode(encrypted.charCodeAt(i) ^ password.charCodeAt(i % password.length));
+        }
+        return decrypted;
+    } catch (error) {
+        throw new Error('復号化に失敗しました');
+    }
+}
+
+/**
+ * パスワードをハッシュ化する関数
+ * @param {string} password - ハッシュ化するパスワード
+ * @returns {string} ハッシュ化されたパスワード（36進数文字列）
+ */
+function hashPassword(password) {
+    let hash = 0;
+    for (let i = 0; i < password.length; i++) {
+        const char = password.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36);
+}
+
+// グローバルに公開
+window.FukaboriUtils.encryptApiKey = encryptApiKey;
+window.FukaboriUtils.decryptApiKey = decryptApiKey;
+window.FukaboriUtils.hashPassword = hashPassword;
+// 互換性のため直接も公開（段階的に削除予定）
+window.encryptApiKey = encryptApiKey;
+window.decryptApiKey = decryptApiKey;
+window.hashPassword = hashPassword; 
