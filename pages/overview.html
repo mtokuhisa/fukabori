@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深堀くん - あなたの経験を価値ある知見に変える</title>
+    <style>
+        /* 深堀くんテーマシステム対応 */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #667eea;
+        }
+
+        .theme-white {
+            --primary-gradient: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            --glass-bg: rgba(255, 255, 255, 0.4);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #007bff;
+        }
+
+        .theme-blue {
+            --primary-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #667eea;
+        }
+
+        .theme-dark {
+            --primary-gradient: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #ecf0f1;
+            --text-secondary: #bdc3c7;
+            --accent-color: #3498db;
+        }
+
+        .theme-colorful {
+            --primary-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            --glass-bg: rgba(255, 255, 255, 0.3);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --text-primary: #2c3e50;
+            --text-secondary: #34495e;
+            --accent-color: #e74c3c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* バックボタン */
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 関連ページリンク */
+        .related-pages {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            margin-top: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .related-pages h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .related-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .related-link {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 15px 30px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .related-link:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        /* ヘッダーセクション */
+        .header-section {
+            text-align: center;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-container {
+            margin-bottom: 20px;
+        }
+
+        .logo-image {
+            width: 400px !important;
+            height: 160px !important;
+            max-width: 400px !important;
+            max-height: 160px !important;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .logo-placeholder {
+            max-width: 750px;
+            width: 100%;
+            height: 188px;
+            background: none;
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            font-size: 7.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            box-shadow: none;
+            border: none;
+        }
+
+        .header-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-subtitle {
+            font-size: 1.3rem;
+            color: #555;
+            margin-bottom: 25px;
+        }
+
+
+
+        /* 問題提起セクション */
+        .problem-section {
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-left: 8px solid #e74c3c;
+        }
+
+        .problem-title {
+            font-size: 1.8rem;
+            color: #c0392b;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .problem-item {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .problem-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .problem-text {
+            font-size: 1rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        /* ソリューションセクション */
+        .solution-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .solution-title {
+            font-size: 2rem;
+            color: var(--text-primary);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .characters-intro {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            gap: 40px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .character {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            min-width: 400px;
+            max-width: 500px;
+            flex: 1;
+            gap: 25px;
+        }
+
+        .character-avatar {
+            width: 120px;
+            height: 160px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .nehori .character-avatar {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        .hahori .character-avatar {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+        }
+
+        .character-info {
+            flex: 1;
+            text-align: left;
+        }
+
+        .character-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .character-role {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .character-description {
+            font-size: 1rem;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        /* ベネフィットセクション */
+        .benefits-section {
+            margin-bottom: 30px;
+        }
+
+        .benefits-title {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .benefit-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .benefit-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .benefit-icon {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+        }
+
+        .benefit-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .benefit-description {
+            font-size: 1rem;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        /* プロセスセクション */
+        .process-section {
+            background: white;
+            border-radius: 25px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .process-title {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 40px;
+            color: var(--text-primary);
+        }
+
+        .process-flow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .process-step {
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+            background: var(--glass-bg);
+            padding: 25px 15px;
+            border-radius: 20px;
+            border-left: 6px solid var(--accent-color);
+            position: relative;
+        }
+
+        .process-number {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin: 0 auto 15px;
+            font-size: 1.2rem;
+        }
+
+        .process-step-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .process-step-description {
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .process-arrow {
+            font-size: 2rem;
+            color: var(--accent-color);
+            margin: 0 10px;
+        }
+
+        /* 特徴セクション */
+        .features-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .features-title {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--text-primary);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .feature-item {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: var(--accent-color);
+        }
+
+        .feature-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .feature-description {
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        /* ターゲットセクション */
+        .target-section {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            border-radius: 25px;
+            padding: 40px;
+            margin-bottom: 30px;
+            color: white;
+            text-align: center;
+        }
+
+        .target-title {
+            font-size: 2rem;
+            margin-bottom: 30px;
+        }
+
+        .target-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .target-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .target-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .target-item-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .target-description {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* CTAセクション */
+        .cta-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .cta-title {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .cta-description {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            color: #555;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent-color), rgba(102, 126, 234, 0.8));
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            .logo-placeholder {
+                max-width: 90%;
+                height: auto;
+                min-height: 120px;
+                font-size: 4rem;
+            }
+            
+            .logo-image {
+                max-height: 200px;
+                max-width: 90%;
+            }
+            
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .characters-intro {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .character {
+                flex-direction: column;
+                text-align: center;
+                min-width: auto;
+                max-width: none;
+                gap: 20px;
+            }
+            
+            .character-avatar {
+                width: 100px;
+                height: 130px;
+                margin: 0 auto;
+            }
+            
+            .character-info {
+                text-align: center;
+            }
+            
+            .character-image {
+                width: 100px;
+                height: 130px;
+            }
+            
+            .process-flow {
+                flex-direction: column;
+            }
+            
+            .process-arrow {
+                transform: rotate(90deg);
+                margin: 10px 0;
+            }
+            
+            .benefits-grid, .features-grid, .target-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* アニメーション */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .benefit-card, .feature-item, .target-item {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .benefit-card:nth-child(1) { animation-delay: 0.1s; }
+        .benefit-card:nth-child(2) { animation-delay: 0.2s; }
+        .benefit-card:nth-child(3) { animation-delay: 0.3s; }
+        .benefit-card:nth-child(4) { animation-delay: 0.4s; }
+
+        /* ロゴとキャラクター画像の表示設定 */
+        .logo-image {
+            width: 400px !important;
+            height: 160px !important;
+            max-width: 400px !important;
+            max-height: 160px !important;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .character-image {
+            width: 120px;
+            height: 160px;
+            border-radius: 15px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body class="theme-blue">
+    <div class="container">
+        <!-- ヒーローセクション -->
+        <div class="header-section">
+            <div class="logo-container">
+                <!-- ロゴ画像の読み込み（フォールバック付き） -->
+                <div class="logo-placeholder" id="logoContainer">
+                    🔍 深堀くん
+                </div>
+            </div>
+            <h1 class="header-title">概要説明</h1>
+            <p class="header-subtitle">
+                日々の経験の中に隠れている貴重な知見を、AIパートナーとの会話を通じて発見・抽出して、みんなで共有。企業の競争力を高めます。
+            </p>
+        </div>
+
+        <!-- 問題提起セクション -->
+        <div class="problem-section">
+            <h2 class="problem-title">😤 こんなお困りごと、ありませんか？</h2>
+            <div class="problem-grid">
+                <div class="problem-item">
+                    <div class="problem-icon">😔</div>
+                    <div class="problem-text">経験豊富なベテランの知識が<br>引き継がれずに失われてしまう</div>
+                </div>
+                <div class="problem-item">
+                    <div class="problem-icon">🤔</div>
+                    <div class="problem-text">自分では当たり前だと思っていることが<br>実は他の人には価値ある情報だった</div>
+                </div>
+                <div class="problem-item">
+                    <div class="problem-icon">📝</div>
+                    <div class="problem-text">インタビューや聞き取りをしても<br>うまく整理できない</div>
+                </div>
+                <div class="problem-item">
+                    <div class="problem-icon">⏰</div>
+                    <div class="problem-text">忙しくて知識の整理や<br>共有に時間を割けない</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ソリューションセクション -->
+        <div class="solution-section">
+            <h2 class="solution-title">✨ 深堀くんが解決します！</h2>
+            
+            <!-- AIキャラクター紹介 -->
+            <div class="characters-intro">
+                <div class="character nehori">
+                    <div class="character-avatar" id="nehoriAvatar">ね</div>
+                    <div class="character-info">
+                        <div class="character-name">ねほりーの</div>
+                        <div class="character-role">質問の専門家</div>
+                        <div class="character-description">好奇心いっぱい！あなたの話を深く掘り下げる質問をします。経験の奥に隠れた価値を見つけ出すために、様々な角度から興味深い質問を投げかけます。</div>
+                    </div>
+                </div>
+                <div class="character hahori">
+                    <div class="character-avatar" id="hahoriAvatar">は</div>
+                    <div class="character-info">
+                        <div class="character-name">はほりーの</div>
+                        <div class="character-role">整理の専門家</div>
+                        <div class="character-description">冷静沈着！あなたの話から大切なポイントを整理します。複雑な情報を分かりやすく構造化し、価値ある知見として形にまとめます。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ベネフィットセクション -->
+        <div class="benefits-section">
+            <h2 class="benefits-title">🎉 こんなに素晴らしい効果が！</h2>
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon">💡</div>
+                    <div class="benefit-title">隠れた価値を発見</div>
+                    <div class="benefit-description">普段は気づかない、あなたの経験の中にある貴重な知見を見つけ出します</div>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">🗣️</div>
+                    <div class="benefit-title">自然な会話で楽々</div>
+                    <div class="benefit-description">難しい操作は不要。普通におしゃべりするだけで、自動的に整理されます</div>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">📚</div>
+                    <div class="benefit-title">知識の資産化</div>
+                    <div class="benefit-description">散らばった経験を、検索・活用しやすい「知識の資産」として蓄積できます</div>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">🤝</div>
+                    <div class="benefit-title">チーム全体で共有</div>
+                    <div class="benefit-description">個人の学びをチーム全体の成長につなげ、組織の競争力を高めます</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- プロセスセクション -->
+        <div class="process-section">
+            <h2 class="process-title">🚀 使い方はとってもシンプル！</h2>
+            <div class="process-flow">
+                <div class="process-step">
+                    <div class="process-number">1</div>
+                    <div class="process-step-title">テーマを決める</div>
+                    <div class="process-step-description">今日話したい話題や、深掘りしたい経験を決めます。文書がある場合はアップロード</div>
+                </div>
+                <div class="process-arrow">→</div>
+                <div class="process-step">
+                    <div class="process-number">2</div>
+                    <div class="process-step-title">AIと会話する</div>
+                    <div class="process-step-description">2人のAIパートナーが質問したり、整理したりしてくれます</div>
+                </div>
+                <div class="process-arrow">→</div>
+                <div class="process-step">
+                    <div class="process-number">3</div>
+                    <div class="process-step-title">AI品質評価</div>
+                    <div class="process-step-description">5段階品質評価で知見を自動判定。重要なものは自動記録、確認が必要なものは音声で相談</div>
+                </div>
+                <div class="process-arrow">→</div>
+                <div class="process-step">
+                    <div class="process-number">4</div>
+                    <div class="process-step-title">Knowledge DNA生成</div>
+                    <div class="process-step-description">AI知見整理・関係性分析・高度可視化レポートを自動生成</div>
+                </div>
+                <div class="process-arrow">→</div>
+                <div class="process-step">
+                    <div class="process-number">5</div>
+                    <div class="process-step-title">保存・活用</div>
+                    <div class="process-step-description">構造化レポート・インフォグラフィックで保存、チームや組織で活用</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 特徴セクション -->
+        <div class="features-section">
+            <h2 class="features-title">🌟 深堀くんの特徴</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">🎤</div>
+                    <div class="feature-title">音声で自然に</div>
+                    <div class="feature-description">タイピング不要！話すだけで自動的に文字起こし・整理</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🧬</div>
+                    <div class="feature-title">Knowledge DNA</div>
+                    <div class="feature-description">AI知見整理・関係性分析で、あなたの知見を構造化・関連付け</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🎯</div>
+                    <div class="feature-title">自動品質評価</div>
+                    <div class="feature-description">5段階品質評価で重要な知見は自動記録、曖昧な内容は確認</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">高度可視化</div>
+                    <div class="feature-description">知見関係性ネットワーク・品質トレンド・AI強化分析を自動生成</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🧠</div>
+                    <div class="feature-title">AI分析</div>
+                    <div class="feature-description">最新AIが話の要点を見抜き、価値ある部分を自動抽出</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📄</div>
+                    <div class="feature-title">文書連携</div>
+                    <div class="feature-description">PDF・Excel・Word等の資料をアップロードして内容ベース質問</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🔒</div>
+                    <div class="feature-title">安全・安心</div>
+                    <div class="feature-description">データは暗号化保存、プライバシーもしっかり保護</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📱</div>
+                    <div class="feature-title">どこでも使える</div>
+                    <div class="feature-description">スマホ・タブレット・PCでどこでも利用可能</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">⚙️</div>
+                    <div class="feature-title">カスタマイズ</div>
+                    <div class="feature-description">声の設定や質問スタイル、知見記録閾値をお好みに調整</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ターゲットセクション -->
+        <div class="target-section">
+            <h2 class="target-title">👥 こんな方におすすめ</h2>
+            <div class="target-grid">
+                <div class="target-item">
+                    <div class="target-icon">👨‍💼</div>
+                    <div class="target-item-title">dJのみなさん</div>
+                    <div class="target-description">Craft to Scale 技術や知識をAIの力でさらなる競争力に</div>
+                </div>
+                <div class="target-item">
+                    <div class="target-icon">👩‍🏫</div>
+                    <div class="target-item-title">研修・人事担当</div>
+                    <div class="target-description">社員研修や面談で。従業員の経験から組織の知見を蓄積</div>
+                </div>
+                <div class="target-item">
+                    <div class="target-icon">👨‍💻</div>
+                    <div class="target-item-title">コンサルタント</div>
+                    <div class="target-description">クライアントからの聞き取りや、課題の深掘りに最適</div>
+                </div>
+                <div class="target-item">
+                    <div class="target-icon">🏢</div>
+                    <div class="target-item-title">管理職・リーダー</div>
+                    <div class="target-description">チームの知識共有と人材育成に。部下との1on1にも活用できます</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTAセクション -->
+        <div class="cta-section">
+            <h2 class="cta-title">🎯 今すぐ始めてみませんか？</h2>
+            <p class="cta-description">
+                あなたの経験に眠っている価値ある知見を発見しましょう。<br>
+                "ねほりーの""はほりーの"がお待ちしています！
+            </p>
+            <a href="../深堀くん.html" class="cta-button">
+                🚀 深堀くんを始める
+            </a>
+        </div>
+
+        <!-- 関連ページ -->
+        <div class="related-pages">
+            <h2>
+                <span>🔗</span>
+                関連ページ
+            </h2>
+            <div class="related-links">
+                <a href="../深堀くん.html" class="related-link">🚀 深堀くんを使う</a>
+                <a href="screenshots.html" class="related-link">📱 画面説明</a>
+                <a href="technical.html" class="related-link">⚙️ 技術仕様</a>
+                <a href="changelog.html" class="related-link">📝 更新履歴</a>
+                <a href="faq.html" class="related-link">❓ よくある質問</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- バックボタン -->
+    <a href="../深堀くん.html" class="back-button" title="深堀くんに戻る">
+        ←
+    </a>
+
+    <!-- 設定データファイル読み込み -->
+    <script src="../config/app_settings.js"></script>
+    <script src="../config/app_config_loader.js"></script>
+    <script>
+        // テーマ読み込み機能（深堀くんメインアプリと同期）
+        function loadSavedTheme() {
+            const savedTheme = localStorage.getItem('fukabori_theme') || 'blue';
+            document.body.className = `theme-${savedTheme}`;
+            console.log(`✅ 保存されたテーマ「${savedTheme}」を読み込みました`);
+        }
+
+        // ロゴとキャラクター画像の自動読み込み
+        document.addEventListener('DOMContentLoaded', function() {
+            // テーマを最初に読み込み
+            loadSavedTheme();
+            
+            // ロゴ画像の読み込み試行
+            const logoContainer = document.getElementById('logoContainer');
+            const logoImg = new Image();
+            logoImg.onload = function() {
+                logoContainer.innerHTML = '';
+                logoImg.className = 'logo-image';
+                logoImg.alt = '深堀くんロゴ';
+                logoContainer.appendChild(logoImg);
+            };
+            logoImg.src = '../assets/fukabori_logo_wb.png';
+
+            // ねほりーのアバター画像の読み込み試行
+            const nehoriAvatar = document.getElementById('nehoriAvatar');
+            const nehoriImg = new Image();
+            nehoriImg.onload = function() {
+                nehoriAvatar.innerHTML = '';
+                nehoriImg.className = 'character-image';
+                nehoriImg.alt = 'ねほりーの';
+                nehoriAvatar.appendChild(nehoriImg);
+            };
+            nehoriImg.src = '../assets/nehori_avatar.png';
+
+            // はほりーのアバター画像の読み込み試行
+            const hahoriAvatar = document.getElementById('hahoriAvatar');
+            const hahoriImg = new Image();
+            hahoriImg.onload = function() {
+                hahoriAvatar.innerHTML = '';
+                hahoriImg.className = 'character-image';
+                hahoriImg.alt = 'はほりーの';
+                hahoriAvatar.appendChild(hahoriImg);
+            };
+            hahoriImg.src = '../assets/hahori_avatar.png';
+
+            // 画像が見つからない場合は、文字表示のままにする（フォールバック）
+            console.log('ロゴとキャラクター画像の読み込みを試行しました');
+        });
+
+        // スムーススクロール効果
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // セクションのフェードインアニメーション
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // アニメーション対象の要素を監視
+        document.querySelectorAll('.benefit-card, .feature-item, .target-item').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

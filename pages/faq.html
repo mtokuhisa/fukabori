@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深堀くん - よくある質問（FAQ）</title>
+    <style>
+        /* 深堀くんテーマシステム対応 */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #667eea;
+        }
+
+        .theme-white {
+            --primary-gradient: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            --glass-bg: rgba(255, 255, 255, 0.4);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #007bff;
+        }
+
+        .theme-blue {
+            --primary-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #667eea;
+        }
+
+        .theme-dark {
+            --primary-gradient: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #ecf0f1;
+            --text-secondary: #bdc3c7;
+            --accent-color: #3498db;
+        }
+
+        .theme-colorful {
+            --primary-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            --glass-bg: rgba(255, 255, 255, 0.3);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --text-primary: #2c3e50;
+            --text-secondary: #34495e;
+            --accent-color: #e74c3c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* バックボタン */
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* ヘッダーセクション */
+        .header-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .logo-container {
+            margin-bottom: 20px;
+        }
+
+        .logo-image {
+            width: 400px !important;
+            height: 160px !important;
+            max-width: 400px !important;
+            max-height: 160px !important;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .header-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        /* FAQセクション */
+        .faq-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: var(--text-primary);
+            margin-bottom: 30px;
+            text-align: center;
+            border-bottom: 3px solid var(--accent-color);
+            padding-bottom: 15px;
+        }
+
+        .faq-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .faq-item {
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 6px solid var(--accent-color);
+            transition: all 0.3s ease;
+        }
+
+        .faq-item:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .faq-question {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .faq-icon {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+        }
+
+        .faq-answer {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-left: 35px;
+        }
+
+        .faq-answer ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .faq-answer li {
+            margin-bottom: 5px;
+        }
+
+        .faq-answer code {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        /* カテゴリー別セクション */
+        .category-section {
+            margin-bottom: 40px;
+        }
+
+        .category-title {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* 関連ページリンク */
+        .related-pages {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            margin-top: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .related-pages h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .related-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .related-link {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 15px 30px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .related-link:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header-title {
+                font-size: 2rem;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .faq-item {
+                padding: 20px;
+            }
+
+            .faq-question {
+                font-size: 1.1rem;
+            }
+
+            .related-links {
+                gap: 10px;
+            }
+
+            .related-link {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body class="theme-blue">
+    <!-- バックボタン -->
+    <a href="../深堀くん.html" class="back-button" title="深堀くんに戻る">
+        ←
+    </a>
+
+    <div class="container">
+        <!-- ヘッダーセクション -->
+        <div class="header-section">
+            <div class="logo-container" id="logoContainer">
+                <div class="logo-placeholder">🤖 深堀くん</div>
+            </div>
+            <h1 class="header-title">よくある質問（FAQ）</h1>
+            <p class="header-subtitle">深堀くんの使い方でお困りの際はこちらをご確認ください</p>
+        </div>
+
+        <!-- 基本的な使い方 -->
+        <div class="faq-section">
+            <div class="category-section">
+                <h2 class="category-title">🚀 基本的な使い方</h2>
+                <div class="faq-grid">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">❓</span>
+                            深堀くんって何ですか？
+                        </div>
+                        <div class="faq-answer">
+                            深堀くんは、あなたの経験や知識をAIが深掘りして価値ある知見に変えるシステムです。2人のAIキャラクター「ねほりーの」と「はほりーの」が対話を通じて、あなたの話から重要なポイントを抽出・整理します。
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">🔑</span>
+                            APIキーって何ですか？どこで取得できますか？
+                        </div>
+                        <div class="faq-answer">
+                            APIキーは、OpenAIのサービスを使用するための認証キーです。以下の手順で取得できます：
+                            <ul>
+                                <li>OpenAIの公式サイト（platform.openai.com）にアクセス</li>
+                                <li>アカウントを作成またはログイン</li>
+                                <li>「API Keys」ページでキーを生成</li>
+                                <li>生成されたキー（sk-で始まる文字列）をコピー</li>
+                            </ul>
+                            無料枠でも十分お試しいただけます。
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">🎤</span>
+                            マイクが認識されません。どうしたらいいですか？
+                        </div>
+                        <div class="faq-answer">
+                            以下の点をご確認ください：
+                            <ul>
+                                <li>ブラウザでマイクの使用を許可しているか</li>
+                                <li>マイクが正しく接続されているか</li>
+                                <li>他のアプリケーションがマイクを使用していないか</li>
+                                <li>HTTPSでアクセスしているか（音声認識にはHTTPS必須）</li>
+                            </ul>
+                            ブラウザの設定でマイク許可を確認し、ページを再読み込みしてください。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 技術的な問題 -->
+        <div class="faq-section">
+            <div class="category-section">
+                <h2 class="category-title">⚙️ 技術的な問題</h2>
+                <div class="faq-grid">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">🔒</span>
+                            APIキーの安全性は大丈夫ですか？
+                        </div>
+                        <div class="faq-answer">
+                            はい、安全です。APIキーは以下の方法で保護されています：
+                            <ul>
+                                <li>XOR暗号化によりパスワードベースで暗号化</li>
+                                <li>ブラウザのLocalStorageに暗号化された状態で保存</li>
+                                <li>平文での保存は一切行いません</li>
+                                <li>復号にはユーザーのパスワードが必須</li>
+                            </ul>
+                            セキュリティを最優先に設計されています。
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">📱</span>
+                            スマートフォンでも使えますか？
+                        </div>
+                        <div class="faq-answer">
+                            はい、スマートフォンでも使用可能です。レスポンシブデザインにより、PC・タブレット・スマートフォンすべてに対応しています。ただし、音声認識機能は端末とブラウザの対応状況によって異なる場合があります。
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">🌐</span>
+                            どのブラウザで使えますか？
+                        </div>
+                        <div class="faq-answer">
+                            以下のブラウザで動作確認済みです：
+                            <ul>
+                                <li>Google Chrome（推奨）</li>
+                                <li>Microsoft Edge</li>
+                                <li>Firefox</li>
+                                <li>Safari</li>
+                            </ul>
+                            音声認識機能を使用する場合は、Chrome系ブラウザを推奨します。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 機能について -->
+        <div class="faq-section">
+            <div class="category-section">
+                <h2 class="category-title">✨ 機能について</h2>
+                <div class="faq-grid">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">📄</span>
+                            どんなファイルを読み込めますか？
+                        </div>
+                        <div class="faq-answer">
+                            以下のファイル形式に対応しています：
+                            <ul>
+                                <li>PDF（.pdf）</li>
+                                <li>Word文書（.docx）</li>
+                                <li>Excel（.xlsx）</li>
+                                <li>PowerPoint（.pptx）</li>
+                                <li>テキストファイル（.txt）</li>
+                                <li>Markdown（.md）</li>
+                                <li>CSV（.csv）</li>
+                            </ul>
+                            ファイルサイズは10MBまでです。
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">🎨</span>
+                            テーマを変更するにはどうしたらいいですか？
+                        </div>
+                        <div class="faq-answer">
+                            「その他設定」ボタンから設定画面を開き、テーマセクションで4つのテーマから選択できます：
+                            <ul>
+                                <li>ホワイト：明るく清潔感のあるデザイン</li>
+                                <li>ブルー：落ち着いた青系のデザイン（デフォルト）</li>
+                                <li>ダーク：目に優しい暗色系デザイン</li>
+                                <li>カラフル：鮮やかなグラデーションデザイン</li>
+                            </ul>
+                            選択したテーマは自動的に保存されます。
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">🧬</span>
+                            Knowledge DNAとは何ですか？
+                        </div>
+                        <div class="faq-answer">
+                            Knowledge DNAは、あなたの知見をAIが自動整理・構造化・関係性分析する機能です：
+                            <ul>
+                                <li>知見の明確化・背景補完（GPT-4o-mini）</li>
+                                <li>知見間の関係性自動抽出（因果関係・補完関係等）</li>
+                                <li>ナレッジグラフ生成・クラスター分析</li>
+                                <li>組織知識の系統管理・継承サポート</li>
+                            </ul>
+                            知見データファイルにAI整理版が併記されます。
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">📊</span>
+                            インフォグラフィック機能とは何ですか？
+                        </div>
+                        <div class="faq-answer">
+                            知見データを高度な可視化で分析表示する機能です：
+                            <ul>
+                                <li>Knowledge DNAネットワーク（Vis.js）</li>
+                                <li>品質トレンド・AI強化進捗（Chart.js）</li>
+                                <li>関係性マトリクス・時系列分析（D3.js）</li>
+                                <li>セッション版・全知見版の2種類</li>
+                            </ul>
+                            「📊 セッション可視化」「🌐 全知見可視化」ボタンから利用できます。
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">🎯</span>
+                            自動記録閾値とは何ですか？
+                        </div>
+                        <div class="faq-answer">
+                            音声ベース知見評価システムの自動記録基準です：
+                            <ul>
+                                <li>デフォルト70点以上で自動記録</li>
+                                <li>70点未満は手動確認（音声で相談）</li>
+                                <li>「閾値を80点に変更」等の音声コマンドで調整可能</li>
+                                <li>5段階評価（重要度・信頼度・具体性・独自性・実用性）</li>
+                            </ul>
+                            右ペインで現在の設定を確認できます。
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">💾</span>
+                            会話内容を保存できますか？
+                        </div>
+                        <div class="faq-answer">
+                            はい、可能です。セッション終了時に「データをダウンロード」ボタンをクリックすると、会話内容と抽出された知見をJSONファイルとしてダウンロードできます。Knowledge DNA整理版も併記され、インフォグラフィック可視化も利用できます。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- トラブルシューティング -->
+        <div class="faq-section">
+            <div class="category-section">
+                <h2 class="category-title">🔧 トラブルシューティング</h2>
+                <div class="faq-grid">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">❌</span>
+                            「APIキーが無効です」と表示されます
+                        </div>
+                        <div class="faq-answer">
+                            以下の点をご確認ください：
+                            <ul>
+                                <li>APIキーが正しく入力されているか（sk-で始まる文字列）</li>
+                                <li>APIキーが有効期限内か</li>
+                                <li>OpenAIアカウントに利用可能な残高があるか</li>
+                                <li>コピー＆ペーストの際に余分な文字が含まれていないか</li>
+                            </ul>
+                            OpenAIのダッシュボードでAPIキーの状態を確認してください。
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">🔊</span>
+                            音声が聞こえません
+                        </div>
+                        <div class="faq-answer">
+                            以下をお試しください：
+                            <ul>
+                                <li>ブラウザの音量設定を確認</li>
+                                <li>システムの音量設定を確認</li>
+                                <li>他のタブやアプリケーションで音声が再生されるか確認</li>
+                                <li>「その他設定」で音声設定を調整</li>
+                            </ul>
+                            それでも解決しない場合は、ブラウザを再起動してください。
+                        </div>
+                    </div>
+                    
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span class="faq-icon">⏳</span>
+                            応答が遅いです
+                        </div>
+                        <div class="faq-answer">
+                            応答速度は以下の要因に影響されます：
+                            <ul>
+                                <li>インターネット接続速度</li>
+                                <li>OpenAI APIの混雑状況</li>
+                                <li>入力テキストの長さ</li>
+                                <li>添付ファイルのサイズ</li>
+                            </ul>
+                            通常は数秒以内に応答します。長時間応答がない場合は、ページを再読み込みしてください。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 関連ページ -->
+        <div class="related-pages">
+            <h2>
+                <span>🔗</span>
+                関連ページ
+            </h2>
+            <div class="related-links">
+                <a href="../深堀くん.html" class="related-link">🚀 深堀くんを使う</a>
+                <a href="overview.html" class="related-link">📖 概要</a>
+                <a href="screenshots.html" class="related-link">📱 画面説明</a>
+                <a href="technical.html" class="related-link">⚙️ 技術仕様</a>
+                <a href="changelog.html" class="related-link">📝 更新履歴</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設定データファイル読み込み -->
+    <script src="../config/app_settings.js"></script>
+    <script src="../config/app_config_loader.js"></script>
+    <script>
+        // テーマ管理システム
+                  function loadTheme() {
+              const savedTheme = localStorage.getItem('fukabori_theme') || 'blue';
+              document.body.className = `theme-${savedTheme}`;
+          }
+
+        // テーマ変更イベントリスナー
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'fukabori-theme') {
+                loadTheme();
+            }
+        });
+
+        // ロゴ画像の自動読み込み
+        document.addEventListener('DOMContentLoaded', function() {
+            // テーマ読み込み
+            loadTheme();
+
+            // ロゴ画像の読み込み試行
+            const logoContainer = document.getElementById('logoContainer');
+            const logoImg = new Image();
+            logoImg.onload = function() {
+                logoContainer.innerHTML = '';
+                logoImg.className = 'logo-image';
+                logoImg.alt = '深堀くんロゴ';
+                logoContainer.appendChild(logoImg);
+                console.log('✅ FAQページ用ロゴ画像を読み込みました');
+            };
+            logoImg.src = '../assets/fukabori_logo_wb.png';
+
+            console.log('❓ 深堀くんFAQページが読み込まれました');
+        });
+
+        // スムーススクロール効果
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // FAQアイテムのアニメーション
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // アニメーション対象の要素を監視
+        document.querySelectorAll('.faq-item').forEach((el, index) => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+            observer.observe(el);
+        });
+
+        console.log('🚀 深堀くんFAQ v1.0 ロード完了');
+        console.log('❓ よくある質問をご確認いただけます');
+    </script>
+</body>
+</html> 

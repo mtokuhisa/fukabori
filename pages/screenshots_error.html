@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深堀くん - 画面で見る操作ガイド</title>
+    <style>
+        /* 深堀くんテーマシステム対応（メインアプリと完全同期） */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #667eea;
+        }
+
+        .theme-white {
+            --primary-gradient: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            --glass-bg: rgba(255, 255, 255, 0.4);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #007bff;
+        }
+
+        .theme-blue {
+            --primary-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #667eea;
+        }
+
+        .theme-dark {
+            --primary-gradient: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #ecf0f1;
+            --text-secondary: #bdc3c7;
+            --accent-color: #3498db;
+        }
+
+        .theme-colorful {
+            --primary-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            --glass-bg: rgba(255, 255, 255, 0.3);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --text-primary: #2c3e50;
+            --text-secondary: #34495e;
+            --accent-color: #e74c3c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* ヘッダーセクション */
+        .header-section {
+            text-align: center;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-container {
+            margin-bottom: 20px;
+        }
+
+        .logo-image {
+            width: 400px !important;
+            height: 160px !important;
+            max-width: 400px !important;
+            max-height: 160px !important;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .logo-placeholder {
+            width: 200px;
+            height: 80px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .header-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+
+
+        .hero-avatars {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid var(--glass-border);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .avatar.nehori {
+            border-color: #8b5cf6;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1));
+        }
+
+        .avatar.hahori {
+            border-color: #06b6d4;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(6, 182, 212, 0.1));
+        }
+
+        .header-subtitle {
+            font-size: 1.4rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        .hero-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 800px;
+            margin: 0 auto 30px;
+        }
+
+        /* ナビゲーションボタン */
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .nav-btn {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 15px 30px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .nav-btn.active {
+            background: var(--accent-color);
+            color: white;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* セクション共通スタイル */
+        .section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 30px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .section-icon {
+            font-size: 2rem;
+            color: var(--accent-color);
+        }
+
+        /* 画面キャプチャグリッド */
+        .screenshots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .screenshot-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .screenshot-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .screenshot-image {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .screenshot-image:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .screenshot-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+        }
+
+        .screenshot-description {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* 操作ステップ */
+        .steps-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .step-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .step-item:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .step-number {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-color);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .step-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+
+        .step-description {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* 機能ハイライト */
+        .feature-highlights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+        }
+
+        .feature-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .feature-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+
+
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--accent-color);
+            transform: scale(1.1);
+        }
+
+        .modal-image {
+            width: 100%;
+            height: auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* バックボタン */
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .hero-title {
+                font-size: 2.2rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.2rem;
+            }
+
+            .section {
+                padding: 25px;
+            }
+
+            .section-title {
+                font-size: 1.8rem;
+            }
+
+            .screenshots-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .steps-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .nav-buttons {
+                gap: 10px;
+            }
+
+            .nav-btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-title {
+                font-size: 1.8rem;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .screenshot-item {
+                padding: 20px;
+            }
+        }
+
+        /* アニメーション */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* スクロールアニメーション */
+        .scroll-animate {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease-out;
+        }
+
+        .scroll-animate.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="theme-blue" id="screenshotsPage">
+    <script>
+        // テーマ設定の読み込み（深堀くん.htmlの設定に追従のみ）
+        document.addEventListener('DOMContentLoaded', function() {
+            // localStorage からテーマ設定を読み込み
+            const savedTheme = localStorage.getItem('fukabori_theme') || 'blue';
+            document.body.className = `theme-${savedTheme}`;
+        });
+    </script>
+    <!-- バックボタン -->
+    <a href="../深堀くん.html" class="back-button" title="深堀くんに戻る">
+        ←
+    </a>
+
+    <div class="container">
+        <!-- ヘッダーセクション -->
+        <section class="header-section fade-in">
+            <div class="logo-container">
+                <img src="../assets/fukabori_logo_wb.png" alt="深堀くん" class="logo-image" 
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                <div class="logo-placeholder" style="display: none;">🔍 深堀くん</div>
+            </div>
+            <h1 class="header-title">エラー画面説明</h1>
+            <p class="header-subtitle">
+                エラーメッセージの意味と対処法をご紹介します。<br>
+                問題が発生した際の解決方法を分かりやすく解説いたします。
+            </p>
+        </section>
+
+                 <!-- ナビゲーション -->
+        <nav class="nav-buttons fade-in">
+            <a href="#overview" class="nav-btn">📋 概要</a>
+            <a href="#setup" class="nav-btn">⚙️ 初期設定</a>
+            <a href="#conversation" class="nav-btn">💬 会話操作</a>
+            <a href="#features" class="nav-btn">✨ 高度な機能</a>
+            <a href="#other-pages" class="nav-btn">📚 その他説明ページ</a>
+            <a href="#tips" class="nav-btn">💡 使いこなしのコツ</a>
+        </nav>
+
+        <!-- 概要セクション -->
+        <section id="overview" class="section scroll-animate">
+            <h2 class="section-title">
+                <span class="section-icon">📋</span>
+                深堀くんとは？
+            </h2>
+            
+            <div class="feature-highlights">
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3 class="feature-title">AI対話システム</h3>
+                    <p class="feature-description">ねほりーの・はほりーのの2人のAIがあなたの経験を深掘りします</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎤</div>
+                    <h3 class="feature-title">音声認識</h3>
+                    <p class="feature-description">話すだけで自動的に文字起こし。手軽に対話できます</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔊</div>
+                    <h3 class="feature-title">音声合成</h3>
+                    <p class="feature-description">AIの回答を音声で聞けるので、自然な会話体験</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📄</div>
+                    <h3 class="feature-title">ファイル対応</h3>
+                    <p class="feature-description">PDF・Word・Excel・PowerPointなど多様なファイルを読み込み可能</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 初期設定セクション -->
+        <section id="setup" class="section scroll-animate">
+            <h2 class="section-title">
+                <span class="section-icon">⚙️</span>
+                初期設定の手順
+            </h2>
+
+            <div class="steps-container">
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">APIキー取得</h3>
+                    <p class="step-description">
+                        OpenAIのウェブサイトでAPIキーを取得します。無料枠でも十分お試しいただけます。
+                    </p>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">ログイン</h3>
+                    <p class="step-description">
+                        取得したAPIキーを入力してログイン。APIキーは暗号化されて安全に保存されます。
+                    </p>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <h3 class="step-title">マイク許可</h3>
+                    <p class="step-description">
+                        音声認識を使用するため、ブラウザでマイクの使用を許可してください。
+                    </p>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <h3 class="step-title">テーマ選択</h3>
+                    <p class="step-description">
+                        お好みのテーマを選択。ホワイト・ブルー・ダーク・カラフルから選べます。
+                    </p>
+                </div>
+            </div>
+
+            <div class="screenshots-grid">
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/ログイン画面初期_ブルー.png" 
+                         alt="ログイン画面初期状態" class="screenshot-image" onclick="openModal(this)">
+                    <h3 class="screenshot-title">ログイン画面（初期状態）</h3>
+                    <p class="screenshot-description">
+                        深堀くんの初期ログイン画面。APIキーを入力してログインします。
+                        ブルーテーマでの表示例。
+                    </p>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/ログイン画面ライト.png" 
+                         alt="ログイン画面ライトテーマ" class="screenshot-image" onclick="openModal(this)">
+                    <h3 class="screenshot-title">ログイン画面（ライトテーマ）</h3>
+                    <p class="screenshot-description">
+                        ホワイト（ライト）テーマでのログイン画面。
+                        明るく清潔感のあるデザインで使いやすい。
+                    </p>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/ログイン画面ダーク.png" 
+                         alt="ログイン画面ダークテーマ" class="screenshot-image" onclick="openModal(this)">
+                    <h3 class="screenshot-title">ログイン画面（ダークテーマ）</h3>
+                    <p class="screenshot-description">
+                        ダークテーマでのログイン画面。目に優しい暗色系デザインで
+                        長時間の使用でも疲れにくい。
+                    </p>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/ログイン画面カラフル.png" 
+                         alt="ログイン画面カラフルテーマ" class="screenshot-image" onclick="openModal(this)">
+                    <h3 class="screenshot-title">ログイン画面（カラフルテーマ）</h3>
+                    <p class="screenshot-description">
+                        カラフルテーマでのログイン画面。鮮やかなグラデーションで
+                        明るく楽しい雰囲気のデザイン。
+                    </p>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/その他設定画面上.png" 
+                         alt="その他設定画面上部" class="screenshot-image" onclick="openModal(this)">
+                    <h3 class="screenshot-title">その他設定画面（上部）</h3>
+                    <p class="screenshot-description">
+                        APIキー設定とテスト機能。接続確認ができるので安心です。
+                        音声設定やテーマ設定も可能。
+                    </p>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/その他設定画面下.png" 
+                         alt="その他設定画面下部" class="screenshot-image" onclick="openModal(this)">
+                    <h3 class="screenshot-title">その他設定画面（下部）</h3>
+                    <p class="screenshot-description">
+                        音声設定の詳細オプション。音声の速度、音程、音量などを
+                        細かく調整できます。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 会話操作セクション -->
+        <section id="conversation" class="section scroll-animate">
+            <h2 class="section-title">
+                <span class="section-icon">💬</span>
+                メイン画面の詳細説明
+            </h2>
+
+            <div class="screenshots-grid">
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/ログイン画面ログイン後.png" 
+                         alt="ログイン完了後のメイン画面" class="screenshot-image" onclick="openModal(this)">
+                    <h3 class="screenshot-title">ログイン完了後のメイン画面</h3>
+                    <p class="screenshot-description">
+                        APIキー設定完了後のメイン画面。3つのパネル構成で直感的に操作できます。
+                        左側にガイド、中央に会話エリア、右側にステータス表示。
+                        ガラスモルフィズムデザインで美しく、使いやすいインターフェース。
+                    </p>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/メイン画面_マイク許可.png" 
+                         alt="マイク許可ダイアログ表示" class="screenshot-image" onclick="openModal(this)">
+                    <h3 class="screenshot-title">マイク許可ダイアログ</h3>
+                    <p class="screenshot-description">
+                        音声認識機能を使用するため、ブラウザからマイクの使用許可を求められます。
+                        「許可」をクリックして音声機能を有効にしてください。
+                        この許可は一度のみ必要で、次回以降は自動的に音声認識が利用できます。
+                    </p>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/メイン画面_挨拶.png" 
+                         alt="AI挨拶画面" class="screenshot-image" onclick="openModal(this)">
+                    <h3 class="screenshot-title">AI挨拶・対話開始</h3>
+                    <p class="screenshot-description">
+                        セッション開始後、ねほりーの・はほりーのが挨拶と最初の質問をします。
+                        中央の会話エリアに対話が表示され、右パネルにはセッション状況が表示されます。
+                        音声認識ボタンも有効になり、話すだけで自動的に文字起こしされます。
+                        AIキャラクターのアバターが会話に合わせて動き、自然な対話体験を提供します。
+                    </p>
+                </div>
+            </div>
+
+            <div class="steps-container">
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">左パネル（ガイド）</h3>
+                    <p class="step-description">
+                        操作ガイドと進行状況を表示。初心者でも迷わず使えるよう、
+                        ステップバイステップで案内します。
+                    </p>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">中央パネル（会話）</h3>
+                    <p class="step-description">
+                        AIとの対話が表示されるメインエリア。音声認識ボタンで
+                        話すだけで簡単に対話できます。
+                    </p>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <h3 class="step-title">右パネル（ステータス）</h3>
+                    <p class="step-description">
+                        現在のテーマ、セッション状況、抽出された知見を
+                        リアルタイムで表示します。
+                    </p>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <h3 class="step-title">音声認識機能</h3>
+                    <p class="step-description">
+                        マイクボタンで手動音声認識、または自動音声認識で
+                        常時音声を監視し、自然な会話を実現します。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 高度な機能セクション -->
+        <section id="features" class="section scroll-animate">
+            <h2 class="section-title">
+                <span class="section-icon">✨</span>
+                高度な機能
+            </h2>
+
+            <div class="feature-highlights">
+                <div class="feature-card">
+                    <div class="feature-icon">📎</div>
+                    <h3 class="feature-title">ファイル添付</h3>
+                    <p class="feature-description">PDF・Word・Excel・PowerPointを読み込んで内容を基に対話</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3 class="feature-title">テーマ切替</h3>
+                    <p class="feature-description">4種類のテーマでお好みの見た目にカスタマイズ</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <h3 class="feature-title">データ保存</h3>
+                    <p class="feature-description">セッション内容を保存・エクスポート可能</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔊</div>
+                    <h3 class="feature-title">音声設定</h3>
+                    <p class="feature-description">音声の速度・音程を細かく調整可能</p>
+                </div>
+            </div>
+
+            <div class="screenshots-grid">
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/ログイン画面テーマ設定後.png" 
+                         alt="テーマ設定後の画面" class="screenshot-image" onclick="openModal(this)">
+                    <h3 class="screenshot-title">テーマ設定完了</h3>
+                    <p class="screenshot-description">
+                        テーマ選択後の画面。選択したテーマが即座に反映されます。
+                        4つのテーマから好みに合わせて選択可能。
+                    </p>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/changelog.png" 
+                         alt="更新履歴ページ" class="screenshot-image" onclick="openModal(this)">
+                    <h3 class="screenshot-title">更新履歴ページ</h3>
+                    <p class="screenshot-description">
+                        深堀くんの開発履歴と機能追加の詳細。
+                        バージョンごとの改善点や新機能を確認できます。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- その他説明ページセクション -->
+        <section id="other-pages" class="section scroll-animate">
+            <h2 class="section-title">
+                <span class="section-icon">📚</span>
+                その他説明ページ
+            </h2>
+
+            <div class="screenshots-grid">
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/overview.png" 
+                         alt="概要ページ" class="screenshot-image" onclick="openModal(this)">
+                    <h3 class="screenshot-title">概要ページ</h3>
+                    <p class="screenshot-description">
+                        深堀くんの全体像を理解できる総合案内ページ。
+                        サービスの目的、特徴、使い方を分かりやすく説明しています。
+                        初めての方はこちらから始めることをお勧めします。
+                    </p>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/technical.png" 
+                         alt="技術仕様ページ" class="screenshot-image" onclick="openModal(this)">
+                    <h3 class="screenshot-title">技術仕様ページ</h3>
+                    <p class="screenshot-description">
+                        開発者向けの技術的詳細を網羅したバイブルページ。
+                        API仕様、システム構成、セキュリティ対策などの技術情報を詳しく解説しています。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 使いこなしのコツセクション -->
+        <section id="tips" class="section scroll-animate">
+            <h2 class="section-title">
+                <span class="section-icon">💡</span>
+                使いこなしのコツ
+            </h2>
+
+            <div class="steps-container">
+                <div class="step-item">
+                    <div class="step-number">💡</div>
+                    <h3 class="step-title">具体的な体験を話す</h3>
+                    <p class="step-description">
+                        抽象的な話より、具体的な体験談の方がAIが深掘りしやすく、
+                        価値ある知見を抽出できます。
+                    </p>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">🎯</div>
+                    <h3 class="step-title">失敗談も積極的に</h3>
+                    <p class="step-description">
+                        成功体験だけでなく、失敗談からも多くの学びが得られます。
+                        失敗から学んだことを話してみてください。
+                    </p>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">🔄</div>
+                    <h3 class="step-title">対話を継続する</h3>
+                    <p class="step-description">
+                        短時間で終わらず、じっくりと対話を続けることで、
+                        より深い洞察が得られます。
+                    </p>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">📝</div>
+                    <h3 class="step-title">知見を記録・活用</h3>
+                    <p class="step-description">
+                        抽出された知見は必ず記録し、今後の行動や意思決定に
+                        積極的に活用しましょう。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 関連ページセクション -->
+        <section class="section scroll-animate">
+            <h2 class="section-title">
+                <span class="section-icon">🔗</span>
+                関連ページ
+            </h2>
+            
+            <div class="nav-buttons">
+                <a href="../深堀くん.html" class="nav-btn">🚀 深堀くんを使う</a>
+                <a href="overview.html" class="nav-btn">📋 機能概要</a>
+                <a href="technical.html" class="nav-btn">⚙️ 技術仕様</a>
+                <a href="changelog.html" class="nav-btn">📝 更新履歴</a>
+                <a href="faq.html" class="nav-btn">❓ よくある質問</a>
+            </div>
+        </section>
+    </div>
+
+    <!-- 画像拡大モーダル -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <img id="modalImage" class="modal-image" alt="拡大画像">
+        </div>
+    </div>
+
+
+
+        // スムーズスクロール機能
+        function smoothScrollTo(targetId) {
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
+
+        // 画像モーダル
+        function openModal(img) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.classList.add('active');
+            modalImg.src = img.src;
+            modalImg.alt = img.alt;
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').classList.remove('active');
+        }
+
+        // モーダル外クリックで閉じる
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // ESCキーでモーダルを閉じる
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // スクロールアニメーション
+        function handleScrollAnimation() {
+            const elements = document.querySelectorAll('.scroll-animate');
+            const windowHeight = window.innerHeight;
+            
+            elements.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                
+                if (elementTop < windowHeight - 100) {
+                    element.classList.add('visible');
+                }
+            });
+        }
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            // スクロールアニメーション初期化
+            handleScrollAnimation();
+            window.addEventListener('scroll', handleScrollAnimation);
+        });
+
+        // リサイズ時の処理
+        window.addEventListener('resize', function() {
+            handleScrollAnimation();
+        });
+    </script>
+</body>
+</html>
