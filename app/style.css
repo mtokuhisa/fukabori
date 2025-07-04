@@ -1552,7 +1552,7 @@ body {
 
 .error-modal-button.secondary:hover {
     background: rgba(255, 255, 255, 0.35);
-} 
+}
 
 /* =================================================================================
    SPEECH SHORTENING UI - 発声短縮設定UI
@@ -1890,4 +1890,220 @@ input:checked + .slider:before {
     .shortening-phase2-section .switch {
         align-self: flex-end;
     }
+}
+
+.shortening-phase2-section .switch {
+    transform: scale(0.8);
+}
+
+#advancedSettingsModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ==========================================================================
+   Advanced Settings Modal
+   ========================================================================== */
+#advancedSettingsModal .glass-panel {
+    width: 90%;
+    max-width: 800px;
+    max-height: 90%;
+    overflow-y: auto;
+    padding: 30px;
+}
+
+#advancedSettingsModal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#advancedSettingsModal .modal-header h2 {
+    color: var(--text-primary);
+    margin: 0;
+}
+
+#advancedSettingsModal .modal-close-btn {
+    padding: 8px 16px;
+}
+
+#advancedSettingsModal .settings-section {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+#advancedSettingsModal .settings-section h3 {
+    margin-bottom: 15px;
+    color: var(--text-primary);
+}
+
+#advancedSettingsModal .setup-row {
+    margin-bottom: 15px;
+}
+
+#advancedSettingsModal #apiKeyInput {
+    flex: 1;
+}
+
+#advancedSettingsModal #apiPasswordInput {
+    min-width: 150px;
+}
+
+#advancedSettingsModal .voice-preset-controls {
+    margin-bottom: 20px;
+}
+
+#advancedSettingsModal .voice-preset-controls label {
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: block;
+}
+
+#advancedSettingsModal #voicePresetSelect {
+    margin-bottom: 10px;
+}
+
+#advancedSettingsModal .voice-preset-controls .glass-button {
+    margin-right: 10px;
+}
+
+#advancedSettingsModal .character-voice-settings {
+    margin-bottom: 25px;
+    border: 1px solid; /* Color is set by specific class */
+    border-radius: 10px;
+    padding: 15px;
+}
+
+#advancedSettingsModal .nehori-settings {
+    border-color: #8b5cf6;
+}
+
+#advancedSettingsModal .hahori-settings {
+    border-color: #06b6d4;
+}
+
+#advancedSettingsModal .character-voice-settings h4 {
+    margin-bottom: 15px;
+}
+
+#advancedSettingsModal .nehori-settings h4 {
+    color: #8b5cf6;
+}
+
+#advancedSettingsModal .hahori-settings h4 {
+    color: #06b6d4;
+}
+
+#advancedSettingsModal .voice-settings {
+    gap: 15px;
+}
+
+#advancedSettingsModal .custom-prompt-area {
+    margin-top: 15px;
+}
+
+#advancedSettingsModal .custom-prompt-area textarea {
+    width: 100%;
+    margin-top: 5px;
+}
+
+#advancedSettingsModal .test-voice-btn {
+    margin-top: 10px;
+}
+
+#advancedSettingsModal .shortening-phase1-header {
+    background: #ffa500;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    margin-left: 10px;
+}
+
+#advancedSettingsModal .shortening-toggle-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ffa500;
+    border-radius: 10px;
+    background: rgba(255, 165, 0, 0.1);
+}
+
+#advancedSettingsModal .shortening-toggle-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+#advancedSettingsModal .shortening-toggle-label {
+    font-weight: 600;
+    color: #ffa500;
+}
+
+/* ==========================================================================
+   Setup Panel Overrides
+   ========================================================================== */
+.setup-header-override {
+    text-align: center;
+    margin-bottom: 6px;
+    padding: 0; /* Override default header padding */
+}
+
+.logo-container {
+    margin-bottom: 10px;
+}
+
+.setup-logo {
+    max-width: 480px;
+    max-height: 192px;
+    object-fit: contain;
+}
+
+.setup-title-fallback {
+    /* `display: none;` is kept inline as it's controlled by JS */
+    margin: 0;
+    font-size: 2rem;
+    color: var(--text-primary);
+}
+
+/* ==========================================================================
+   Theme Selection Modal Overrides
+   ========================================================================== */
+#themeModalCloseBtn {
+    padding: 8px 16px;
+}
+
+#floatingCompleteBtn {
+    background: linear-gradient(135deg, #2196f3, #1976d2);
+    color: white;
+}
+
+/* This is a more specific override than the general .danger class */
+.theme-selection-actions .glass-button.danger {
+    background: linear-gradient(135deg, #ff5722, #d32f2f);
+    color: white;
+}
+
+#confirmThemeBtn {
+    background: linear-gradient(135deg, #4caf50, #45a049);
+    color: white;
+}
+
+/* ==========================================================================
+   First Time Guide Overrides
+   ========================================================================== */
+#guideStep4 .glass-button {
+    background: linear-gradient(135deg, #4caf50, #45a049);
+    color: white;
 }

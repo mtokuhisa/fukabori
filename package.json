@@ -1,0 +1,15 @@
+{
+  "name": "fukabori-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app/script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "dependency-cruiser": "^16.10.4"
+  }
+}

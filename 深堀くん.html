@@ -67,7 +67,7 @@
                         自然に話すだけでOKです
                     </div>
                     <div class="guide-buttons">
-                        <button onclick="completeGuide()" class="glass-button" style="background: linear-gradient(135deg, #4caf50, #45a049); color: white;">セッション開始</button>
+                        <button onclick="completeGuide()" class="glass-button">セッション開始</button>
                         <button onclick="prevGuideStep()" class="glass-button">戻る</button>
                     </div>
                 </div>
@@ -79,7 +79,7 @@
             <div class="theme-selection-panel" onclick="event.stopPropagation()">
                 <div class="theme-selection-header">
                     <h2 class="theme-selection-title" id="themeModalTitle">📋 テーマを選択してください</h2>
-                    <button onclick="closeThemeSelection()" class="glass-button" id="themeModalCloseBtn" style="padding: 8px 16px;">✕ 閉じる</button>
+                    <button onclick="closeThemeSelection()" class="glass-button" id="themeModalCloseBtn">✕ 閉じる</button>
                 </div>
 
                 <!-- 解析中表示 -->
@@ -99,7 +99,7 @@
                         <div class="selection-guidance">
                             <span id="selectionGuidance">⬇️ 他のテーマも確認してください</span>
                         </div>
-                        <button id="floatingCompleteBtn" onclick="scrollToConfirmation()" class="glass-button floating-complete-btn" style="background: linear-gradient(135deg, #2196f3, #1976d2); color: white;">選択内容を確認</button>
+                        <button id="floatingCompleteBtn" onclick="scrollToConfirmation()" class="glass-button floating-complete-btn">選択内容を確認</button>
                     </div>
 
                     <!-- 文書要約 -->
@@ -115,10 +115,10 @@
 
                     <!-- アクションボタン -->
                     <div class="theme-selection-actions">
-                        <button onclick="cancelThemeSelection()" class="glass-button danger" style="background: linear-gradient(135deg, #ff5722, #d32f2f); color: white;">中止</button>
+                        <button onclick="cancelThemeSelection()" class="glass-button danger">中止</button>
                         <button onclick="selectAllThemes()" class="glass-button">全て選択</button>
                         <button onclick="deselectAllThemes()" class="glass-button">全て解除</button>
-                        <button onclick="confirmThemeSelection()" class="glass-button" style="background: linear-gradient(135deg, #4caf50, #45a049); color: white;" id="confirmThemeBtn">選択したテーマで開始</button>
+                        <button onclick="confirmThemeSelection()" class="glass-button" id="confirmThemeBtn">選択したテーマで開始</button>
                     </div>
                 </div>
             </div>
@@ -127,32 +127,32 @@
         <!-- 初期設定パネル -->
         <div id="setupPanel" class="setup-panel glass-panel">
             <!-- ロゴヘッダー -->
-            <div class="header" style="text-align: center; margin-bottom: 6px;">
-                <div style="margin-bottom: 10px;">
-                    <img src="assets/fukabori_logo_main.png" alt="深堀くん" style="max-width: 480px; max-height: 192px; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                    <h1 id="mainTitle" style="display: none; margin: 0; font-size: 2rem; color: var(--text-primary);">🔍 深堀くん</h1>
+            <div class="header setup-header-override">
+                <div class="logo-container">
+                    <img src="assets/fukabori_logo_main.png" alt="深堀くん" class="setup-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                    <h1 id="mainTitle" class="setup-title-fallback" style="display: none;">🔍 深堀くん</h1>
                 </div>
             </div>
 
             <!-- その他設定モーダル -->
-            <div id="advancedSettingsModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;" onclick="handleModalBackgroundClick(event)">
-                <div class="glass-panel" style="width: 90%; max-width: 800px; max-height: 90%; overflow-y: auto; padding: 30px;" onclick="event.stopPropagation();">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 style="color: var(--text-primary); margin: 0;">⚙️ その他設定</h2>
-                        <button onclick="closeAdvancedSettings()" class="glass-button" style="padding: 8px 16px;">✕ 閉じる</button>
+            <div id="advancedSettingsModal" class="hidden" onclick="handleModalBackgroundClick(event)">
+                <div class="glass-panel" onclick="event.stopPropagation();">
+                    <div class="modal-header">
+                        <h2>⚙️ その他設定</h2>
+                        <button onclick="closeAdvancedSettings()" class="glass-button modal-close-btn">✕ 閉じる</button>
                     </div>
 
                     <!-- APIキー管理 -->
-                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
-                        <h3 style="margin-bottom: 15px; color: var(--text-primary);">🔑 OpenAI API キー管理</h3>
+                    <div class="settings-section">
+                        <h3>🔑 OpenAI API キー管理</h3>
                         
-                        <div class="setup-row" style="margin-bottom: 15px;">
-                            <input type="password" id="apiKeyInput" class="setup-input" placeholder="sk-...で始まるAPIキーを入力" style="flex: 1;">
-                            <input type="password" id="apiPasswordInput" class="setup-input" placeholder="暗号化パスワード" style="min-width: 150px;">
+                        <div class="setup-row">
+                            <input type="password" id="apiKeyInput" class="setup-input" placeholder="sk-...で始まるAPIキーを入力">
+                            <input type="password" id="apiPasswordInput" class="setup-input" placeholder="暗号化パスワード">
                             <button onclick="setupApiKey()" class="glass-button">設定</button>
                         </div>
                         
-                        <div class="setup-row" style="margin-bottom: 15px;">
+                        <div class="setup-row">
                             <button onclick="testApiKey()" class="glass-button" id="testApiButton" disabled>接続テスト</button>
                             <button onclick="clearApiKey()" class="glass-button danger">削除</button>
                             <button onclick="changePassword()" class="glass-button">パスワード変更</button>
@@ -160,23 +160,23 @@
                     </div>
 
                     <!-- 音声設定 -->
-                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
-                        <h3 style="margin-bottom: 15px; color: var(--text-primary);">🎵 音声設定</h3>
+                    <div class="settings-section">
+                        <h3>🎵 音声設定</h3>
                         
                         <!-- プリセット選択 -->
-                        <div style="margin-bottom: 20px;">
-                            <label style="font-weight: 600; margin-bottom: 10px; display: block;">音声プリセット:</label>
-                            <select id="voicePresetSelect" class="setup-input" onchange="loadVoicePreset()" style="margin-bottom: 10px;">
+                        <div class="voice-preset-controls">
+                            <label>音声プリセット:</label>
+                            <select id="voicePresetSelect" class="setup-input" onchange="loadVoicePreset()">
                                 <option value="default">デフォルト設定</option>
                             </select>
-                            <button onclick="saveVoicePreset()" class="glass-button" style="margin-right: 10px;">現在の設定を保存</button>
+                            <button onclick="saveVoicePreset()" class="glass-button">現在の設定を保存</button>
                             <button onclick="deleteVoicePreset()" class="glass-button danger">選択したプリセットを削除</button>
                         </div>
 
                         <!-- ねほりーの設定 -->
-                        <div style="margin-bottom: 25px; border: 1px solid #8b5cf6; border-radius: 10px; padding: 15px;">
-                            <h4 style="color: #8b5cf6; margin-bottom: 15px;">ねほりーの (質問担当)</h4>
-                            <div class="voice-settings" style="gap: 15px;">
+                        <div class="character-voice-settings nehori-settings">
+                            <h4>ねほりーの (質問担当)</h4>
+                            <div class="voice-settings">
                                 <div class="voice-setting">
                                     <label>Voice:</label>
                                     <select id="nehoriVoice" class="setup-input">
@@ -197,17 +197,17 @@
                                     <input type="range" id="nehoriVolume" min="0.1" max="1.0" step="0.1" value="0.8" class="setup-input">
                                 </div>
                             </div>
-                            <div style="margin-top: 15px;">
+                            <div class="custom-prompt-area">
                                 <label>カスタムプロンプト:</label>
-                                <textarea id="nehoriPrompt" class="setup-input" rows="3" placeholder="ねほりーののキャラクター設定プロンプト" style="width: 100%; margin-top: 5px;"></textarea>
+                                <textarea id="nehoriPrompt" class="setup-input" rows="3" placeholder="ねほりーののキャラクター設定プロンプト"></textarea>
                             </div>
-                            <button onclick="testCharacterVoice('nehori')" class="glass-button" style="margin-top: 10px;">ねほりーの音声テスト</button>
+                            <button onclick="testCharacterVoice('nehori')" class="glass-button test-voice-btn">ねほりーの音声テスト</button>
                         </div>
 
                         <!-- はほりーの設定 -->
-                        <div style="margin-bottom: 20px; border: 1px solid #06b6d4; border-radius: 10px; padding: 15px;">
-                            <h4 style="color: #06b6d4; margin-bottom: 15px;">はほりーの (進行担当)</h4>
-                            <div class="voice-settings" style="gap: 15px;">
+                        <div class="character-voice-settings hahori-settings">
+                            <h4>はほりーの (進行担当)</h4>
+                            <div class="voice-settings">
                                 <div class="voice-setting">
                                     <label>Voice:</label>
                                     <select id="hahoriVoice" class="setup-input">
@@ -228,28 +228,28 @@
                                     <input type="range" id="hahoriVolume" min="0.1" max="1.0" step="0.1" value="0.8" class="setup-input">
                                 </div>
                             </div>
-                            <div style="margin-top: 15px;">
+                            <div class="custom-prompt-area">
                                 <label>カスタムプロンプト:</label>
-                                <textarea id="hahoriPrompt" class="setup-input" rows="3" placeholder="はほりーののキャラクター設定プロンプト" style="width: 100%; margin-top: 5px;"></textarea>
+                                <textarea id="hahoriPrompt" class="setup-input" rows="3" placeholder="はほりーののキャラクター設定プロンプト"></textarea>
                             </div>
-                            <button onclick="testCharacterVoice('hahori')" class="glass-button" style="margin-top: 10px;">はほりーの音声テスト</button>
+                            <button onclick="testCharacterVoice('hahori')" class="glass-button test-voice-btn">はほりーの音声テスト</button>
                         </div>
                     </div>
 
                     <!-- 発声短縮設定 -->
-                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
-                        <h3 style="margin-bottom: 15px; color: var(--text-primary);">🎤 発声短縮設定 <span style="background: #ffa500; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; margin-left: 10px;">Phase 1</span></h3>
+                    <div class="settings-section">
+                        <h3>🎤 発声短縮設定 <span class="shortening-phase1-header">Phase 1</span></h3>
                         
                         <!-- メイン切り替えスイッチ -->
-                        <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ffa500; border-radius: 10px; background: rgba(255, 165, 0, 0.1);">
-                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                                <label style="font-weight: 600; color: #ffa500;">🔄 発声短縮機能を有効化 (試験機能)</label>
+                        <div class="shortening-toggle-section">
+                            <div class="shortening-toggle-header">
+                                <label class="shortening-toggle-label">🔄 発声短縮機能を有効化 (試験機能)</label>
                                 <label class="switch">
                                     <input type="checkbox" id="speechShorteningEnabled" onchange="toggleSpeechShortening()">
                                     <span class="slider round"></span>
                                 </label>
                             </div>
-                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;">
+                            <div class="shortening-toggle-description">
                                 ※ 有効化すると、長い発話が自動的に短縮されて音声再生されます（表示は元のまま）
                             </div>
                         </div>
