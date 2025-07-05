@@ -2082,132 +2082,9 @@ function loginWithPassword() {
     }
 }
 
-function openAdvancedSettings() {
-    console.log('💡 openAdvancedSettings が実行されました');
-    
-    const modal = window.UIManager.DOMUtils.get('advancedSettingsModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.style.display = 'flex';
-        updateAdvancedSettingsDisplay();
-        document.addEventListener('keydown', handleEscapeKey);
-        console.log('✅ その他設定モーダルを開きました');
-    } else {
-        console.error('❌ モーダル要素が見つかりません');
-    }
-}
-
-function closeAdvancedSettings() {
-    console.log('💡 closeAdvancedSettings が実行されました');
-    
-    const modal = window.UIManager.DOMUtils.get('advancedSettingsModal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.style.display = 'none';
-        document.removeEventListener('keydown', handleEscapeKey);
-        console.log('✅ その他設定モーダルを閉じました');
-    }
-}
-
-function updateAdvancedSettingsDisplay() {
-    // カスタムプロンプト表示更新
-    const nehoriPrompt = window.UIManager.DOMUtils.get('nehoriPrompt');
-    const hahoriPrompt = window.UIManager.DOMUtils.get('hahoriPrompt');
-    
-    if (nehoriPrompt) {
-        nehoriPrompt.value = getCharacterPrompt(SPEAKERS.NEHORI);
-    }
-    if (hahoriPrompt) {
-        hahoriPrompt.value = getCharacterPrompt(SPEAKERS.HAHORI);
-    }
-    
-    // 🆕 音声設定UIも更新
-    setTimeout(() => {
-        updateVoiceSettingsUI();
-    }, 100); // prompts.jsの読み込み完了を待つ
-}
-
-function saveVoicePreset() {
-    try {
-        console.log('💾 音声設定を保存中...');
-        
-        // 設定画面からプロンプトを取得
-        const nehoriPrompt = window.UIManager.DOMUtils.get('nehoriPrompt');
-        const hahoriPrompt = window.UIManager.DOMUtils.get('hahoriPrompt');
-        
-        if (!nehoriPrompt || !hahoriPrompt) {
-            window.showMessage('error', 'プロンプト入力欄が見つかりません');
-            return;
-        }
-        
-        // VoiceSettingsを更新
-        VoiceSettings[SPEAKERS.NEHORI].prompt = nehoriPrompt.value || '';
-        VoiceSettings[SPEAKERS.HAHORI].prompt = hahoriPrompt.value || '';
-        
-        // ローカルストレージに保存
-        const voiceConfig = {
-            nehori: {
-                ...VoiceSettings[SPEAKERS.NEHORI]
-            },
-            hahori: {
-                ...VoiceSettings[SPEAKERS.HAHORI]
-            },
-            lastUpdated: new Date().toISOString()
-        };
-        
-        localStorage.setItem('fukabori_voice_config', JSON.stringify(voiceConfig));
-        
-        // configフォルダ用の設定ファイルも生成してダウンロード
-        downloadVoiceConfig(voiceConfig);
-        
-        console.log('✅ 音声設定を保存しました');
-        window.showMessage('success', '音声設定を保存しました（voice_config.jsファイルもダウンロードされました）');
-        
-    } catch (error) {
-        console.error('❌ 音声設定保存エラー:', error);
-        window.showMessage('error', '音声設定の保存に失敗しました');
-    }
-}
-
-function downloadVoiceConfig(config) {
-    try {
-        // JavaScriptファイル形式で出力
-        const jsContent = `// 深堀くん - カスタム音声設定
-// 生成日時: ${config.lastUpdated}
-
-window.CUSTOM_VOICE_CONFIG = ${JSON.stringify(config, null, 2)};
-
-// 設定の自動適用
-if (typeof window !== 'undefined' && window.VoiceSettings) {
-    Object.assign(window.VoiceSettings.nehori, window.CUSTOM_VOICE_CONFIG.nehori);
-    Object.assign(window.VoiceSettings.hahori, window.CUSTOM_VOICE_CONFIG.hahori);
-    console.log('✅ カスタム音声設定を適用しました');
-}
-`;
-
-        const blob = new Blob([jsContent], { type: 'application/javascript' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'voice_config.js';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        console.log('📁 voice_config.jsファイルをダウンロードしました');
-        
-    } catch (error) {
-        console.error('❌ 設定ファイルダウンロードエラー:', error);
-    }
-}
-
-function handleEscapeKey(event) {
-    if (event.key === 'Escape') {
-        closeAdvancedSettings();
-    }
-}
+// 🔧 UI最適化Phase1: モーダル管理機能をapp/ui-advanced.jsに移動
+// openAdvancedSettings, closeAdvancedSettings, updateAdvancedSettingsDisplay, 
+// saveVoicePreset, downloadVoiceConfig, handleEscapeKey
 
 // =================================================================================
 // API INTEGRATION - API統合
@@ -5262,32 +5139,8 @@ window.executeCorrectionCommand = (command) => SpeechCorrectionSystem.executeCor
 window.provideCorrectionFeedback = provideCorrectionFeedback;
 
 // ヘルプガイド切り替え関数
-function toggleVoiceGuide() {
-    const voiceGuidePanel = window.UIManager.DOMUtils.get('voiceGuidePanel');
-    const mainGuideToggle = window.UIManager.DOMUtils.get('mainGuideToggle');
-    
-    if (voiceGuidePanel && mainGuideToggle) {
-        const isHidden = voiceGuidePanel.classList.contains('hidden');
-        
-        if (isHidden) {
-            // ガイドパネルを表示
-            voiceGuidePanel.classList.remove('hidden');
-            mainGuideToggle.classList.remove('show');
-            // 横書きを強制確保
-            voiceGuidePanel.style.writingMode = 'horizontal-tb';
-            voiceGuidePanel.style.textOrientation = 'mixed';
-            console.log('✅ ヘルプガイドを表示しました');
-        } else {
-            // ガイドパネルを非表示
-            voiceGuidePanel.classList.add('hidden');
-            mainGuideToggle.classList.add('show');
-            console.log('✅ ヘルプガイドを非表示にしました');
-        }
-    }
-}
-
-// ヘルプガイド関数を公開
-window.toggleVoiceGuide = toggleVoiceGuide;
+// 🔧 UI最適化Phase1: ヘルプガイド管理機能をapp/ui-advanced.jsに移動
+// toggleVoiceGuide
 
 // 🎯 新機能: 音声ベース知見評価関数を公開
 window.updateThresholdFromInput = updateThresholdFromInput;
@@ -5447,8 +5300,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
     
-    // Escキーでモーダルを閉じる
-    document.addEventListener('keydown', handleEscapeKey);
+    // Escキーでモーダルを閉じる（ui-advanced.jsから参照）
+    if (window.UIAdvanced && window.UIAdvanced.Modal && window.UIAdvanced.Modal.handleEscapeKey) {
+        document.addEventListener('keydown', window.UIAdvanced.Modal.handleEscapeKey);
+    } else {
+        // フォールバック: 基本的なEscapeキーハンドラー
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                if (window.closeAdvancedSettings) {
+                    window.closeAdvancedSettings();
+                }
+            }
+        });
+    }
     
     // 🎤 Phase B: スマート音声操作パネルの初期化
     if (typeof SmartVoicePanelManager !== 'undefined') {
@@ -6606,7 +6470,14 @@ const SpeechShorteningManager = {
     init() {
         console.log('🔧 Phase 1: 発声短縮管理システム初期化中...');
         this.loadSettings();
-        this.updateUI();
+        
+        // UI更新はui-advanced.jsのUIAdvancedに委譲
+        if (window.UIAdvanced && window.UIAdvanced.SpeechShorteningUI) {
+            window.UIAdvanced.SpeechShorteningUI.updateUI();
+        } else {
+            console.warn('⚠️ UIAdvanced.SpeechShorteningUIが利用できません - UI更新をスキップ');
+        }
+        
         console.log('✅ Phase 1: 発声短縮管理システム初期化完了');
     },
 
@@ -6636,97 +6507,9 @@ const SpeechShorteningManager = {
     },
 
     // UI更新
-    updateUI() {
-        const enabledCheckbox = document.getElementById('speechShorteningEnabled');
-        const settingsPanel = document.getElementById('shorteningSettings');
-        const levelSlider = document.getElementById('shorteningLevel');
-        const levelValue = document.getElementById('shorteningLevelValue');
-        const maxCharSlider = document.getElementById('maxCharacters');
-        const maxCharValue = document.getElementById('maxCharactersValue');
-
-        if (enabledCheckbox) {
-            enabledCheckbox.checked = this.settings.enabled;
-        }
-
-        if (settingsPanel) {
-            settingsPanel.style.opacity = this.settings.enabled ? '1' : '0.5';
-            settingsPanel.style.pointerEvents = this.settings.enabled ? 'auto' : 'none';
-        }
-
-        if (levelSlider && levelValue) {
-            levelSlider.value = this.settings.level;
-            levelValue.textContent = this.settings.level;
-        }
-
-        if (maxCharSlider && maxCharValue) {
-            maxCharSlider.value = this.settings.maxCharacters;
-            maxCharValue.textContent = this.settings.maxCharacters;
-        }
-
-        // 個別オプション更新
-        Object.keys(this.settings.options).forEach(key => {
-            const checkbox = document.getElementById(key);
-            if (checkbox) {
-                checkbox.checked = this.settings.options[key];
-            }
-        });
-    },
-
-    // 機能有効/無効切り替え
-    toggleEnabled() {
-        this.settings.enabled = !this.settings.enabled;
-        this.updateUI();
-        this.saveSettings();
-        
-        const status = this.settings.enabled ? '有効' : '無効';
-        console.log(`🔄 発声短縮機能: ${status}`);
-        window.showMessage('success', `発声短縮機能を${status}にしました`);
-    },
-
-    // レベル更新
-    updateLevel(level) {
-        this.settings.level = parseInt(level);
-        this.updateUI();
-        this.saveSettings();
-        console.log(`📊 発声短縮レベル: ${this.settings.level}`);
-    },
-
-    // 最大文字数更新
-    updateMaxCharacters(maxChars) {
-        this.settings.maxCharacters = parseInt(maxChars);
-        this.updateUI();
-        this.saveSettings();
-        console.log(`📏 最大文字数: ${this.settings.maxCharacters}`);
-    },
-
-    // 個別オプション更新
-    updateOption(optionKey, value) {
-        if (this.settings.options.hasOwnProperty(optionKey)) {
-            this.settings.options[optionKey] = value;
-            this.saveSettings();
-            console.log(`⚙️ ${optionKey}: ${value}`);
-        }
-    },
-
-    // 設定リセット
-    resetSettings() {
-        this.settings = {
-            enabled: false,
-            level: 3,
-            maxCharacters: 150,
-            options: {
-                shortenGreetings: true,
-                shortenHonorific: true,
-                shortenThemes: true,
-                removeRedundancy: true
-            }
-        };
-        this.updateUI();
-        this.saveSettings();
-        window.showMessage('success', '発声短縮設定をリセットしました');
-        console.log('🔄 発声短縮設定をリセット');
-    },
-
+    // 🔧 UI最適化Phase1: UI関連メソッドをapp/ui-advanced.jsに移動
+    // updateUI, toggleEnabled, updateLevel, updateMaxCharacters, resetSettings
+    
     // 統合処理: 発声短縮エンジンとの連携
     async processTextWithShortening(originalText, speaker) {
         if (!this.settings.enabled) {
@@ -6790,6 +6573,45 @@ const SpeechShorteningManager = {
             // エラー時は既存の短縮処理を使用（フォールバック）
             return shortenForSpeech(originalText, this.settings.maxCharacters);
         }
+    },
+
+    // UI関連メソッド（app/ui-advanced.jsから呼び出し）
+    toggleEnabled() {
+        this.settings.enabled = !this.settings.enabled;
+        this.saveSettings();
+        
+        const status = this.settings.enabled ? '有効' : '無効';
+        console.log(`🔄 発声短縮機能: ${status}`);
+        window.showMessage('success', `発声短縮機能を${status}にしました`);
+    },
+
+    updateLevel(level) {
+        this.settings.level = parseInt(level);
+        this.saveSettings();
+        console.log(`📊 発声短縮レベル: ${this.settings.level}`);
+    },
+
+    updateMaxCharacters(maxChars) {
+        this.settings.maxCharacters = parseInt(maxChars);
+        this.saveSettings();
+        console.log(`📏 最大文字数: ${this.settings.maxCharacters}`);
+    },
+
+    resetSettings() {
+        this.settings = {
+            enabled: false,
+            level: 3,
+            maxCharacters: 150,
+            options: {
+                shortenGreetings: true,
+                shortenHonorific: true,
+                shortenThemes: true,
+                removeRedundancy: true
+            }
+        };
+        this.saveSettings();
+        window.showMessage('success', '発声短縮設定をリセットしました');
+        console.log('🔄 発声短縮設定をリセット');
     }
 };
 
@@ -6845,53 +6667,9 @@ async function addMessageToChatWithSmartShortening(speaker, displayText, speechT
 // PHASE 1: UI EVENT HANDLERS - UI イベントハンドラー
 // =================================================================================
 
-// グローバル関数として公開
-window.toggleSpeechShortening = function() {
-    SpeechShorteningManager.toggleEnabled();
-};
-
-window.updateShorteningLevel = function() {
-    const levelSlider = document.getElementById('shorteningLevel');
-    if (levelSlider) {
-        SpeechShorteningManager.updateLevel(levelSlider.value);
-    }
-};
-
-window.updateMaxCharacters = function() {
-    const maxCharSlider = document.getElementById('maxCharacters');
-    if (maxCharSlider) {
-        SpeechShorteningManager.updateMaxCharacters(maxCharSlider.value);
-    }
-};
-
-window.resetShorteningSettings = function() {
-    if (confirm('発声短縮設定をリセットしますか？')) {
-        SpeechShorteningManager.resetSettings();
-    }
-};
-
-window.testSpeechShortening = async function() {
-    console.log('🧪 発声短縮機能テスト開始');
-    
-    const testTexts = [
-        'いつもお忙しい中、貴重なお時間をいただき、誠にありがとうございます。本日は「プロジェクト管理の工夫」というテーマについて、さらに詳しくお聞かせいただければと思います。',
-        'それは本当に素晴らしいお話ですね。具体的には、どのような場面で、どのような課題があり、それをどのように解決されたのでしょうか？',
-        'ありがとうございました。非常に価値ある知見をお聞かせいただき、心より感謝申し上げます。'
-    ];
-    
-    for (let i = 0; i < testTexts.length; i++) {
-        const originalText = testTexts[i];
-        const shortenedText = await SpeechShorteningManager.processTextWithShortening(originalText, 'nehori');
-        
-        console.log(`📋 テスト ${i + 1}:`);
-        console.log(`📝 元テキスト (${originalText.length}文字): ${originalText}`);
-        console.log(`🔊 短縮後 (${shortenedText.length}文字): ${shortenedText}`);
-        console.log(`📊 短縮率: ${Math.round((1 - shortenedText.length / originalText.length) * 100)}%`);
-        console.log('---');
-    }
-    
-    window.showMessage('success', '発声短縮テストが完了しました。コンソールで結果を確認してください。');
-};
+// 🔧 UI最適化Phase1: 発声短縮UI関数をapp/ui-advanced.jsに移動
+// toggleSpeechShortening, updateShorteningLevel, updateMaxCharacters, 
+// resetShorteningSettings, testSpeechShortening
 
 // =================================================================================
 // PHASE 1: INITIALIZATION - Phase 1 初期化
