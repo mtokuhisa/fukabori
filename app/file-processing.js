@@ -52,10 +52,10 @@ const FileProcessingInterface = {
         return false;
     },
     
-    // メッセージ表示
+    // メッセージ表示（window.showMessage経由で統一）
     showMessage: (type, message) => {
-        if (typeof showMessage !== 'undefined') {
-            showMessage(type, message);
+        if (typeof window.showMessage !== 'undefined') {
+            window.showMessage(type, message);
         } else {
             console.log(`[${type}] ${message}`);
         }

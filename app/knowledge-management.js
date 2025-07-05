@@ -228,7 +228,7 @@ const FukaboriKnowledgeDatabase = {
             this.save(database);
 
             console.log(`✅ セッション知見を永続化: ${sessionRecord.metadata.totalInsights}知見`);
-            showMessage('success', `💾 ${sessionRecord.metadata.totalInsights}件の知見を永続保存しました`);
+            window.showMessage('success', `💾 ${sessionRecord.metadata.totalInsights}件の知見を永続保存しました`);
 
             return sessionRecord;
         } catch (error) {

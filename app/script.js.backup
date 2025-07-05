@@ -614,7 +614,7 @@ class RecognitionManager {
         
         if (isLongSession) {
             console.log('⏰ 長時間セッション検出 - セッション分割モードで再開');
-            window.showMessage('info', '長時間セッションにより再開します...');
+            showMessage('info', '長時間セッションにより再開します...');
             
             // 長時間セッション用の短い間隔で再開
             setTimeout(() => {
@@ -780,7 +780,7 @@ class RecognitionManager {
         // ユーザーへの通知
         if (delay > 5000) {
             const seconds = Math.round(delay / 1000);
-            window.showMessage('info', `音声認識の安定化のため${seconds}秒待機します...`);
+            showMessage('info', `音声認識の安定化のため${seconds}秒待機します...`);
         }
         
         setTimeout(() => {
@@ -1153,9 +1153,9 @@ class StateManager {
     // エラーメッセージ更新
     updateErrorMessages(permissionState, recognitionState) {
         if (permissionState === 'denied') {
-            window.showMessage('error', 'マイクの使用許可が拒否されています。ブラウザの設定で許可し、ページを再読み込みしてください。');
+            showMessage('error', 'マイクの使用許可が拒否されています。ブラウザの設定で許可し、ページを再読み込みしてください。');
         } else if (recognitionState === 'error') {
-            window.showMessage('warning', '音声認識でエラーが発生しました。しばらく待ってから再試行してください。');
+            showMessage('warning', '音声認識でエラーが発生しました。しばらく待ってから再試行してください。');
         }
     }
     
@@ -2101,11 +2101,11 @@ const ErrorHandler = {
     handle: (error, context = '', userMessage = '') => {
         console.error(`❌ ${context}エラー:`, error);
         const message = userMessage || error.message || 'エラーが発生しました';
-        window.showMessage('error', message);
+        showMessage('error', message);
     },
     success: (message) => {
         console.log(`✅ ${message}`);
-        window.showMessage('success', message);
+        showMessage('success', message);
     }
 };
 
@@ -2345,7 +2345,7 @@ function saveVoicePreset() {
         const hahoriPrompt = DOMUtils.get('hahoriPrompt');
         
         if (!nehoriPrompt || !hahoriPrompt) {
-            window.showMessage('error', 'プロンプト入力欄が見つかりません');
+            showMessage('error', 'プロンプト入力欄が見つかりません');
             return;
         }
         
@@ -2370,11 +2370,11 @@ function saveVoicePreset() {
         downloadVoiceConfig(voiceConfig);
         
         console.log('✅ 音声設定を保存しました');
-        window.showMessage('success', '音声設定を保存しました（voice_config.jsファイルもダウンロードされました）');
+        showMessage('success', '音声設定を保存しました（voice_config.jsファイルもダウンロードされました）');
         
     } catch (error) {
         console.error('❌ 音声設定保存エラー:', error);
-        window.showMessage('error', '音声設定の保存に失敗しました');
+        showMessage('error', '音声設定の保存に失敗しました');
     }
 }
 
@@ -2489,7 +2489,7 @@ async function addMessageToChatWithSpeech(speaker, displayText, speechText = nul
         await playPreGeneratedAudio(audioBlob, speaker);
     } catch (error) {
         console.error('❌ 音声生成エラー:', error);
-        window.showMessage('error', '音声の生成に失敗しました');
+        showMessage('error', '音声の生成に失敗しました');
     }
 }
 
@@ -2673,9 +2673,9 @@ async function initializeMicrophoneRecording(forceRecheck = false) {
         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
             localStorage.removeItem('microphonePermissionGranted');
             localStorage.setItem('microphonePermissionDenied', 'true'); // 拒否状態を記録
-            window.showMessage('error', 'マイクの使用許可が拒否されました。ブラウザの設定で許可し、ページを再読み込みしてください。');
+            showMessage('error', 'マイクの使用許可が拒否されました。ブラウザの設定で許可し、ページを再読み込みしてください。');
         } else {
-            window.showMessage('error', 'マイクの初期化に失敗しました。ページを再読み込みしてください。');
+            showMessage('error', 'マイクの初期化に失敗しました。ページを再読み込みしてください。');
         }
         
         return false;
@@ -2894,11 +2894,11 @@ async function provideCorrectionFeedback(message) {
         await playPreGeneratedAudio(audioBlob, SPEAKERS.HAHORI);
         
         // 画面にもメッセージ表示
-        window.showMessage('info', message);
+        showMessage('info', message);
         
     } catch (error) {
         console.error('❌ 音声訂正フィードバックエラー:', error);
-        window.showMessage('info', message);
+        showMessage('info', message);
     }
 }
 
@@ -2934,7 +2934,7 @@ async function handleUserTextInput(text) {
                 break;
         }
     } catch (error) {
-        window.showMessage('error', `応答処理でエラーが発生しました: ${error.message}`);
+        showMessage('error', `応答処理でエラーが発生しました: ${error.message}`);
     }
 }
 
@@ -2959,7 +2959,7 @@ async function startDeepdivePhase() {
     try {
         if (!window.AI_PROMPTS || !window.AI_PROMPTS.DEEPDIVE_FIRST) {
             console.error('❌ AI_PROMPTS.DEEPDIVE_FIRST が読み込まれていません');
-            window.showMessage('error', 'プロンプト設定の読み込みに失敗しました。ページを再読み込みしてください。');
+            showMessage('error', 'プロンプト設定の読み込みに失敗しました。ページを再読み込みしてください。');
             return;
         }
         
@@ -2980,7 +2980,7 @@ async function startDeepdivePhase() {
         AppState.waitingForPermission = true;
         
     } catch (error) {
-        window.showMessage('error', `深掘りフェーズでエラーが発生しました: ${error.message}`);
+        showMessage('error', `深掘りフェーズでエラーが発生しました: ${error.message}`);
     }
 }
 
@@ -3076,7 +3076,7 @@ async function processDeepdiveUserResponse(text) {
         }
         
     } catch (error) {
-        window.showMessage('error', `深掘り応答処理でエラーが発生しました: ${error.message}`);
+        showMessage('error', `深掘り応答処理でエラーが発生しました: ${error.message}`);
     }
 }
 
@@ -3095,7 +3095,7 @@ async function askNextQuestionInDeepDive() {
             .join('\n');
         if (!window.AI_PROMPTS || !window.AI_PROMPTS.DEEPDIVE_NEXT) {
             console.error('❌ AI_PROMPTS.DEEPDIVE_NEXT が読み込まれていません');
-            window.showMessage('error', 'プロンプト設定の読み込みに失敗しました。ページを再読み込みしてください。');
+            showMessage('error', 'プロンプト設定の読み込みに失敗しました。ページを再読み込みしてください。');
             return;
         }
         const nextQuestionPrompt = window.AI_PROMPTS.DEEPDIVE_NEXT(
@@ -3117,7 +3117,7 @@ async function askNextQuestionInDeepDive() {
         await addMessageToChat(SPEAKERS.NEHORI, nextQuestion);
         await playPreGeneratedAudio(audio, SPEAKERS.NEHORI);
     } catch (error) {
-        window.showMessage('error', `次の質問生成でエラーが発生しました: ${error.message}`);
+        showMessage('error', `次の質問生成でエラーが発生しました: ${error.message}`);
     }
 }
 
@@ -3179,7 +3179,7 @@ async function startSession() {
     // 🛡️ マイク許可の事前チェック（絶対ルール）
     const permissionDenied = localStorage.getItem('microphonePermissionDenied') === 'true';
     if (permissionDenied) {
-        window.showMessage('error', 'マイクの使用許可が拒否されています。ブラウザの設定で許可し、ページを再読み込みしてください。');
+        showMessage('error', 'マイクの使用許可が拒否されています。ブラウザの設定で許可し、ページを再読み込みしてください。');
         return;
     }
     
@@ -3187,29 +3187,29 @@ async function startSession() {
     const status = evaluate2StepStatus();
     if (!status.allComplete) {
         if (!status.loginComplete) {
-            window.showMessage('error', 'ログインを完了してください');
+            showMessage('error', 'ログインを完了してください');
             focusPasswordInput();
         } else {
-            window.showMessage('error', 'テーマを入力してください');
+            showMessage('error', 'テーマを入力してください');
             focusThemeInput();
         }
         return;
     }
     
     if (!AppState.apiKey) {
-        window.showMessage('error', 'APIキーを設定してください');
+        showMessage('error', 'APIキーを設定してください');
         return;
     }
 
     const themeInput = DOMUtils.get('themeInput');
     if (!themeInput) {
-        window.showMessage('error', 'テーマ入力欄が見つかりません');
+        showMessage('error', 'テーマ入力欄が見つかりません');
         return;
     }
 
     const theme = themeInput.value;
     if (!theme.trim()) {
-        window.showMessage('error', 'テーマを入力してください');
+        showMessage('error', 'テーマを入力してください');
         return;
     }
 
@@ -3244,7 +3244,7 @@ async function startSession() {
     // 🛡️ マイク初期化（AppState初期化後に実行）
     const micInitialized = await initializeMicrophoneRecording();
     if (!micInitialized) {
-        window.showMessage('error', 'マイクの初期化に失敗しました。音声機能を使用できません。');
+        showMessage('error', 'マイクの初期化に失敗しました。音声機能を使用できません。');
         return;
     }
     
@@ -3287,7 +3287,7 @@ async function startWarmupPhase() {
         }
     } catch (error) {
         console.error('❌ ウォームアップ質問生成エラー:', error);
-        window.showMessage('error', '質問の生成に失敗しました');
+        showMessage('error', '質問の生成に失敗しました');
     }
 }
 
@@ -3470,7 +3470,7 @@ const AudioControlManager = {
         
         // ユーザー向けメッセージ
         if (stoppedCount > 0 && reason === 'user_request') {
-            window.showMessage('info', `${stoppedCount}件の音声再生を停止しました`);
+            showMessage('info', `${stoppedCount}件の音声再生を停止しました`);
         }
         
         return stoppedCount;
@@ -3594,7 +3594,7 @@ async function startNehoriGenerationDuringHahori() {
             
         if (!window.AI_PROMPTS || !window.AI_PROMPTS.DEEPDIVE_NEXT) {
             console.error('❌ AI_PROMPTS.DEEPDIVE_NEXT が読み込まれていません');
-            window.showMessage('error', 'プロンプト設定の読み込みに失敗しました。ページを再読み込みしてください。');
+            showMessage('error', 'プロンプト設定の読み込みに失敗しました。ページを再読み込みしてください。');
             return;
         }
         
@@ -3730,7 +3730,7 @@ async function generateAndPlayNehoriImmediately() {
             .join('\n');
         if (!window.AI_PROMPTS || !window.AI_PROMPTS.DEEPDIVE_NEXT) {
             console.error('❌ AI_PROMPTS.DEEPDIVE_NEXT が読み込まれていません');
-            window.showMessage('error', 'プロンプト設定の読み込みに失敗しました。ページを再読み込みしてください。');
+            showMessage('error', 'プロンプト設定の読み込みに失敗しました。ページを再読み込みしてください。');
             return;
         }
         const nextQuestionPrompt = window.AI_PROMPTS.DEEPDIVE_NEXT(
@@ -3964,7 +3964,7 @@ function downloadMarkdownReport() {
         
         downloadTextFile(markdown, filename);
         
-        window.showMessage('success', 'レポートをダウンロードしました');
+        showMessage('success', 'レポートをダウンロードしました');
         console.log('✅ レポートダウンロード完了');
         
     } catch (error) {
@@ -4035,7 +4035,7 @@ function generateMarkdownReport() {
 
 function saveEncryptedApiKey(apiKey, password) {
     const encrypted = encryptApiKey(apiKey, password);
-    const passwordHash = window.hashPassword(password);
+    const passwordHash = hashPassword(password);
     const keyId = `fukabori_encrypted_key_${passwordHash}`;
     const timestampId = `fukabori_key_timestamp_${passwordHash}`;
     
@@ -4047,7 +4047,7 @@ function saveEncryptedApiKey(apiKey, password) {
 }
 
 function loadEncryptedApiKey(password) {
-    const passwordHash = window.hashPassword(password);
+    const passwordHash = hashPassword(password);
     const keyId = `fukabori_encrypted_key_${passwordHash}`;
     const encrypted = localStorage.getItem(keyId);
     
@@ -4073,7 +4073,7 @@ function getPasswordHashList() {
 }
 
 function hasApiKeyForPassword(password) {
-    const passwordHash = window.hashPassword(password);
+    const passwordHash = hashPassword(password);
     const keyId = `fukabori_encrypted_key_${passwordHash}`;
     return !!localStorage.getItem(keyId);
 }
@@ -4331,10 +4331,10 @@ function handleLogout() {
             update2StepUI();
             
             console.log('✅ ログイン状態クリア完了');
-            window.showMessage('success', 'ログイン状態をクリアしました');
+            showMessage('success', 'ログイン状態をクリアしました');
         } catch (error) {
             console.error('❌ ログイン状態クリアエラー:', error);
-            window.showMessage('error', 'ログイン状態のクリア中にエラーが発生しました');
+            showMessage('error', 'ログイン状態のクリア中にエラーが発生しました');
         }
     }
 }
@@ -4357,10 +4357,10 @@ function handleThemeClear() {
             update2StepUI();
             
             console.log('✅ テーマクリア完了');
-            window.showMessage('success', 'テーマ設定をクリアしました');
+            showMessage('success', 'テーマ設定をクリアしました');
         } catch (error) {
             console.error('❌ テーマクリアエラー:', error);
-            window.showMessage('error', 'テーマクリア中にエラーが発生しました');
+            showMessage('error', 'テーマクリア中にエラーが発生しました');
         }
     }
 }
@@ -4495,12 +4495,12 @@ async function setupApiKey() {
             if (hasApiKeyForPassword(password)) {
                 const overwrite = confirm(`このパスワードには既にAPIキーが保存されています。\n上書きしますか？`);
                 if (!overwrite) {
-                    window.showMessage('info', 'APIキーの設定をキャンセルしました');
+                    showMessage('info', 'APIキーの設定をキャンセルしました');
                     return;
                 }
             }
             
-            window.showMessage('info', 'APIキー接続テスト中...');
+            showMessage('info', 'APIキー接続テスト中...');
             
             AppState.apiKey = apiKey;
             const isValid = await testApiConnection();
@@ -4527,7 +4527,7 @@ async function setupApiKey() {
             }
         } else {
             console.log('🔍 保存済みAPIキーの読み込みと接続テスト中...');
-            window.showMessage('info', '保存済みAPIキーの接続テスト中...');
+            showMessage('info', '保存済みAPIキーの接続テスト中...');
             
             const decryptedKey = loadEncryptedApiKey(password);
             AppState.apiKey = decryptedKey;
@@ -4616,15 +4616,15 @@ async function testApiKey() {
     console.log('💡 testApiKey が実行されました');
     
     if (!AppState.apiKey) {
-        window.showMessage('error', 'APIキーが設定されていません');
+        showMessage('error', 'APIキーが設定されていません');
         return;
     }
     
-    window.showMessage('info', 'API接続テスト中...');
+    showMessage('info', 'API接続テスト中...');
     const isValid = await testApiConnection();
     
     if (isValid) {
-        window.showMessage('success', 'API接続テスト成功！キーは有効です');
+        showMessage('success', 'API接続テスト成功！キーは有効です');
         
         const startButton = document.getElementById('startButton');
         if (startButton) {
@@ -4632,7 +4632,7 @@ async function testApiKey() {
             console.log('✅ セッション開始ボタンを有効化しました');
         }
     } else {
-        window.showMessage('error', 'API接続失敗：キーが無効です');
+        showMessage('error', 'API接続失敗：キーが無効です');
         
         const startButton = document.getElementById('startButton');
         if (startButton) {
@@ -4649,7 +4649,7 @@ function updateApiKeyStatusDisplay() {
 
 function clearSavedApiKey(password = null) {
     if (password) {
-        const passwordHash = window.hashPassword(password);
+        const passwordHash = hashPassword(password);
         const keyId = `fukabori_encrypted_key_${passwordHash}`;
         const timestampId = `fukabori_key_timestamp_${passwordHash}`;
         
@@ -4669,19 +4669,19 @@ function clearApiKey() {
         
         const passwordInput = document.getElementById('apiPasswordInput');
         if (!passwordInput) {
-            window.showMessage('error', 'パスワード入力フィールドが見つかりません');
+            showMessage('error', 'パスワード入力フィールドが見つかりません');
             return;
         }
         
         const password = passwordInput.value.trim();
         if (!password) {
-            window.showMessage('error', 'パスワードを入力してからAPIキーを削除してください');
+            showMessage('error', 'パスワードを入力してからAPIキーを削除してください');
             return;
         }
         
         // 該当するAPIキーが存在するかチェック
         if (!hasApiKeyForPassword(password)) {
-            window.showMessage('error', 'そのパスワードに対応するAPIキーは見つかりませんでした');
+            showMessage('error', 'そのパスワードに対応するAPIキーは見つかりませんでした');
             return;
         }
         
@@ -4691,7 +4691,7 @@ function clearApiKey() {
             clearSavedApiKey(password);
             
             // パスワードハッシュリストからも削除
-            const passwordHash = window.hashPassword(password);
+            const passwordHash = hashPassword(password);
             const hashList = getPasswordHashList();
             const updatedList = hashList.filter(hash => hash !== passwordHash);
             localStorage.setItem('fukabori_password_hashes', JSON.stringify(updatedList));
@@ -4716,13 +4716,13 @@ function clearApiKey() {
             updateApiKeyStatusDisplay();
             update2StepUI();
             
-            window.showMessage('success', 'APIキーを削除しました');
+            showMessage('success', 'APIキーを削除しました');
             console.log('✅ APIキー削除完了');
         }
         
     } catch (error) {
         console.error('❌ APIキー削除エラー:', error);
-        window.showMessage('error', 'APIキーの削除に失敗しました: ' + error.message);
+        showMessage('error', 'APIキーの削除に失敗しました: ' + error.message);
     }
 }
 
@@ -4735,26 +4735,26 @@ function changePassword() {
         
         const passwordInput = document.getElementById('apiPasswordInput');
         if (!passwordInput) {
-            window.showMessage('error', 'パスワード入力フィールドが見つかりません');
+            showMessage('error', 'パスワード入力フィールドが見つかりません');
             return;
         }
         
         const currentPassword = passwordInput.value.trim();
         if (!currentPassword) {
-            window.showMessage('error', '現在のパスワードを入力してください');
+            showMessage('error', '現在のパスワードを入力してください');
             return;
         }
         
         // 現在のパスワードでAPIキーが存在するかチェック
         if (!hasApiKeyForPassword(currentPassword)) {
-            window.showMessage('error', '現在のパスワードに対応するAPIキーが見つかりません');
+            showMessage('error', '現在のパスワードに対応するAPIキーが見つかりません');
             return;
         }
         
         // 現在のAPIキーを読み込み
         const currentApiKey = loadEncryptedApiKey(currentPassword);
         if (!currentApiKey) {
-            window.showMessage('error', '現在のパスワードでAPIキーを復号できませんでした');
+            showMessage('error', '現在のパスワードでAPIキーを復号できませんでした');
             return;
         }
         
@@ -4765,20 +4765,20 @@ function changePassword() {
         }
         
         if (newPassword.length < 4) {
-            window.showMessage('error', 'パスワードは4文字以上で入力してください');
+            showMessage('error', 'パスワードは4文字以上で入力してください');
             return;
         }
         
         // パスワード確認
         const confirmPassword = prompt('新しいパスワードを再入力してください:');
         if (newPassword !== confirmPassword) {
-            window.showMessage('error', 'パスワードが一致しません');
+            showMessage('error', 'パスワードが一致しません');
             return;
         }
         
         // 新しいパスワードで既にAPIキーが存在するかチェック
         if (hasApiKeyForPassword(newPassword)) {
-            window.showMessage('error', 'そのパスワードは既に使用されています');
+            showMessage('error', 'そのパスワードは既に使用されています');
             return;
         }
         
@@ -4786,7 +4786,7 @@ function changePassword() {
         clearSavedApiKey(currentPassword);
         
         // 古いパスワードハッシュをリストから削除
-        const oldPasswordHash = window.hashPassword(currentPassword);
+        const oldPasswordHash = hashPassword(currentPassword);
         const hashList = getPasswordHashList();
         const filteredList = hashList.filter(hash => hash !== oldPasswordHash);
         
@@ -4799,12 +4799,12 @@ function changePassword() {
         // UI更新
         updateApiKeyStatusDisplay();
         
-        window.showMessage('success', 'パスワードを変更しました');
+        showMessage('success', 'パスワードを変更しました');
         console.log('🔐 パスワード変更完了');
         
     } catch (error) {
         console.error('❌ パスワード変更エラー:', error);
-        window.showMessage('error', 'パスワードの変更に失敗しました: ' + error.message);
+        showMessage('error', 'パスワードの変更に失敗しました: ' + error.message);
     }
 }
 
@@ -4888,7 +4888,7 @@ function forceStopAllActivity() {
     AppState.microphoneActive = false;
     
     updateMicrophoneButton();
-    window.showMessage('info', `全ての活動を強制停止しました（音声${stoppedAudioCount}件停止）`);
+    showMessage('info', `全ての活動を強制停止しました（音声${stoppedAudioCount}件停止）`);
     
     // 少し待ってから音声認識を再開（許可状態をチェックしてから）
     setTimeout(() => {
@@ -4962,7 +4962,7 @@ async function endConversationSession() {
     console.log('💡 endConversationSession が実行されました');
     
     if (!AppState.sessionActive) {
-        window.showMessage('info', 'セッションは既に終了しています');
+        showMessage('info', 'セッションは既に終了しています');
         return;
     }
     
@@ -5016,13 +5016,13 @@ async function endConversationSession() {
         
         // UI更新
         updateSessionStatus('セッション完了', AppState.currentTheme);
-        window.showMessage('success', 'セッションを終了しました');
+        showMessage('success', 'セッションを終了しました');
         
         console.log('✅ セッション終了完了');
         
     } catch (error) {
         console.error('❌ セッション終了エラー:', error);
-        window.showMessage('error', 'セッション終了中にエラーが発生しました');
+        showMessage('error', 'セッション終了中にエラーが発生しました');
     }
 }
 
@@ -5100,7 +5100,7 @@ async function testCharacterVoice(character) {
     
     if (!AppState.apiKey) {
         console.log('APIキーが設定されていません');
-        window.showMessage('error', 'まずAPIキーを設定してください');
+        showMessage('error', 'まずAPIキーを設定してください');
         return;
     }
 
@@ -5121,11 +5121,11 @@ async function testCharacterVoice(character) {
         const audioBlob = await ttsTextToAudioBlob(testMessage, character);
         await playPreGeneratedAudio(audioBlob, character);
         
-        window.showMessage('success', `${character}の音声テストが完了しました`);
+        showMessage('success', `${character}の音声テストが完了しました`);
         console.log('音声テスト完了');
     } catch (error) {
         console.error('音声テストエラー:', error);
-        window.showMessage('error', `音声テストに失敗しました: ${error.message}`);
+        showMessage('error', `音声テストに失敗しました: ${error.message}`);
     }
 }
 
@@ -5142,7 +5142,7 @@ function changeTheme(newTheme) {
         localStorage.setItem('fukabori_theme', newTheme);
         
         console.log(`✅ テーマを「${newTheme}」に変更しました`);
-        window.showMessage('success', `テーマを「${newTheme}」に変更しました`);
+        showMessage('success', `テーマを「${newTheme}」に変更しました`);
     }
 }
 
@@ -5401,7 +5401,7 @@ async function testVoiceCommands() {
     console.log('🧪 テスト結果:\n' + resultMessage);
     
     // ユーザーフィードバック
-    window.showMessage('info', `音声コマンドテスト完了: ${testResults.length}件中${testResults.filter(t => t.result.includes('✅')).length}件成功`);
+    showMessage('info', `音声コマンドテスト完了: ${testResults.length}件中${testResults.filter(t => t.result.includes('✅')).length}件成功`);
     
     // 詳細をコンソールに出力
     console.table(testResults);
@@ -5441,7 +5441,7 @@ function showVoiceCommandHelp() {
     console.log(helpContent);
     alert(helpContent.replace(/\*\*/g, '').replace(/•/g, '・'));
     
-    window.showMessage('info', '音声コマンドヘルプをコンソールに表示しました（F12で確認）');
+    showMessage('info', '音声コマンドヘルプをコンソールに表示しました（F12で確認）');
 }
 
 // グローバル関数として公開
@@ -5843,14 +5843,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.log('🎤 音声システム初期化開始...');
         if (!initializeVoiceSystem()) {
             console.error('❌ 音声システム初期化失敗');
-            window.showMessage('error', '音声システムの初期化に失敗しました。ページを再読み込みしてください。');
+            showMessage('error', '音声システムの初期化に失敗しました。ページを再読み込みしてください。');
             return;
         }
         console.log('✅ 音声システム初期化完了');
         
     } catch (error) {
         console.error('❌ 初期化エラー:', error);
-        window.showMessage('error', 'アプリケーションの初期化に失敗しました。ページを再読み込みしてください。');
+        showMessage('error', 'アプリケーションの初期化に失敗しました。ページを再読み込みしてください。');
         return;
     }
     
@@ -6279,7 +6279,7 @@ const KnowledgeFileManager = {
             console.log('🤖 AI知見整理開始...');
             
             if (showProgress) {
-                window.showMessage('info', '🧬 Knowledge DNAシステムによる知見整理中...');
+                showMessage('info', '🧬 Knowledge DNAシステムによる知見整理中...');
             }
             
             // Phase 1: 知見構造化・リライト（実装済み）
@@ -6292,7 +6292,7 @@ const KnowledgeFileManager = {
                 
                 try {
                     if (showProgress) {
-                        window.showMessage('info', `🔄 知見 ${i + 1}/${session.insights.length} を整理中...`);
+                        showMessage('info', `🔄 知見 ${i + 1}/${session.insights.length} を整理中...`);
                     }
                     
                     // 🔧 修正: 手動知見も自動知見と同様のリライト処理を適用
@@ -6331,7 +6331,7 @@ const KnowledgeFileManager = {
             // Phase 2: 関係性分析（実装済み）
             console.log('🕸️ Phase 2: 知見関係性分析開始...');
             if (showProgress) {
-                window.showMessage('info', '🕸️ 知見間の関係性を分析中...');
+                showMessage('info', '🕸️ 知見間の関係性を分析中...');
             }
             
             const relationships = await KnowledgeDNAManager.analyzeKnowledgeRelationships(
@@ -6342,7 +6342,7 @@ const KnowledgeFileManager = {
             
             console.log('✅ AI知見整理完了');
             if (showProgress) {
-                window.showMessage('success', '🧬 Knowledge DNAによる知見整理が完了しました！');
+                showMessage('success', '🧬 Knowledge DNAによる知見整理が完了しました！');
             }
             
             return enhancedSession;
@@ -6350,7 +6350,7 @@ const KnowledgeFileManager = {
         } catch (error) {
             console.error('❌ AI知見整理エラー:', error);
             if (showProgress) {
-                window.showMessage('warning', 'AI整理でエラーが発生しましたが、基本の知見は保存されます');
+                showMessage('warning', 'AI整理でエラーが発生しましたが、基本の知見は保存されます');
             }
             return session;
         }
@@ -6422,11 +6422,11 @@ async function initializeKnowledgeSession(theme) {
         await KnowledgeFileManager.createSessionFile(sessionMeta);
         
         console.log('✅ 知見セッション初期化完了');
-        window.showMessage('success', `知見収集セッションを開始しました（${category}カテゴリー）`);
+        showMessage('success', `知見収集セッションを開始しました（${category}カテゴリー）`);
         
     } catch (error) {
         console.error('❌ 知見セッション初期化エラー:', error);
-        window.showMessage('warning', '知見収集機能でエラーが発生しましたが、セッションは継続されます');
+        showMessage('warning', '知見収集機能でエラーが発生しましたが、セッションは継続されます');
     }
 }
 
@@ -6901,7 +6901,7 @@ function updateThresholdFromInput() {
     } else {
         // 無効な値の場合は元に戻す
         thresholdInput.value = AppState.knowledgeSettings.autoRecordThreshold;
-        window.showMessage('error', '閾値は0-100の範囲で入力してください');
+        showMessage('error', '閾値は0-100の範囲で入力してください');
     }
 }
 
@@ -6927,12 +6927,12 @@ async function downloadKnowledgeFile() {
         console.log(`📊 知見統合チェック: セッション${sessionInsights.length}件, 手動${manualInsights.length}件`);
         
         if (sessionInsights.length === 0 && manualInsights.length === 0) {
-            window.showMessage('warning', '知見データがありません。セッション中に抽出された知見があるときにダウンロードできます。');
+            showMessage('warning', '知見データがありません。セッション中に抽出された知見があるときにダウンロードできます。');
             return;
         }
 
         console.log('📥 Knowledge DNA統合 知見ファイルダウンロード開始...');
-        window.showMessage('info', '🧬 Knowledge DNAシステムによる知見ファイル生成中...');
+        showMessage('info', '🧬 Knowledge DNAシステムによる知見ファイル生成中...');
 
         // 🔧 Phase A修正: 手動保存された知見をセッションに統合
         let workingSession;
@@ -6978,11 +6978,11 @@ async function downloadKnowledgeFile() {
         );
 
         // Phase 2: 拡張されたセッションでファイル生成
-        window.showMessage('info', '📄 構造化ファイルを生成中...');
+        showMessage('info', '📄 構造化ファイルを生成中...');
         const filename = await KnowledgeFileManager.generateKnowledgeFile(enhancedSession);
         
         if (filename) {
-            window.showMessage('success', `🎉 Knowledge DNA統合知見ファイル「${filename}」をダウンロードしました！`);
+            showMessage('success', `🎉 Knowledge DNA統合知見ファイル「${filename}」をダウンロードしました！`);
             console.log('✅ Knowledge DNA統合 知見ファイルダウンロード完了:', filename);
             
             // 🔧 Phase A修正: 統計情報の改良
@@ -6998,12 +6998,12 @@ async function downloadKnowledgeFile() {
             console.log('📊 知見処理統計:', stats);
             
         } else {
-            window.showMessage('error', '知見ファイルの生成に失敗しました。');
+            showMessage('error', '知見ファイルの生成に失敗しました。');
         }
 
     } catch (error) {
         console.error('❌ Knowledge DNA知見ファイルダウンロードエラー:', error);
-        window.showMessage('error', `知見ファイルのダウンロードでエラーが発生しました: ${error.message}`);
+        showMessage('error', `知見ファイルのダウンロードでエラーが発生しました: ${error.message}`);
     }
 }
 
@@ -7145,7 +7145,7 @@ const SpeechShorteningManager = {
         
         const status = this.settings.enabled ? '有効' : '無効';
         console.log(`🔄 発声短縮機能: ${status}`);
-        window.showMessage('success', `発声短縮機能を${status}にしました`);
+        showMessage('success', `発声短縮機能を${status}にしました`);
     },
 
     // レベル更新
@@ -7188,7 +7188,7 @@ const SpeechShorteningManager = {
         };
         this.updateUI();
         this.saveSettings();
-        window.showMessage('success', '発声短縮設定をリセットしました');
+        showMessage('success', '発声短縮設定をリセットしました');
         console.log('🔄 発声短縮設定をリセット');
     },
 
@@ -7296,7 +7296,7 @@ async function addMessageToChatWithSmartShortening(speaker, displayText, speechT
         
     } catch (error) {
         console.error('❌ Phase 1: 統合発話処理エラー:', error);
-        window.showMessage('error', '音声の生成に失敗しました');
+        showMessage('error', '音声の生成に失敗しました');
         
         // 緊急フォールバック: 安全システムを使用
         if (window.FukaboriSafetySystem) {
@@ -7355,7 +7355,7 @@ window.testSpeechShortening = async function() {
         console.log('---');
     }
     
-    window.showMessage('success', '発声短縮テストが完了しました。コンソールで結果を確認してください。');
+    showMessage('success', '発声短縮テストが完了しました。コンソールで結果を確認してください。');
 };
 
 // =================================================================================
@@ -7422,13 +7422,13 @@ window.checkShorteningSync = function() {
     debugInfo.textContent = JSON.stringify(info, null, 2);
     debugDisplay.style.display = 'block';
     
-    window.showMessage('info', '設定同期状況を確認しました。下記のデバッグ情報を確認してください。');
+    showMessage('info', '設定同期状況を確認しました。下記のデバッグ情報を確認してください。');
 };
 
 // 強制同期修復
 window.forceShorteningSync = function() {
     if (!window.SpeechShorteningEngine) {
-        window.showMessage('error', 'Phase 0エンジンが利用できません。ページを再読み込みしてください。');
+        showMessage('error', 'Phase 0エンジンが利用できません。ページを再読み込みしてください。');
         return;
     }
     
@@ -7454,7 +7454,7 @@ window.forceShorteningSync = function() {
         console.log('Phase 1 level:', SpeechShorteningManager.settings.level);
         console.log('Phase 0 level:', window.SpeechShorteningEngine.settings.level);
         
-        window.showMessage('success', '設定同期修復が完了しました。再度テストを実行してください。');
+        showMessage('success', '設定同期修復が完了しました。再度テストを実行してください。');
         
         // 同期後の状況確認
         setTimeout(() => {
@@ -7463,14 +7463,14 @@ window.forceShorteningSync = function() {
         
     } catch (error) {
         console.error('❌ 強制同期エラー:', error);
-        window.showMessage('error', '同期修復に失敗しました: ' + error.message);
+        showMessage('error', '同期修復に失敗しました: ' + error.message);
     }
 };
 
 // エンジン直接テスト
 window.directShorteningTest = function() {
     if (!window.SpeechShorteningEngine) {
-        window.showMessage('error', 'Phase 0エンジンが利用できません。');
+        showMessage('error', 'Phase 0エンジンが利用できません。');
         return;
     }
     
@@ -7507,14 +7507,14 @@ window.directShorteningTest = function() {
         window.SpeechShorteningEngine.enabled = originalEnabled;
         
         if (result === testText) {
-            window.showMessage('warning', 'エンジンは動作していますが短縮されませんでした。短縮ルールの設定を確認してください。');
+            showMessage('warning', 'エンジンは動作していますが短縮されませんでした。短縮ルールの設定を確認してください。');
         } else {
-            window.showMessage('success', `エンジン直接テスト完了: ${testResult.reductionRate}短縮されました。`);
+            showMessage('success', `エンジン直接テスト完了: ${testResult.reductionRate}短縮されました。`);
         }
         
     } catch (error) {
         console.error('❌ 直接テストエラー:', error);
-        window.showMessage('error', '直接テストに失敗しました: ' + error.message);
+        showMessage('error', '直接テストに失敗しました: ' + error.message);
     }
 };
 
@@ -7555,11 +7555,11 @@ window.clearShorteningCache = function() {
             debugDisplay.style.display = 'none';
         }
         
-        window.showMessage('success', 'キャッシュをクリアしました。設定をリセットしてから再度有効化してください。');
+        showMessage('success', 'キャッシュをクリアしました。設定をリセットしてから再度有効化してください。');
         
     } catch (error) {
         console.error('❌ キャッシュクリアエラー:', error);
-        window.showMessage('error', 'キャッシュクリアに失敗しました: ' + error.message);
+        showMessage('error', 'キャッシュクリアに失敗しました: ' + error.message);
     }
 };
 
@@ -7597,7 +7597,7 @@ function initializeVoiceSystem() {
         return true;
     } catch (error) {
         console.error('❌ 音声システム初期化エラー:', error);
-        window.showMessage('error', '音声システムの初期化に失敗しました');
+        showMessage('error', '音声システムの初期化に失敗しました');
         return false;
     }
 }
