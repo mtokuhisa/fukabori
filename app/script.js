@@ -4370,178 +4370,19 @@ function forceStopAllActivity() {
     }, 2000);
 }
 
-async function generateFinalSummary() {
-    console.log('🎭 はほりーのによる最終まとめを生成中...');
-    
-    try {
-        const knowledgeCount = AppState.extractedKnowledge.length;
-        const summaryPrompt = window.AI_PROMPTS?.SESSION_SUMMARY ? 
-            window.AI_PROMPTS.SESSION_SUMMARY(
-                AppState.currentTheme, 
-                AppState.conversationHistory, 
-                AppState.extractedKnowledge
-            ) :
-            `テーマ「${AppState.currentTheme}」について行った深掘りインタビューのセッション全体を振り返り、抽出された${knowledgeCount}件の知見をまとめて最終的な感謝の言葉を述べてください。`;
-        
-        const summaryMessage = await gptMessagesToCharacterResponse([
-            { role: 'user', content: summaryPrompt }
-        ], SPEAKERS.HAHORI);
-        
-        // 表示は長く、発声は短くする統合処理
-        await addMessageToChatWithSpeech(SPEAKERS.HAHORI, summaryMessage);
-        
-        console.log('✅ はほりーのの最終まとめ完了');
-        
-    } catch (error) {
-        console.error('❌ 最終まとめ生成エラー:', error);
-        const fallbackMessage = `本日は貴重なお時間をいただき、ありがとうございました。${AppState.extractedKnowledge.length}件の価値ある知見を抽出させていただきました。`;
-        await addMessageToChat(SPEAKERS.HAHORI, fallbackMessage);
-        const audioBlob = await ttsTextToAudioBlob(fallbackMessage, SPEAKERS.HAHORI);
-        await playPreGeneratedAudio(audioBlob, SPEAKERS.HAHORI);
-    }
-}
+// =================================================================================
+// SESSION MANAGEMENT - セッション管理システム
+// =================================================================================
 
-async function generateFinalGreeting() {
-    console.log('🎭 ねほりーのによる最終挨拶を生成中...');
-    
-    try {
-        const greetingMessage = `今日は本当にありがとうございました！${AppState.currentTheme}について、とても興味深いお話を聞かせていただけて嬉しかったです。また是非お話を聞かせてくださいね。お疲れさまでした！`;
-        
-        await addMessageToChat(SPEAKERS.NEHORI, greetingMessage);
-        const audioBlob = await ttsTextToAudioBlob(greetingMessage, SPEAKERS.NEHORI);
-        await playPreGeneratedAudio(audioBlob, SPEAKERS.NEHORI);
-        
-        console.log('✅ ねほりーのの最終挨拶完了');
-        
-    } catch (error) {
-        console.error('❌ 最終挨拶生成エラー:', error);
-        const fallbackMessage = 'ありがとうございました！またお話を聞かせてくださいね。';
-        await addMessageToChat(SPEAKERS.NEHORI, fallbackMessage);
-        const audioBlob = await ttsTextToAudioBlob(fallbackMessage, SPEAKERS.NEHORI);
-        await playPreGeneratedAudio(audioBlob, SPEAKERS.NEHORI);
-    }
-}
+// 🔧 セッション終了システムは app/session-manager.js に移動しました
+// 以下の関数群は新モジュールに統合されています:
+// - generateFinalSummary()     → SessionEndManager.generateFinalSummary()
+// - generateFinalGreeting()    → SessionEndManager.generateFinalGreeting()
+// - handleSessionEnd()         → SessionEndManager.handleSessionEndCommand()
+// - endConversationSession()   → SessionEndManager.endSession()
+// - returnToLogin()            → SessionEndManager.returnToLogin()
 
-async function handleSessionEnd() {
-    console.log('💡 音声コマンドによるセッション終了要求');
-    await endConversationSession();
-}
-
-async function endConversationSession() {
-    console.log('💡 endConversationSession が実行されました');
-    
-    if (!AppState.sessionActive) {
-        window.showMessage('info', 'セッションは既に終了しています');
-        return;
-    }
-    
-    const confirmed = confirm('セッションを終了しますか？\n会話データは保存されます。');
-    if (!confirmed) {
-        return;
-    }
-    
-    try {
-        forceStopAllActivity();
-        
-        // 🔧 Phase B: セッション終了時の音声強制停止
-        AudioControlManager.forceStopAllAudio('session_end');
-        
-        // フェーズを終了処理に変更
-        AppState.phase = PHASES.SUMMARY;
-        updateSessionStatus('セッション終了中...', AppState.currentTheme);
-        
-        // はほりーのによる知見のまとめ
-        await generateFinalSummary();
-        
-        // ねほりーのによる最終挨拶
-        await generateFinalGreeting();
-        
-        // セッションデータを保存
-        if (AppState.conversationHistory.length > 0) {
-            const sessionData = {
-                theme: AppState.currentTheme,
-                conversationHistory: [...AppState.conversationHistory],
-                extractedKnowledge: [...AppState.extractedKnowledge],
-                startTime: AppState.sessionStartTime,
-                endTime: new Date()
-            };
-            
-            AppState.allSessions.push(sessionData);
-            
-            // 🧬 知見永続化: LocalStorageに保存
-            if (AppState.extractedKnowledge.length > 0) {
-                FukaboriKnowledgeDatabase.addSession({
-                    theme: AppState.currentTheme,
-                    insights: [...AppState.extractedKnowledge],
-                    startTime: AppState.sessionStartTime
-                });
-            }
-        }
-        
-        // 状態リセット
-        AppState.sessionActive = false;
-        AppState.phase = PHASES.CLOSING;
-        AppState.currentSpeaker = SPEAKERS.NULL;
-        
-        // UI更新
-        updateSessionStatus('セッション完了', AppState.currentTheme);
-        window.showMessage('success', 'セッションを終了しました');
-        
-        console.log('✅ セッション終了完了');
-        
-    } catch (error) {
-        console.error('❌ セッション終了エラー:', error);
-        window.showMessage('error', 'セッション終了中にエラーが発生しました');
-    }
-}
-
-function returnToLogin() {
-    console.log('💡 returnToLogin が実行されました');
-    
-    const confirmed = confirm('ログイン画面に戻りますか？\n現在のセッションデータは失われますが、ログイン状態とテーマ設定は保持されます。');
-    if (confirmed) {
-        // セッションデータをリセット（ただしログイン・テーマ状態は保持）
-        AppState.conversationHistory = [];
-        AppState.extractedKnowledge = [];
-        AppState.currentTheme = ''; // セッション中のテーマをクリア
-        AppState.phase = PHASES.SETUP;
-        AppState.currentSpeaker = SPEAKERS.NULL;
-        AppState.sessionActive = false;
-        
-        // UI状態をリセット
-        updateSessionStatus('準備中...', '未設定');
-        window.updateKnowledgeDisplay();
-        
-        // 音声認識を停止
-        if (AppState.speechRecognition && AppState.speechRecognition.stop) {
-            AppState.speechRecognition.stop();
-        }
-        
-        // チャット履歴をクリア
-        const messagesContainer = window.UIManager.DOMUtils.get('messagesContainer');
-        if (messagesContainer) {
-            messagesContainer.innerHTML = '';
-        }
-        
-        // 🔄 新機能: テーマ入力フィールドの状態は保持（従来はクリアしていた）
-        // const themeInput = window.UIManager.DOMUtils.get('themeInput');
-        // if (themeInput) {
-        //     themeInput.value = ''; // この行をコメントアウト
-        // }
-        
-        // ログイン画面を表示
-        window.showLoginScreen();
-        window.hideMainScreen();
-        
-        // 🔄 新機能: 状態復元（ログイン・テーマ状態を保持）
-        setTimeout(async () => {
-            await restoreApplicationState();
-            console.log('🔄 ログイン画面復帰時の状態復元完了');
-        }, 100);
-        
-        console.log('✅ ログイン画面に戻りました（状態保持機能付き）');
-    }
-}
+// 後方互換性は window.endConversationSession 等のラッパー関数で保証
 
 
 
