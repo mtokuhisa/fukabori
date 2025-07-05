@@ -1243,13 +1243,13 @@ const ConversationGatekeeper = {
             control.questionGenerationScheduled = false;
             
                     // 🔧 Phase C: ねほりーの発声開始時にはほりーの先読みを開始（状況適応版）
-        if (DualPreemptiveOptimization.phase1.isActive) {
-            const situation = DualPreemptiveOptimization.phase1.situationAnalyzer.analyzeConversationSituation(SPEAKERS.NEHORI, null);
-            const strategy = DualPreemptiveOptimization.phase1.situationAnalyzer.determinePreemptiveStrategy(situation);
+        if (window.DualPreemptiveOptimization?.phase1.isActive) {
+            const situation = window.DualPreemptiveOptimization.phase1.situationAnalyzer.analyzeConversationSituation(SPEAKERS.NEHORI, null);
+            const strategy = window.DualPreemptiveOptimization.phase1.situationAnalyzer.determinePreemptiveStrategy(situation);
             
             if (strategy.trigger !== 'none' && strategy.targetSpeaker === SPEAKERS.HAHORI) {
                 setTimeout(() => {
-                    startHahoriGenerationDuringNehori();
+                    window.startHahoriGenerationDuringNehori();
                 }, strategy.delay);
             }
         }
@@ -1260,13 +1260,13 @@ const ConversationGatekeeper = {
             control.justPlayedPendingHahori = false;
             
             // 🔧 Phase C: はほりーの発声開始時にねほりーの先読みを開始（状況適応版）
-            if (DualPreemptiveOptimization.phase1.isActive) {
-                const situation = DualPreemptiveOptimization.phase1.situationAnalyzer.analyzeConversationSituation(SPEAKERS.HAHORI, null);
-                const strategy = DualPreemptiveOptimization.phase1.situationAnalyzer.determinePreemptiveStrategy(situation);
+            if (window.DualPreemptiveOptimization?.phase1.isActive) {
+                const situation = window.DualPreemptiveOptimization.phase1.situationAnalyzer.analyzeConversationSituation(SPEAKERS.HAHORI, null);
+                const strategy = window.DualPreemptiveOptimization.phase1.situationAnalyzer.determinePreemptiveStrategy(situation);
                 
                 if (strategy.trigger !== 'none' && strategy.targetSpeaker === SPEAKERS.NEHORI) {
                     setTimeout(() => {
-                        startNehoriGenerationDuringHahori();
+                        window.startNehoriGenerationDuringHahori();
                     }, strategy.delay);
                 }
             }
@@ -1306,9 +1306,9 @@ const ConversationGatekeeper = {
         }
         
         // 🔧 Phase C: 進行中のはほりーの生成も停止
-        if (DualPreemptiveOptimization.phase1.isGeneratingHahori) {
+        if (window.DualPreemptiveOptimization?.phase1.isGeneratingHahori) {
             console.log('🛑 進行中のはほりーの生成を停止');
-            DualPreemptiveOptimization.phase1.shouldPlayHahoriImmediately = false;
+            window.DualPreemptiveOptimization.phase1.shouldPlayHahoriImmediately = false;
         }
     },
     
@@ -1331,7 +1331,7 @@ const ConversationGatekeeper = {
         setTimeout(() => {
             // 🔧 Phase C: ねほりーのとはほりーのの両方のPendingをチェック
             this.resumePendingNehoriIfNeeded(context);
-            playPendingHahoriIfNeeded();
+            window.playPendingHahoriIfNeeded();
             
             // フラグを解除
             setTimeout(() => {
@@ -1377,7 +1377,7 @@ const ConversationGatekeeper = {
                     
                     // Pendingがない場合は新しい質問を生成
                     setTimeout(() => {
-                        handleNehoriImmediatePlayback().catch(error => {
+                        window.handleNehoriImmediatePlayback().catch(error => {
                             console.error('❌ 新しい質問生成エラー:', error);
                         }).finally(() => {
                             control.questionGenerationScheduled = false;
@@ -1452,16 +1452,16 @@ const ConversationGatekeeper = {
             };
         }
         
-        if (DualPreemptiveOptimization.phase1.pendingHahoriContent && DualPreemptiveOptimization.phase1.pendingHahoriAudio) {
+        if (window.DualPreemptiveOptimization?.phase1.pendingHahoriContent && window.DualPreemptiveOptimization.phase1.pendingHahoriAudio) {
             return {
                 hasPending: true,
                 source: 'dualPreemptiveOptimization',
-                question: DualPreemptiveOptimization.phase1.pendingHahoriContent,
-                audio: DualPreemptiveOptimization.phase1.pendingHahoriAudio,
+                question: window.DualPreemptiveOptimization.phase1.pendingHahoriContent,
+                audio: window.DualPreemptiveOptimization.phase1.pendingHahoriAudio,
                 clearFunction: () => {
-                    DualPreemptiveOptimization.phase1.pendingHahoriContent = null;
-                    DualPreemptiveOptimization.phase1.pendingHahoriAudio = null;
-                    DualPreemptiveOptimization.phase1.shouldPlayHahoriImmediately = false;
+                    window.DualPreemptiveOptimization.phase1.pendingHahoriContent = null;
+                    window.DualPreemptiveOptimization.phase1.pendingHahoriAudio = null;
+                    window.DualPreemptiveOptimization.phase1.shouldPlayHahoriImmediately = false;
                 }
             };
         }
@@ -1551,9 +1551,9 @@ const ConversationGatekeeper = {
         VoiceOptimization.phase3.shouldPlayNehoriImmediately = false;
         
         // 🔧 Phase C: 双方向先読み最適化のPendingデータをクリア
-        DualPreemptiveOptimization.phase1.pendingHahoriContent = null;
-        DualPreemptiveOptimization.phase1.pendingHahoriAudio = null;
-        DualPreemptiveOptimization.phase1.shouldPlayHahoriImmediately = false;
+                    window.DualPreemptiveOptimization.phase1.pendingHahoriContent = null;
+            window.DualPreemptiveOptimization.phase1.pendingHahoriAudio = null;
+            window.DualPreemptiveOptimization.phase1.shouldPlayHahoriImmediately = false;
         
         console.log('✅ 全Pendingデータのクリアが完了');
     },
@@ -1583,7 +1583,7 @@ function emergencyClearAllPending(reason = 'emergency') {
 }
 
 // 🔧 Phase C: グローバル関数公開（テスト・デバッグ用）
-window.DualPreemptiveOptimization = DualPreemptiveOptimization;
+// DualPreemptiveOptimizationは app/voice-phase2-manager.js に移動済み
 window.startHahoriGenerationDuringNehori = startHahoriGenerationDuringNehori;
 window.handleHahoriImmediatePlayback = handleHahoriImmediatePlayback;
 window.playPendingHahoriIfNeeded = playPendingHahoriIfNeeded;
@@ -1594,11 +1594,11 @@ window.testDualPreemptiveSystem = async function() {
     
     try {
         // 1. 状況分析テスト
-        const situation = DualPreemptiveOptimization.phase1.situationAnalyzer.analyzeConversationSituation(SPEAKERS.NEHORI, null);
+        const situation = window.DualPreemptiveOptimization?.phase1.situationAnalyzer.analyzeConversationSituation(SPEAKERS.NEHORI, null);
         console.log('📊 状況分析結果:', situation);
         
         // 2. 戦略決定テスト
-        const strategy = DualPreemptiveOptimization.phase1.situationAnalyzer.determinePreemptiveStrategy(situation);
+        const strategy = window.DualPreemptiveOptimization?.phase1.situationAnalyzer.determinePreemptiveStrategy(situation);
         console.log('🎯 戦略決定結果:', strategy);
         
         // 3. Pending状態確認
@@ -1634,11 +1634,11 @@ window.testAdaptiveStrategy = function() {
     ];
     
     const results = testCases.map(testCase => {
-        const actual = DualPreemptiveOptimization.phase1.situationAnalyzer.analyzeConversationSituation(
+        const actual = window.DualPreemptiveOptimization?.phase1.situationAnalyzer.analyzeConversationSituation(
             testCase.speaker, 
             testCase.input
         );
-        const strategy = DualPreemptiveOptimization.phase1.situationAnalyzer.determinePreemptiveStrategy(actual);
+        const strategy = window.DualPreemptiveOptimization?.phase1.situationAnalyzer.determinePreemptiveStrategy(actual);
         
         return {
             testCase,
@@ -1927,13 +1927,13 @@ function loginWithPassword() {
     
     const passwordInput = window.UIManager.DOMUtils.get('passwordInput');
     if (!passwordInput) {
-        ErrorHandler.handle(new Error('パスワード入力欄が見つかりません'), 'ログイン');
+        window.showMessage('error', 'パスワード入力欄が見つかりません');
         return;
     }
     
     const password = passwordInput.value.trim();
     if (!password) {
-        ErrorHandler.handle(new Error('パスワード未入力'), 'ログイン', 'パスワードを入力してください');
+        window.showMessage('error', 'パスワードを入力してください');
         return;
     }
 
@@ -1954,7 +1954,7 @@ function loginWithPassword() {
         // 🔄 新機能: 2ステップUIを更新（従来のボタン制御から変更）
         update2StepUI();
         
-        ErrorHandler.success('ログインに成功しました');
+        window.showMessage('success', 'ログインに成功しました');
         console.log('✅ ログイン完了 - 状態を保存しました');
         
     } catch (error) {
@@ -1975,7 +1975,7 @@ function loginWithPassword() {
                 passwordInput.value = '';
                 update2StepUI();
                 
-                ErrorHandler.success('データ復旧完了！ログインに成功しました');
+                window.showMessage('success', 'データ復旧完了！ログインに成功しました');
                 console.log('✅ 復旧後ログイン完了');
                 return;
             } catch (retryError) {
@@ -1983,7 +1983,7 @@ function loginWithPassword() {
             }
         }
         
-        ErrorHandler.handle(error, 'ログイン', 'パスワードが間違っているか、保存されたAPIキーがありません');
+        window.showMessage('error', 'パスワードが間違っているか、保存されたAPIキーがありません');
     }
 }
 
@@ -3002,7 +3002,8 @@ function downloadMarkdownReport() {
         console.log('✅ レポートダウンロード完了');
         
     } catch (error) {
-        ErrorHandler.handle(error, 'レポートダウンロード');
+        console.error('❌ レポートダウンロードエラー:', error);
+        window.showMessage('error', 'レポートダウンロードに失敗しました');
     }
 }
 
@@ -3151,7 +3152,7 @@ async function setupApiKey() {
     const elements = window.UIManager.DOMUtils.getAll(['apiKeyInput', 'apiPasswordInput', 'testApiButton', 'startButton']);
     
     if (!elements.apiKeyInput || !elements.apiPasswordInput) {
-        ErrorHandler.handle(new Error('DOM要素が見つかりません'), 'APIキー設定', '入力欄が見つかりません');
+        window.showMessage('error', '入力欄が見つかりません');
         return;
     }
     
@@ -3159,12 +3160,12 @@ async function setupApiKey() {
     const password = elements.apiPasswordInput.value.trim();
     
     if (!password) {
-        ErrorHandler.handle(new Error('パスワード未入力'), 'APIキー設定', 'パスワードを入力してください');
+        window.showMessage('error', 'パスワードを入力してください');
         return;
     }
     
     if (apiKey && !apiKey.startsWith('sk-')) {
-        ErrorHandler.handle(new Error('無効なAPIキー'), 'APIキー設定', '正しいOpenAI APIキーを入力してください (sk-...で始まる)');
+        window.showMessage('error', '正しいOpenAI APIキーを入力してください (sk-...で始まる)');
         return;
     }
     
@@ -3187,7 +3188,7 @@ async function setupApiKey() {
             
             if (isValid) {
                 saveEncryptedApiKey(apiKey, password);
-                ErrorHandler.success('✅ APIキー接続テスト成功！暗号化保存されました');
+                window.showMessage('success', '✅ APIキー接続テスト成功！暗号化保存されました');
                 elements.apiKeyInput.value = '';
                 
                 updateApiKeyStatusDisplay();
@@ -3198,7 +3199,7 @@ async function setupApiKey() {
                 }
             } else {
                 AppState.apiKey = null;
-                ErrorHandler.handle(new Error('APIキー接続テスト失敗'), 'APIキー設定', '❌ APIキーが無効です。正しいキーを入力してください');
+                window.showMessage('error', '❌ APIキーが無効です。正しいキーを入力してください');
                 
                 if (elements.startButton) {
                     elements.startButton.disabled = true;
@@ -3215,7 +3216,7 @@ async function setupApiKey() {
             const isValid = await testApiConnection();
             
             if (isValid) {
-                ErrorHandler.success('✅ 保存されたAPIキーを読み込みました（接続確認済み）');
+                window.showMessage('success', '✅ 保存されたAPIキーを読み込みました（接続確認済み）');
                 
                 if (elements.startButton) {
                     elements.startButton.disabled = false;
@@ -3223,7 +3224,7 @@ async function setupApiKey() {
                 }
             } else {
                 AppState.apiKey = null;
-                ErrorHandler.handle(new Error('保存済みAPIキーが無効'), 'APIキー設定', '❌ 保存されたAPIキーが無効です。新しいキーを設定してください');
+                window.showMessage('error', '❌ 保存されたAPIキーが無効です。新しいキーを設定してください');
                 
                 clearSavedApiKey(password);
                 console.log('🗑️ 無効なAPIキーを削除しました');
@@ -3250,7 +3251,8 @@ async function setupApiKey() {
             elements.startButton.disabled = true;
         }
         
-        ErrorHandler.handle(error, 'APIキー設定');
+        console.error('❌ APIキー設定エラー:', error);
+        window.showMessage('error', 'APIキー設定に失敗しました');
     }
 }
 

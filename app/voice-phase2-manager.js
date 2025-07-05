@@ -265,7 +265,7 @@ async function handleNehoriImmediatePlayback() {
 }
 
 // 🔧 改善版: ゲートキーパー対応のPendingねほりーの再生
-function playPendingNehoriIfNeeded() {
+async function playPendingNehoriIfNeeded() {
     console.log('🎵 ねほりーのPending再生チェック');
     
     // ConversationGatekeeperが利用可能かチェック
@@ -533,8 +533,8 @@ async function handleHahoriImmediatePlayback() {
 }
 
 // 🔧 Phase C: Pendingはほりーのの再生チェック
-function playPendingHahoriIfNeeded() {
-    console.log('�� はほりーのPending再生チェック');
+async function playPendingHahoriIfNeeded() {
+    console.log('🎵 はほりーのPending再生チェック');
     
     // ConversationGatekeeperが利用可能かチェック
     if (!window.ConversationGatekeeper) {
