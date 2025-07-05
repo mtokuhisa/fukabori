@@ -6410,18 +6410,4 @@ window.initializeVoiceSystem = initializeVoiceSystem;
 window.initializeKnowledgeManagement = initializeKnowledgeManagement;
 window.initializeKnowledgeSession = initializeKnowledgeSession;
 
-// 音声システムの自動初期化
-document.addEventListener('DOMContentLoaded', function() {
-    // 少し遅延させて他のシステムの初期化を待つ
-    setTimeout(() => {
-        console.log('🚀 音声システム自動初期化開始');
-        const initialized = initializeVoiceSystem();
-        if (initialized) {
-            console.log('✅ 音声システム自動初期化完了');
-        } else {
-            console.error('❌ 音声システム自動初期化失敗');
-        }
-    }, 50);
-});
-
 console.log('✅ 新音声システム・知見管理システムの関数をwindowオブジェクトに公開しました');
