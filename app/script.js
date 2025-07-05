@@ -1027,13 +1027,8 @@ const SPEAKERS = {
     NULL: null
 };
 
-const PHASES = {
-    SETUP: 'setup',
-    WARMUP: 'warmup',
-    DEEPDIVE: 'deepdive',
-    SUMMARY: 'summary',
-    CLOSING: 'closing'
-};
+// 🔧 PHASES定数は app/phase-manager.js に移動しました
+// 後方互換性は window.PHASES で保証
 
 const MIC_STATES = {
     IDLE: 'idle',
@@ -1047,7 +1042,7 @@ const AppState = {
     currentTheme: '',
     sessionActive: false,
     currentSpeaker: SPEAKERS.NULL,
-    phase: PHASES.SETUP,
+    phase: 'setup', // PhaseManagerで管理
     microphoneActive: false,
     speechRecognition: null,
     conversationHistory: [],
@@ -1701,7 +1696,7 @@ window.testDualPreemptiveSystem = async function() {
         console.log('📋 Pending状態:', pendingStatus);
         
         // 4. はほりーの先読み生成テスト（条件が満たされている場合のみ）
-        if (AppState.phase === PHASES.DEEPDIVE && ConversationGatekeeper.canHahoriSpeak('test')) {
+        if (AppState.phase === 'deepdive' && ConversationGatekeeper.canHahoriSpeak('test')) {
             console.log('🔄 はほりーの先読み生成テスト実行');
             await startHahoriGenerationDuringNehori();
         } else {
@@ -2588,13 +2583,13 @@ async function handleUserTextInput(text) {
         }
         
         switch (AppState.phase) {
-            case PHASES.WARMUP:
+            case 'warmup':
                 await processWarmupUserResponse(text);
                 break;
-            case PHASES.DEEPDIVE:
+            case 'deepdive':
                 await processDeepdiveUserResponse(text);
                 break;
-            case PHASES.SUMMARY:
+            case 'summary':
                 await processSummaryUserResponse(text);
                 break;
             case 'knowledge_confirmation':
@@ -2616,7 +2611,12 @@ async function processWarmupUserResponse(text) {
     
     await playPreGeneratedAudio(audioBlob, SPEAKERS.HAHORI);
 
-    AppState.phase = PHASES.DEEPDIVE;
+    // フェーズ遷移はPhaseManagerに委譲
+    if (window.PhaseManager) {
+        await window.PhaseManager.transitionToPhase('deepdive', { theme: AppState.currentTheme });
+    } else {
+        AppState.phase = 'deepdive';
+    }
     AppState.waitingForPermission = true;
     await startDeepdivePhase();
 }
@@ -2884,7 +2884,12 @@ async function startSession() {
     // 🔧 AppState初期化を最優先で実行
     AppState.currentTheme = theme.trim();
     AppState.sessionActive = true;
-    AppState.phase = PHASES.WARMUP;
+    // フェーズ遷移はPhaseManagerに委譲
+    if (window.PhaseManager) {
+        await window.PhaseManager.transitionToPhase('warmup', { theme: AppState.currentTheme });
+    } else {
+        AppState.phase = 'warmup';
+    }
     AppState.sessionStartTime = new Date();
     
     console.log('✅ セッション状態を有効化:', {
@@ -3172,7 +3177,7 @@ async function playPreGeneratedAudio(audioBlob, speaker) {
 // 🔧 改善版: ゲートキーパー対応のねほりーの質問生成
 async function startNehoriGenerationDuringHahori() {
     // 🛡️ 初期条件チェック
-    if (VoiceOptimization.phase3.isGeneratingNehori || AppState.phase !== PHASES.DEEPDIVE) {
+    if (VoiceOptimization.phase3.isGeneratingNehori || AppState.phase !== 'deepdive') {
         return;
     }
     
@@ -3394,7 +3399,7 @@ function playPendingNehoriIfNeeded() {
 // 🔧 Phase C: はほりーの先読み生成機能
 async function startHahoriGenerationDuringNehori() {
     // 🛡️ 初期条件チェック
-    if (DualPreemptiveOptimization.phase1.isGeneratingHahori || AppState.phase !== PHASES.DEEPDIVE) {
+    if (DualPreemptiveOptimization.phase1.isGeneratingHahori || AppState.phase !== 'deepdive') {
         return;
     }
     
