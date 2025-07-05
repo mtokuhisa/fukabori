@@ -1101,7 +1101,7 @@ class StateManager {
     
     // マイクボタン更新
     updateMicrophoneButton(permissionState, recognitionState) {
-        const micButton = window.UIManager.DOMUtils.get('micButton');
+        const micButton = DOMUtils.get('micButton');
         if (!micButton) return;
         
         let buttonClass = 'mic-button';
@@ -1161,7 +1161,7 @@ class StateManager {
     
     // 進行状況更新
     updateProgress(permissionState, recognitionState, audioInfo) {
-        const statusElement = window.UIManager.DOMUtils.get('sessionStatus');
+        const statusElement = DOMUtils.get('sessionStatus');
         if (!statusElement) return;
         
         let statusText = '';
@@ -2211,11 +2211,11 @@ function updateVoiceSettingsUI() {
         }
         
         // ねほりーの設定
-        const nehoriVoice = window.UIManager.DOMUtils.get('nehoriVoice');
-        const nehoriSpeed = window.UIManager.DOMUtils.get('nehoriSpeed');
-        const nehoriVolume = window.UIManager.DOMUtils.get('nehoriVolume');
-        const nehoriSpeedValue = window.UIManager.DOMUtils.get('nehoriSpeedValue');
-        const nehoriVolumeValue = window.UIManager.DOMUtils.get('nehoriVolumeValue');
+        const nehoriVoice = DOMUtils.get('nehoriVoice');
+        const nehoriSpeed = DOMUtils.get('nehoriSpeed');
+        const nehoriVolume = DOMUtils.get('nehoriVolume');
+        const nehoriSpeedValue = DOMUtils.get('nehoriSpeedValue');
+        const nehoriVolumeValue = DOMUtils.get('nehoriVolumeValue');
         
         if (nehoriVoice) nehoriVoice.value = nehoriSettings.voice || 'sage';
         if (nehoriSpeed) nehoriSpeed.value = nehoriSettings.speed || 1.3;
@@ -2224,11 +2224,11 @@ function updateVoiceSettingsUI() {
         if (nehoriVolumeValue) nehoriVolumeValue.textContent = nehoriVolume?.value || '0.9';
         
         // はほりーの設定
-        const hahoriVoice = window.UIManager.DOMUtils.get('hahoriVoice');
-        const hahoriSpeed = window.UIManager.DOMUtils.get('hahoriSpeed');
-        const hahoriVolume = window.UIManager.DOMUtils.get('hahoriVolume');
-        const hahoriSpeedValue = window.UIManager.DOMUtils.get('hahoriSpeedValue');
-        const hahoriVolumeValue = window.UIManager.DOMUtils.get('hahoriVolumeValue');
+        const hahoriVoice = DOMUtils.get('hahoriVoice');
+        const hahoriSpeed = DOMUtils.get('hahoriSpeed');
+        const hahoriVolume = DOMUtils.get('hahoriVolume');
+        const hahoriSpeedValue = DOMUtils.get('hahoriSpeedValue');
+        const hahoriVolumeValue = DOMUtils.get('hahoriVolumeValue');
         
         if (hahoriVoice) hahoriVoice.value = hahoriSettings.voice || 'shimmer';
         if (hahoriSpeed) hahoriSpeed.value = hahoriSettings.speed || 1.3;
@@ -2254,7 +2254,7 @@ function updateVoiceSettingsUI() {
 function loginWithPassword() {
     console.log('💡 loginWithPassword が実行されました');
     
-    const passwordInput = window.UIManager.DOMUtils.get('passwordInput');
+    const passwordInput = DOMUtils.get('passwordInput');
     if (!passwordInput) {
         ErrorHandler.handle(new Error('パスワード入力欄が見つかりません'), 'ログイン');
         return;
@@ -2294,7 +2294,7 @@ function loginWithPassword() {
 function openAdvancedSettings() {
     console.log('💡 openAdvancedSettings が実行されました');
     
-    const modal = window.UIManager.DOMUtils.get('advancedSettingsModal');
+    const modal = DOMUtils.get('advancedSettingsModal');
     if (modal) {
         modal.classList.remove('hidden');
         modal.style.display = 'flex';
@@ -2309,7 +2309,7 @@ function openAdvancedSettings() {
 function closeAdvancedSettings() {
     console.log('💡 closeAdvancedSettings が実行されました');
     
-    const modal = window.UIManager.DOMUtils.get('advancedSettingsModal');
+    const modal = DOMUtils.get('advancedSettingsModal');
     if (modal) {
         modal.classList.add('hidden');
         modal.style.display = 'none';
@@ -2320,8 +2320,8 @@ function closeAdvancedSettings() {
 
 function updateAdvancedSettingsDisplay() {
     // カスタムプロンプト表示更新
-    const nehoriPrompt = window.UIManager.DOMUtils.get('nehoriPrompt');
-    const hahoriPrompt = window.UIManager.DOMUtils.get('hahoriPrompt');
+    const nehoriPrompt = DOMUtils.get('nehoriPrompt');
+    const hahoriPrompt = DOMUtils.get('hahoriPrompt');
     
     if (nehoriPrompt) {
         nehoriPrompt.value = getCharacterPrompt(SPEAKERS.NEHORI);
@@ -2341,8 +2341,8 @@ function saveVoicePreset() {
         console.log('💾 音声設定を保存中...');
         
         // 設定画面からプロンプトを取得
-        const nehoriPrompt = window.UIManager.DOMUtils.get('nehoriPrompt');
-        const hahoriPrompt = window.UIManager.DOMUtils.get('hahoriPrompt');
+        const nehoriPrompt = DOMUtils.get('nehoriPrompt');
+        const hahoriPrompt = DOMUtils.get('hahoriPrompt');
         
         if (!nehoriPrompt || !hahoriPrompt) {
             window.showMessage('error', 'プロンプト入力欄が見つかりません');
@@ -2772,7 +2772,7 @@ function restartSpeechRecognition() {
 }
 
 function updateTranscriptDisplay() {
-    const transcriptDisplay = window.UIManager.DOMUtils.get('transcriptDisplay');
+    const transcriptDisplay = DOMUtils.get('transcriptDisplay');
     if (transcriptDisplay) {
         if (AppState.currentTranscript) {
             // リアルタイム文字起こし（確定済み + 入力中）を表示
@@ -3201,7 +3201,7 @@ async function startSession() {
         return;
     }
 
-    const themeInput = window.UIManager.DOMUtils.get('themeInput');
+    const themeInput = DOMUtils.get('themeInput');
     if (!themeInput) {
         window.showMessage('error', 'テーマ入力欄が見つかりません');
         return;
@@ -3228,8 +3228,8 @@ async function startSession() {
     // 🔄 知見管理システムとの連携
     await initializeKnowledgeSession(theme.trim());
 
-    const setupPanel = window.UIManager.DOMUtils.get('setupPanel');
-    const chatArea = window.UIManager.DOMUtils.get('chatArea');
+    const setupPanel = DOMUtils.get('setupPanel');
+    const chatArea = DOMUtils.get('chatArea');
     
     if (setupPanel) {
         setupPanel.classList.add('hidden');
@@ -3300,7 +3300,7 @@ async function startWarmupPhase() {
 // =================================================================================
 
 function hideLoginScreen() {
-    const setupPanel = window.UIManager.DOMUtils.get('setupPanel');
+    const setupPanel = DOMUtils.get('setupPanel');
     if (setupPanel) {
         setupPanel.classList.add('hidden');
         console.log('✅ ログイン画面を非表示');
@@ -3308,7 +3308,7 @@ function hideLoginScreen() {
 }
 
 function showMainScreen() {
-    const chatArea = window.UIManager.DOMUtils.get('chatArea');
+    const chatArea = DOMUtils.get('chatArea');
     if (chatArea) {
         chatArea.classList.remove('hidden');
         console.log('✅ メイン画面を表示');
@@ -3316,9 +3316,9 @@ function showMainScreen() {
 }
 
 function updateSessionStatus(status, theme) {
-    const sessionStatus = window.UIManager.DOMUtils.get('sessionStatus');
-    const currentTheme = window.UIManager.DOMUtils.get('currentTheme');
-    const currentThemeFixed = window.UIManager.DOMUtils.get('currentThemeFixed');
+    const sessionStatus = DOMUtils.get('sessionStatus');
+    const currentTheme = DOMUtils.get('currentTheme');
+    const currentThemeFixed = DOMUtils.get('currentThemeFixed');
     
     if (sessionStatus) {
         sessionStatus.textContent = status;
@@ -3341,7 +3341,7 @@ function updateSessionStatus(status, theme) {
 }
 
 function updateKnowledgeDisplay() {
-    const extractedKnowledge = window.UIManager.DOMUtils.get('extractedKnowledge');
+    const extractedKnowledge = DOMUtils.get('extractedKnowledge');
     
     if (extractedKnowledge) {
         if (AppState.extractedKnowledge.length === 0) {
@@ -3373,7 +3373,7 @@ async function addMessageToChat(speaker, message) {
     if (speaker === SPEAKERS.NEHORI && AppState.voiceRecognitionState.isKnowledgeConfirmationMode) {
         return;
     }
-    const messagesContainer = window.UIManager.DOMUtils.get('messagesContainer');
+    const messagesContainer = DOMUtils.get('messagesContainer');
     if (messagesContainer) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${speaker}`;
@@ -4170,9 +4170,9 @@ function update2StepUI() {
         const status = evaluate2StepStatus();
         
         // Step 1: ログイン状態の更新
-        const step1Checkbox = window.UIManager.DOMUtils.get('step1Checkbox');
-        const step1Status = window.UIManager.DOMUtils.get('step1Status');
-        const step1ActionButton = window.UIManager.DOMUtils.get('step1ActionButton');
+        const step1Checkbox = DOMUtils.get('step1Checkbox');
+        const step1Status = DOMUtils.get('step1Status');
+        const step1ActionButton = DOMUtils.get('step1ActionButton');
         
         if (step1Checkbox && step1Status && step1ActionButton) {
             if (status.loginComplete) {
@@ -4210,9 +4210,9 @@ function update2StepUI() {
         }
         
         // Step 2: テーマ状態の更新
-        const step2Checkbox = window.UIManager.DOMUtils.get('step2Checkbox');
-        const step2Status = window.UIManager.DOMUtils.get('step2Status');
-        const step2ActionButton = window.UIManager.DOMUtils.get('step2ActionButton');
+        const step2Checkbox = DOMUtils.get('step2Checkbox');
+        const step2Status = DOMUtils.get('step2Status');
+        const step2ActionButton = DOMUtils.get('step2ActionButton');
         
         if (step2Checkbox && step2Status && step2ActionButton) {
             if (status.themeComplete) {
@@ -4240,9 +4240,9 @@ function update2StepUI() {
         }
         
         // ファイル添付ボタンの状態制御
-        const fileInput = window.UIManager.DOMUtils.get('themeFileInput');
-        const fileInputDisplay = window.UIManager.DOMUtils.get('fileInputDisplay');
-        const fileInputText = window.UIManager.DOMUtils.get('fileInputText');
+        const fileInput = DOMUtils.get('themeFileInput');
+        const fileInputDisplay = DOMUtils.get('fileInputDisplay');
+        const fileInputText = DOMUtils.get('fileInputText');
         
         console.log('🔄 ファイル入力状態更新:', {
             fileInput: !!fileInput,
@@ -4297,7 +4297,7 @@ function update2StepUI() {
 
 // 🎯 フォーカス制御関数
 function focusPasswordInput() {
-    const passwordInput = window.UIManager.DOMUtils.get('passwordInput');
+    const passwordInput = DOMUtils.get('passwordInput');
     if (passwordInput) {
         passwordInput.focus();
         passwordInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -4305,7 +4305,7 @@ function focusPasswordInput() {
 }
 
 function focusThemeInput() {
-    const themeInput = window.UIManager.DOMUtils.get('themeInput');
+    const themeInput = DOMUtils.get('themeInput');
     if (themeInput) {
         themeInput.focus();
         themeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -4322,7 +4322,7 @@ function handleLogout() {
             AppState.apiKey = null;
             
             // パスワード入力欄をクリア
-            const passwordInput = window.UIManager.DOMUtils.get('passwordInput');
+            const passwordInput = DOMUtils.get('passwordInput');
             if (passwordInput) {
                 passwordInput.value = '';
             }
@@ -4348,7 +4348,7 @@ function handleThemeClear() {
             clearThemeInputState();
             
             // テーマ入力欄をクリア
-            const themeInput = window.UIManager.DOMUtils.get('themeInput');
+            const themeInput = DOMUtils.get('themeInput');
             if (themeInput) {
                 themeInput.value = '';
             }
@@ -4367,9 +4367,9 @@ function handleThemeClear() {
 
 // 🚀 セッション開始ボタンの状態更新
 function updateSessionStartButton(allComplete) {
-    const startButton = window.UIManager.DOMUtils.get('startButton');
-    const startButtonSubText = window.UIManager.DOMUtils.get('startButtonSubText');
-    const sessionStartSection = window.UIManager.DOMUtils.get('sessionStartSection');
+    const startButton = DOMUtils.get('startButton');
+    const startButtonSubText = DOMUtils.get('startButtonSubText');
+    const sessionStartSection = DOMUtils.get('sessionStartSection');
     
     // Step0時は非表示、Step1以降で表示
     const isApiKeyConfigured = window.isApiKeyConfigured ? window.isApiKeyConfigured() : false;
@@ -4430,7 +4430,7 @@ async function restoreApplicationState() {
         // 2. テーマ入力状態の復元
         const savedTheme = loadThemeInputState();
         if (savedTheme) {
-            const themeInput = window.UIManager.DOMUtils.get('themeInput');
+            const themeInput = DOMUtils.get('themeInput');
             if (themeInput) {
                 themeInput.value = savedTheme;
                 console.log(`🎨 テーマ入力状態復元: "${savedTheme}"`);
@@ -4468,7 +4468,7 @@ async function restoreApplicationState() {
 async function setupApiKey() {
     console.log('💡 setupApiKey が実行されました');
     
-    const elements = window.UIManager.DOMUtils.getAll(['apiKeyInput', 'apiPasswordInput', 'testApiButton', 'startButton']);
+    const elements = DOMUtils.getAll(['apiKeyInput', 'apiPasswordInput', 'testApiButton', 'startButton']);
     
     if (!elements.apiKeyInput || !elements.apiPasswordInput) {
         ErrorHandler.handle(new Error('DOM要素が見つかりません'), 'APIキー設定', '入力欄が見つかりません');
@@ -5049,13 +5049,13 @@ function returnToLogin() {
         }
         
         // チャット履歴をクリア
-        const messagesContainer = window.UIManager.DOMUtils.get('messagesContainer');
+        const messagesContainer = DOMUtils.get('messagesContainer');
         if (messagesContainer) {
             messagesContainer.innerHTML = '';
         }
         
         // 🔄 新機能: テーマ入力フィールドの状態は保持（従来はクリアしていた）
-        // const themeInput = window.UIManager.DOMUtils.get('themeInput');
+        // const themeInput = DOMUtils.get('themeInput');
         // if (themeInput) {
         //     themeInput.value = ''; // この行をコメントアウト
         // }
@@ -5075,7 +5075,7 @@ function returnToLogin() {
 }
 
 function showLoginScreen() {
-    const setupPanel = window.UIManager.DOMUtils.get('setupPanel');
+    const setupPanel = DOMUtils.get('setupPanel');
     if (setupPanel) {
         setupPanel.classList.remove('hidden');
         console.log('✅ ログイン画面を表示');
@@ -5083,7 +5083,7 @@ function showLoginScreen() {
 }
 
 function hideMainScreen() {
-    const chatArea = window.UIManager.DOMUtils.get('chatArea');
+    const chatArea = DOMUtils.get('chatArea');
     if (chatArea) {
         chatArea.classList.add('hidden');
         console.log('✅ メイン画面を非表示');
@@ -5685,8 +5685,8 @@ window.provideCorrectionFeedback = provideCorrectionFeedback;
 
 // ヘルプガイド切り替え関数
 function toggleVoiceGuide() {
-    const voiceGuidePanel = window.UIManager.DOMUtils.get('voiceGuidePanel');
-    const mainGuideToggle = window.UIManager.DOMUtils.get('mainGuideToggle');
+    const voiceGuidePanel = DOMUtils.get('voiceGuidePanel');
+    const mainGuideToggle = DOMUtils.get('mainGuideToggle');
     
     if (voiceGuidePanel && mainGuideToggle) {
         const isHidden = voiceGuidePanel.classList.contains('hidden');
@@ -5733,7 +5733,7 @@ function updateSessionProgress() {
     
     // ステップアイコンを更新
     for (let i = 1; i <= 5; i++) {
-        const stepElement = window.UIManager.DOMUtils.get(`step${i}`);
+        const stepElement = DOMUtils.get(`step${i}`);
         if (stepElement) {
             stepElement.className = 'step-icon';
             if (i < currentStep) {
@@ -5752,10 +5752,10 @@ function updateSessionProgress() {
 // 音声設定スライダーのイベントリスナーを設定
 function initializeVoiceSliders() {
     // ねほりーの設定
-    const nehoriSpeed = window.UIManager.DOMUtils.get('nehoriSpeed');
-    const nehoriVolume = window.UIManager.DOMUtils.get('nehoriVolume');
-    const nehoriSpeedValue = window.UIManager.DOMUtils.get('nehoriSpeedValue');
-    const nehoriVolumeValue = window.UIManager.DOMUtils.get('nehoriVolumeValue');
+    const nehoriSpeed = DOMUtils.get('nehoriSpeed');
+    const nehoriVolume = DOMUtils.get('nehoriVolume');
+    const nehoriSpeedValue = DOMUtils.get('nehoriSpeedValue');
+    const nehoriVolumeValue = DOMUtils.get('nehoriVolumeValue');
     
     if (nehoriSpeed && nehoriSpeedValue) {
         nehoriSpeed.addEventListener('input', function() {
@@ -5772,10 +5772,10 @@ function initializeVoiceSliders() {
     }
     
     // はほりーの設定
-    const hahoriSpeed = window.UIManager.DOMUtils.get('hahoriSpeed');
-    const hahoriVolume = window.UIManager.DOMUtils.get('hahoriVolume');
-    const hahoriSpeedValue = window.UIManager.DOMUtils.get('hahoriSpeedValue');
-    const hahoriVolumeValue = window.UIManager.DOMUtils.get('hahoriVolumeValue');
+    const hahoriSpeed = DOMUtils.get('hahoriSpeed');
+    const hahoriVolume = DOMUtils.get('hahoriVolume');
+    const hahoriSpeedValue = DOMUtils.get('hahoriSpeedValue');
+    const hahoriVolumeValue = DOMUtils.get('hahoriVolumeValue');
     
     if (hahoriSpeed && hahoriSpeedValue) {
         hahoriSpeed.addEventListener('input', function() {
@@ -5797,9 +5797,9 @@ function initializeVoiceSliders() {
 // 現在の音声設定を取得する関数
 function getVoiceSettings(speaker) {
     if (speaker === SPEAKERS.NEHORI) {
-        const speedElement = window.UIManager.DOMUtils.get('nehoriSpeed');
-        const volumeElement = window.UIManager.DOMUtils.get('nehoriVolume');
-        const voiceElement = window.UIManager.DOMUtils.get('nehoriVoice');
+        const speedElement = DOMUtils.get('nehoriSpeed');
+        const volumeElement = DOMUtils.get('nehoriVolume');
+        const voiceElement = DOMUtils.get('nehoriVoice');
         
         return {
             voice: voiceElement?.value || VoiceSettings[SPEAKERS.NEHORI].voice || 'sage',
@@ -5807,9 +5807,9 @@ function getVoiceSettings(speaker) {
             volume: Math.min(parseFloat(volumeElement?.value || VoiceSettings[SPEAKERS.NEHORI].volume || '0.9'), 1.0) // 上限1.0
         };
     } else if (speaker === SPEAKERS.HAHORI) {
-        const speedElement = window.UIManager.DOMUtils.get('hahoriSpeed');
-        const volumeElement = window.UIManager.DOMUtils.get('hahoriVolume');
-        const voiceElement = window.UIManager.DOMUtils.get('hahoriVoice');
+        const speedElement = DOMUtils.get('hahoriSpeed');
+        const volumeElement = DOMUtils.get('hahoriVolume');
+        const voiceElement = DOMUtils.get('hahoriVoice');
         
         return {
             voice: voiceElement?.value || VoiceSettings[SPEAKERS.HAHORI].voice || 'shimmer',
@@ -6642,7 +6642,7 @@ const VoiceKnowledgeSystem = {
         if (!AppState.knowledgeSettings.showDetailedEvaluation) return;
         
         // 既存の知見表示を更新（詳細情報付き）
-        const extractedKnowledge = window.UIManager.DOMUtils.get('extractedKnowledge');
+        const extractedKnowledge = DOMUtils.get('extractedKnowledge');
         if (!extractedKnowledge) return;
         
         const statusIcon = {
@@ -6854,10 +6854,10 @@ function loadKnowledgeSettings() {
 
 // 🎯 右ペイン設定表示更新
 function updateKnowledgeSettingsDisplay() {
-    const thresholdInput = window.UIManager.DOMUtils.get('thresholdInput');
-    const autoRecordCount = window.UIManager.DOMUtils.get('autoRecordCount');
-    const manualConfirmCount = window.UIManager.DOMUtils.get('manualConfirmCount');
-    const rejectedCount = window.UIManager.DOMUtils.get('rejectedCount');
+    const thresholdInput = DOMUtils.get('thresholdInput');
+    const autoRecordCount = DOMUtils.get('autoRecordCount');
+    const manualConfirmCount = DOMUtils.get('manualConfirmCount');
+    const rejectedCount = DOMUtils.get('rejectedCount');
     
     if (thresholdInput) {
         thresholdInput.value = AppState.knowledgeSettings.autoRecordThreshold;
@@ -6880,7 +6880,7 @@ function updateKnowledgeSettingsDisplay() {
 
 // 🎯 HTML入力による閾値変更
 function updateThresholdFromInput() {
-    const thresholdInput = window.UIManager.DOMUtils.get('thresholdInput');
+    const thresholdInput = DOMUtils.get('thresholdInput');
     if (!thresholdInput) return;
     
     const newThreshold = parseInt(thresholdInput.value);
@@ -6907,7 +6907,7 @@ function updateThresholdFromInput() {
 
 // 🎯 左ペイン音声コマンド表示制御
 function updateVoiceCommandsDisplay() {
-    const knowledgeCommands = window.UIManager.DOMUtils.get('knowledgeCommands');
+    const knowledgeCommands = DOMUtils.get('knowledgeCommands');
     if (!knowledgeCommands) return;
     
     if (AppState.voiceRecognitionState.isKnowledgeConfirmationMode) {

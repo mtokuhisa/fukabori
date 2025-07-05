@@ -1,0 +1,2109 @@
+/**
+ * 深堀くん - 統合スタイルファイル
+ * 全てのCSSを一元管理
+ * Version: v0.6.5
+ */
+
+/* デザインテーマ */
+:root {
+    --primary-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    --glass-bg: rgba(255, 255, 255, 0.25);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --text-primary: #333;
+    --text-secondary: #666;
+    --accent-color: #667eea;
+}
+
+.theme-white {
+    --primary-gradient: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    --glass-bg: rgba(255, 255, 255, 0.4);
+    --glass-border: rgba(0, 0, 0, 0.1);
+    --text-primary: #333;
+    --text-secondary: #666;
+    --accent-color: #007bff;
+}
+
+.theme-blue {
+    --primary-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    --glass-bg: rgba(255, 255, 255, 0.25);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --text-primary: #333;
+    --text-secondary: #666;
+    --accent-color: #667eea;
+}
+
+.theme-dark {
+    --primary-gradient: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --text-primary: #ecf0f1;
+    --text-secondary: #bdc3c7;
+    --accent-color: #3498db;
+}
+
+.theme-colorful {
+    --primary-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+    --glass-bg: rgba(255, 255, 255, 0.3);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --text-primary: #2c3e50;
+    --text-secondary: #34495e;
+    --accent-color: #e74c3c;
+}
+
+/* 基本リセット */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ベーススタイル */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--primary-gradient);
+    min-height: 100vh;
+    color: var(--text-primary);
+    overflow-x: hidden;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+}
+
+/* ガラスモルフィズム基本コンポーネント */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.glass-button {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 15px;
+    padding: 12px 24px;
+    color: var(--text-primary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.glass-button:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.glass-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.glass-button.danger {
+    background: rgba(255, 99, 99, 0.2);
+    border-color: rgba(255, 99, 99, 0.3);
+}
+
+.glass-button.danger:hover {
+    background: rgba(255, 99, 99, 0.35);
+}
+
+/* レイアウト */
+.main-container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.header {
+    text-align: center;
+    padding: 24px;
+    margin-bottom: 16px;
+}
+
+.header-with-avatars {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.header p {
+    font-size: 1.1rem;
+    color: #7f8c8d;
+    margin-bottom: 20px;
+}
+
+/* ロゴ画像 */
+.logo-image {
+    max-height: 80px;
+    max-width: 250px;
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
+    margin-bottom: 10px;
+}
+
+/* メインタイトル - ロゴ画像がある場合は文字を非表示 */
+#mainTitle {
+    background-image: url('../assets/fukabori_logo.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    color: transparent;
+    text-shadow: none;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#mainTitle.no-image {
+    background-image: none;
+    color: #2c3e50;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    height: auto;
+}
+
+/* セットアップパネル */
+.setup-panel {
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.setup-section {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 16px;
+    margin-bottom: 8px;
+}
+
+.setup-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.setup-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 12px 16px;
+    border: 2px solid var(--glass-border);
+    border-radius: 10px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(5px);
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.setup-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+}
+
+.setup-input[type="file"] {
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.setup-note {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-left: 10px;
+    font-style: italic;
+}
+
+/* 3ペインレイアウト */
+.chat-area {
+    display: flex;
+    width: 100%;
+    min-height: 700px;
+    height: calc(100vh - 40px);
+    gap: 20px;
+    position: relative;
+    overflow: visible;
+}
+
+/* 左ペイン: 可変幅 0→280px */
+.voice-guide-panel {
+    width: 280px;
+    min-width: 0;
+    flex-shrink: 0;
+    transition: width 0.3s ease, min-width 0.3s ease;
+    overflow: hidden;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+}
+
+/* 左ペイン内のすべての要素を強制的に横書きに */
+.voice-guide-panel *,
+.voice-guide-panel *::before,
+.voice-guide-panel *::after {
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+}
+
+/* ヘルプ表示ボタンのみ縦書きを維持 */
+.main-guide-toggle {
+    writing-mode: vertical-rl !important;
+    text-orientation: mixed !important;
+}
+
+.voice-guide-panel.hidden {
+    width: 0;
+    min-width: 0;
+    padding: 0;
+    border: none;
+}
+
+/* 中央ペイン: 自動拡張 */
+.conversation-panel {
+    flex: 1;
+    min-width: 400px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* 右ペイン: 固定300px */
+.status-panel {
+    width: 300px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* ガイド非表示時のヘルプ表示ボタン */
+.main-guide-toggle {
+    position: absolute;
+    left: -15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 35px;
+    height: 140px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    border: 1px solid var(--glass-border);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    padding: 15px 5px;
+    letter-spacing: 3px;
+    line-height: 1.8;
+}
+
+.main-guide-toggle.show {
+    display: flex;
+}
+
+.main-guide-toggle:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: translateY(-50%) scale(1.05);
+    width: 40px;
+}
+
+/* 中央チャットエリアの自動スクロール強化 */
+.messages-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-bottom: 20px;
+    padding-right: 10px;
+    scroll-behavior: smooth;
+}
+
+.messages-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* 初回ガイダンス関連スタイル */
+.first-time-guide {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.guide-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(15px);
+    border-radius: 25px;
+    border: 2px solid var(--glass-border);
+    padding: 40px;
+    max-width: 600px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.guide-progress {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.progress-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.progress-dot.active {
+    background: var(--accent-color);
+    transform: scale(1.2);
+}
+
+.guide-step h2 {
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+}
+
+.guide-step p {
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.guide-example {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    margin: 20px 0;
+    border-left: 4px solid var(--accent-color);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.guide-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+/* 音声ガイドパネル内のスタイル */
+.guide-toggle-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+.guide-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.guide-section {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
+}
+
+.guide-section h3 {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.guide-content {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
+}
+
+.command-list {
+    list-style: none;
+    padding: 0;
+}
+
+.command-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.75rem;
+}
+
+.command-list li:last-child {
+    border-bottom: none;
+}
+
+.command-key {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.65rem;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-waiting {
+    background: #ffa500;
+    animation: pulse-waiting 2s infinite;
+}
+
+.status-active {
+    background: #4caf50;
+    animation: pulse-active 1.5s infinite;
+}
+
+@keyframes pulse-waiting {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes pulse-active {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.2); }
+}
+
+.progress-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.progress-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.7rem;
+}
+
+.step-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: bold;
+}
+
+.step-pending {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-secondary);
+}
+
+.step-current {
+    background: var(--accent-color);
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+.step-completed {
+    background: #4caf50;
+    color: white;
+}
+
+.step-active {
+    background: var(--accent-color);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.ai-avatars {
+    display: flex;
+    justify-content: space-around;
+    margin: 15px 0;
+    gap: 10px;
+}
+
+.avatar {
+    width: 60px;
+    height: 80px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    position: relative;
+    transition: all 0.3s ease;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    overflow: hidden;
+}
+
+.avatar.setup {
+    width: 80px;
+    height: 100px;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.avatar.nehori {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    background-image: url('../assets/nehori_avatar.png');
+    background-size: cover;
+    background-position: center;
+    color: transparent;
+    text-shadow: none;
+}
+
+.avatar.nehori.no-image {
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    background-image: none;
+}
+
+.avatar.hahori {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    background-image: url('../assets/hahori_avatar.png');
+    background-size: cover;
+    background-position: center;
+    color: transparent;
+    text-shadow: none;
+}
+
+.avatar.hahori.no-image {
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    background-image: none;
+}
+
+.avatar.speaking {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    animation: speaking 1s infinite alternate;
+}
+
+/* 画像が読み込まれた場合のスタイル */
+.avatar.has-image {
+    font-size: 0;
+    text-shadow: none;
+    background-size: cover;
+    background-position: center center;
+}
+
+@keyframes speaking {
+    0% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.5); }
+    100% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.8); }
+}
+
+.message {
+    margin-bottom: 20px;
+    padding: 15px 20px;
+    border-radius: 18px;
+    max-width: 80%;
+    word-wrap: break-word;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    animation: fadeInUp 0.3s ease;
+}
+
+.message.nehori {
+    background: linear-gradient(135deg, #e8e2ff 0%, #d6c9ff 100%);
+    color: #5b2c87;
+    align-self: flex-start;
+    border-left: 4px solid #8b5cf6;
+}
+
+.message.hahori {
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+    color: #1e3a8a;
+    align-self: flex-start;
+    border-left: 4px solid #06b6d4;
+}
+
+.message.user {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    color: #1e40af;
+    align-self: flex-end;
+    border-right: 4px solid #3b82f6;
+    margin-left: auto;
+}
+
+.message-header {
+    font-weight: 600;
+    font-size: 12px;
+    opacity: 0.8;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.message-content {
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.transcript-display {
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
+    padding: 15px;
+    margin: 10px 0;
+    min-height: 60px;
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    font-style: italic;
+    color: #666;
+    border-left: 4px solid #3498db;
+    line-height: 1.4;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.voice-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    padding: 20px;
+    flex-wrap: wrap;
+}
+
+.mic-button {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.mic-button.recording {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+.mic-button.idle {
+    background: linear-gradient(135deg, #4ecdc4, #44a08d);
+    color: white;
+}
+
+.mic-button.processing {
+    background: linear-gradient(135deg, #ffd93d, #ff9800);
+    color: white;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.status-section {
+    padding: 15px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.status-title {
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.status-content {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.4;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4ecdc4, #44a08d);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.chat-area.hidden {
+    display: none !important;
+}
+
+.error-message, .success-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 400px;
+    padding: 15px;
+    border-radius: 10px;
+    margin: 10px 0;
+}
+
+.error-message {
+    background: linear-gradient(135deg, #fee, #fdd);
+    color: #c53030;
+    border-left: 4px solid #e53e3e;
+}
+
+.success-message {
+    background: linear-gradient(135deg, #eff, #dfd);
+    color: #2f855a;
+    border-left: 4px solid #38a169;
+}
+
+.voice-settings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.voice-setting {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.voice-setting label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    margin-bottom: 8px;
+}
+
+.voice-setting select,
+.voice-setting input[type="range"] {
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.tts-test-panel {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+/* 高度設定スタイル */
+.settings-section {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* テーマ選択モーダル */
+.theme-selection-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.theme-selection-panel {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 25px;
+    border: 2px solid var(--glass-border);
+    padding: 30px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    color: #333;
+}
+
+.theme-selection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.theme-selection-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.analysis-progress {
+    text-align: center;
+    padding: 40px;
+}
+
+.progress-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid var(--accent-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+.progress-text {
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.progress-detail {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.theme-list {
+    margin: 20px 0;
+}
+
+.theme-item {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 15px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.theme-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.theme-item.recommended {
+    border-color: var(--accent-color);
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.theme-item.recommended::before {
+    content: "🔥 推奨";
+    position: absolute;
+    top: -8px;
+    right: 15px;
+    background: var(--accent-color);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.theme-checkbox-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.theme-checkbox {
+    margin-top: 3px;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-color);
+}
+
+.theme-content {
+    flex: 1;
+}
+
+.theme-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.theme-description {
+    color: var(--text-primary);
+    opacity: 0.85;
+    line-height: 1.5;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.theme-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    opacity: 0.75;
+}
+
+.theme-priority {
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.theme-points {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.theme-point {
+    color: var(--text-primary);
+    opacity: 0.8;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.priority-high {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+}
+
+.priority-medium {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.priority-low {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.theme-key-points {
+    margin-top: 10px;
+}
+
+.theme-key-points li {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+}
+
+.document-summary {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px;
+    margin: 20px 0;
+    border-left: 3px solid var(--accent-color);
+}
+
+.document-summary h4 {
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+
+.document-summary p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.theme-selection-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--glass-border);
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.selected-count {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+}
+
+/* フローティング選択パネル */
+.floating-selection-panel {
+    position: sticky;
+    top: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+}
+
+.selection-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    color: var(--text-primary);
+}
+
+.selection-guidance {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.floating-complete-btn {
+    padding: 12px 24px;
+    font-weight: 700;
+    min-width: 120px;
+}
+
+/* ダークテーマ対応 */
+[data-theme="dark"] .floating-selection-panel {
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 知見表示関連 */
+.knowledge-item {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-left: 3px solid var(--accent-color);
+    transition: all 0.3s ease;
+}
+
+.knowledge-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(5px);
+}
+
+.knowledge-item:last-child {
+    margin-bottom: 0;
+}
+
+.knowledge-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.knowledge-meta {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.knowledge-summary {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.knowledge-list-empty {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: 20px;
+}
+
+.theme-button {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--glass-border);
+    border-radius: 15px;
+    padding: 15px;
+    color: var(--text-primary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.theme-button:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1200px) {
+    .chat-area {
+        gap: 15px;
+    }
+    
+    .voice-guide-panel {
+        width: 250px;
+    }
+    
+    .status-panel {
+        width: 250px;
+    }
+    
+    .conversation-panel {
+        min-width: 350px;
+    }
+}
+
+@media (max-width: 768px) {
+    .chat-area {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+        gap: 15px;
+        padding: 10px;
+    }
+    
+    .voice-guide-panel {
+        width: 100%;
+        order: 3;
+    }
+    
+    .voice-guide-panel.hidden {
+        display: none;
+    }
+    
+    .conversation-panel {
+        width: 100%;
+        min-width: auto;
+        order: 1;
+        min-height: 400px;
+    }
+    
+    .status-panel {
+        width: 100%;
+        order: 2;
+        max-height: 300px;
+    }
+    
+    .main-container {
+        padding: 10px;
+    }
+    
+    .header h1 {
+        font-size: 2rem;
+    }
+    
+    .message {
+        max-width: 95%;
+    }
+    
+    #advancedSettingsModal .glass-panel {
+        width: 95%;
+        max-width: none;
+        margin: 20px;
+    }
+    
+    .header-with-avatars {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .avatar.setup {
+        width: 60px;
+        height: 75px;
+        font-size: 24px;
+    }
+    
+    .main-guide-toggle {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        width: auto;
+        height: auto;
+        writing-mode: initial;
+        padding: 10px 15px;
+    }
+    
+    .theme-selection-panel {
+        width: 95%;
+        margin: 20px;
+        padding: 20px;
+    }
+    
+    .theme-selection-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .theme-selection-actions .glass-button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    /* フローティングパネルのレスポンシブ対応 */
+    .floating-selection-panel {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .selection-status {
+        align-items: center;
+    }
+    
+    .floating-complete-btn {
+        width: 100%;
+    }
+}
+
+/* =================================================================================
+   CUSTOM FILE INPUT - カスタムファイル入力
+   ================================================================================= */
+
+.custom-file-input {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.file-input-hidden {
+    position: absolute;
+    left: -9999px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.file-input-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border: 2px solid var(--glass-border);
+    border-radius: 12px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    height: auto;
+}
+
+.file-input-display:hover {
+    border-color: var(--accent-color);
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.file-input-display.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background: rgba(200, 200, 200, 0.2);
+    pointer-events: none;
+}
+
+.file-input-display.disabled:hover {
+    border-color: var(--glass-border);
+    background: rgba(200, 200, 200, 0.2);
+}
+
+.file-input-text {
+    flex: 1;
+    color: var(--text-primary);
+    font-size: 14px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.file-input-text.placeholder {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.file-input-button {
+    background: linear-gradient(135deg, var(--accent-color), rgba(102, 126, 234, 0.8));
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-left: 10px;
+    transition: all 0.3s ease;
+}
+
+.file-input-display:hover .file-input-button {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), var(--accent-color));
+    transform: translateY(-1px);
+}
+
+.file-input-display.disabled .file-input-button {
+    background: #ccc;
+    transform: none;
+}
+
+/* エラー表示モーダル */
+.error-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.error-modal-content {
+    background: var(--glass-bg);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+}
+
+.error-modal-title {
+    font-size: 1.5rem;
+    color: #e74c3c;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.error-modal-message {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 25px;
+    line-height: 1.6;
+}
+
+.error-modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.error-modal-button {
+    background: linear-gradient(135deg, var(--accent-color), rgba(102, 126, 234, 0.8));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.error-modal-button:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), var(--accent-color));
+    transform: translateY(-2px);
+}
+
+.error-modal-button.secondary {
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+}
+
+.error-modal-button.secondary:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+/* =================================================================================
+   SPEECH SHORTENING UI - 発声短縮設定UI
+   ================================================================================= */
+
+/* 発声短縮設定用スイッチ */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #ffa500;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 24px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Phase 1: 発声短縮設定のスタイル */
+.shortening-setting {
+    margin-bottom: 15px;
+}
+
+.shortening-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.shortening-slider {
+    margin-bottom: 10px;
+}
+
+.shortening-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.shortening-option {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+/* デバッグ・修復機能のスタイル */
+.shortening-debug-section {
+    margin-top: 20px;
+    padding: 15px;
+    border: 2px dashed #007bff;
+    border-radius: 8px;
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.shortening-debug-section h4 {
+    margin: 0 0 15px 0;
+    color: #007bff;
+    font-size: 14px;
+}
+
+.debug-button {
+    background-color: #17a2b8 !important;
+    border-color: #17a2b8 !important;
+}
+
+.debug-button:hover {
+    background-color: #138496 !important;
+    border-color: #117a8b !important;
+}
+
+.fix-button {
+    background-color: #fd7e14 !important;
+    border-color: #fd7e14 !important;
+}
+
+.fix-button:hover {
+    background-color: #e55a0d !important;
+    border-color: #dc5202 !important;
+}
+
+.clear-button {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+}
+
+.clear-button:hover {
+    background-color: #5a6268 !important;
+    border-color: #545b62 !important;
+}
+
+.debug-info-display {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.debug-info-display h5 {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    color: #495057;
+}
+
+.debug-info-display pre {
+    margin: 0;
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* =================================================================================
+   Phase 2: 発声短縮実用拡張 スタイル
+   ================================================================================= */
+
+/* Phase 2セクション */
+.shortening-phase2-section {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.shortening-phase2-section h4 {
+    color: #ff6b35;
+    font-size: 16px;
+    margin-bottom: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Phase 2統計表示 */
+.phase2-stats-container {
+    background: rgba(255, 107, 53, 0.1);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.phase2-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ff6b35;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.phase2-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.stats-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stats-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.stats-value {
+    color: #ff6b35;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+/* Phase 2テストボタンスタイル */
+.shortening-phase2-section .advanced-button.test-button {
+    background: rgba(255, 107, 53, 0.2);
+    border: 1px solid #ff6b35;
+    color: #ff6b35;
+}
+
+.shortening-phase2-section .advanced-button.test-button:hover {
+    background: rgba(255, 107, 53, 0.3);
+    transform: translateY(-2px);
+}
+
+/* スイッチコントロール - Phase 2専用 */
+.shortening-phase2-section .switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.shortening-phase2-section .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.shortening-phase2-section .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: 0.3s;
+    border-radius: 24px;
+}
+
+.shortening-phase2-section .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.shortening-phase2-section input:checked + .slider {
+    background-color: rgba(255, 107, 53, 0.8);
+    border-color: #ff6b35;
+}
+
+.shortening-phase2-section input:checked + .slider:before {
+    transform: translateX(20px);
+    background-color: #fff;
+}
+
+/* Phase 2オプション行 */
+.shortening-phase2-section .shortening-option {
+    margin-bottom: 12px;
+    padding: 8px 0;
+}
+
+.shortening-phase2-section .shortening-option:last-child {
+    margin-bottom: 0;
+}
+
+.shortening-phase2-section .shortening-option label {
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Phase 2ボタングループ配置 */
+.shortening-phase2-section .shortening-option button {
+    margin-right: 8px;
+    margin-bottom: 8px;
+    min-width: 120px;
+}
+
+.shortening-phase2-section .shortening-option button:last-child {
+    margin-right: 0;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .phase2-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .shortening-phase2-section .shortening-option button {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 8px;
+    }
+    
+    .shortening-phase2-section .shortening-option label {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .shortening-phase2-section .switch {
+        align-self: flex-end;
+    }
+}
+
+.shortening-phase2-section .switch {
+    transform: scale(0.8);
+}
+
+#advancedSettingsModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ==========================================================================
+   Advanced Settings Modal
+   ========================================================================== */
+#advancedSettingsModal .glass-panel {
+    width: 90%;
+    max-width: 800px;
+    max-height: 90%;
+    overflow-y: auto;
+    padding: 30px;
+}
+
+#advancedSettingsModal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#advancedSettingsModal .modal-header h2 {
+    color: var(--text-primary);
+    margin: 0;
+}
+
+#advancedSettingsModal .modal-close-btn {
+    padding: 8px 16px;
+}
+
+#advancedSettingsModal .settings-section {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+#advancedSettingsModal .settings-section h3 {
+    margin-bottom: 15px;
+    color: var(--text-primary);
+}
+
+#advancedSettingsModal .setup-row {
+    margin-bottom: 15px;
+}
+
+#advancedSettingsModal #apiKeyInput {
+    flex: 1;
+}
+
+#advancedSettingsModal #apiPasswordInput {
+    min-width: 150px;
+}
+
+#advancedSettingsModal .voice-preset-controls {
+    margin-bottom: 20px;
+}
+
+#advancedSettingsModal .voice-preset-controls label {
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: block;
+}
+
+#advancedSettingsModal #voicePresetSelect {
+    margin-bottom: 10px;
+}
+
+#advancedSettingsModal .voice-preset-controls .glass-button {
+    margin-right: 10px;
+}
+
+#advancedSettingsModal .character-voice-settings {
+    margin-bottom: 25px;
+    border: 1px solid; /* Color is set by specific class */
+    border-radius: 10px;
+    padding: 15px;
+}
+
+#advancedSettingsModal .nehori-settings {
+    border-color: #8b5cf6;
+}
+
+#advancedSettingsModal .hahori-settings {
+    border-color: #06b6d4;
+}
+
+#advancedSettingsModal .character-voice-settings h4 {
+    margin-bottom: 15px;
+}
+
+#advancedSettingsModal .nehori-settings h4 {
+    color: #8b5cf6;
+}
+
+#advancedSettingsModal .hahori-settings h4 {
+    color: #06b6d4;
+}
+
+#advancedSettingsModal .voice-settings {
+    gap: 15px;
+}
+
+#advancedSettingsModal .custom-prompt-area {
+    margin-top: 15px;
+}
+
+#advancedSettingsModal .custom-prompt-area textarea {
+    width: 100%;
+    margin-top: 5px;
+}
+
+#advancedSettingsModal .test-voice-btn {
+    margin-top: 10px;
+}
+
+#advancedSettingsModal .shortening-phase1-header {
+    background: #ffa500;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    margin-left: 10px;
+}
+
+#advancedSettingsModal .shortening-toggle-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ffa500;
+    border-radius: 10px;
+    background: rgba(255, 165, 0, 0.1);
+}
+
+#advancedSettingsModal .shortening-toggle-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+#advancedSettingsModal .shortening-toggle-label {
+    font-weight: 600;
+    color: #ffa500;
+}
+
+/* ==========================================================================
+   Setup Panel Overrides
+   ========================================================================== */
+.setup-header-override {
+    text-align: center;
+    margin-bottom: 6px;
+    padding: 0; /* Override default header padding */
+}
+
+.logo-container {
+    margin-bottom: 10px;
+}
+
+.setup-logo {
+    max-width: 480px;
+    max-height: 192px;
+    object-fit: contain;
+}
+
+.setup-title-fallback {
+    /* `display: none;` is kept inline as it's controlled by JS */
+    margin: 0;
+    font-size: 2rem;
+    color: var(--text-primary);
+}
+
+/* ==========================================================================
+   Theme Selection Modal Overrides
+   ========================================================================== */
+#themeModalCloseBtn {
+    padding: 8px 16px;
+}
+
+#floatingCompleteBtn {
+    background: linear-gradient(135deg, #2196f3, #1976d2);
+    color: white;
+}
+
+/* This is a more specific override than the general .danger class */
+.theme-selection-actions .glass-button.danger {
+    background: linear-gradient(135deg, #ff5722, #d32f2f);
+    color: white;
+}
+
+#confirmThemeBtn {
+    background: linear-gradient(135deg, #4caf50, #45a049);
+    color: white;
+}
+
+/* ==========================================================================
+   First Time Guide Overrides
+   ========================================================================== */
+#guideStep4 .glass-button {
+    background: linear-gradient(135deg, #4caf50, #45a049);
+    color: white;
+}
