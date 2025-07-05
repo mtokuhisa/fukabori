@@ -1,0 +1,5 @@
+nickname,formal_name,department,role,email,is_active,last_session,created_date
+田中,田中太郎,営業部,営業課長,tanaka@company.com,true,,2025-06-25
+佐藤,佐藤花子,開発部,エンジニア,sato@company.com,true,,2025-06-25
+山田,山田次郎,企画部,プランナー,yamada@company.com,true,,2025-06-25
+admin,管理者,システム,管理者,admin@company.com,true,,2025-06-25

@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深堀くん - "ねほりーの""はほりーの"にあなた達の知見を聞かせて</title>
+    <link rel="stylesheet" href="app/style.css">
+</head>
+<body>
+    <div class="main-container">
+        <!-- 初回ガイダンスモーダル -->
+        <div id="firstTimeGuide" class="first-time-guide hidden">
+            <div class="guide-panel">
+                <div class="guide-progress">
+                    <div class="progress-dot active" id="dot1"></div>
+                    <div class="progress-dot" id="dot2"></div>
+                    <div class="progress-dot" id="dot3"></div>
+                    <div class="progress-dot" id="dot4"></div>
+                </div>
+
+                <div id="guideStep1" class="guide-step">
+                    <h2>📋 深堀くんへようこそ！ (1/4)</h2>
+                    <p>まずはOpenAI APIキーを設定しましょう</p>
+                    <div class="guide-example">
+                        🔑 「その他設定」→ APIキー入力<br>
+                        → パスワードを決めて暗号化保存
+                    </div>
+                    <div class="guide-buttons">
+                        <button onclick="nextGuideStep()" class="glass-button">次へ</button>
+                        <button onclick="skipGuide()" class="glass-button">スキップ</button>
+                    </div>
+                </div>
+
+                <div id="guideStep2" class="guide-step hidden">
+                    <h2>🎯 テーマを決めよう！ (2/4)</h2>
+                    <p>今回深掘りしたいテーマを設定しましょう</p>
+                    <div class="guide-example">
+                        📝 例: 「プロジェクト管理の工夫」<br>
+                        「営業で学んだコツ」<br>
+                        「チームビルディングの経験」
+                    </div>
+                    <div class="guide-buttons">
+                        <button onclick="nextGuideStep()" class="glass-button">次へ</button>
+                        <button onclick="prevGuideStep()" class="glass-button">戻る</button>
+                    </div>
+                </div>
+
+                <div id="guideStep3" class="guide-step hidden">
+                    <h2>🎤 音声で会話します (3/4)</h2>
+                    <p>AIとの会話は音声で行います</p>
+                    <div class="guide-example">
+                        🗣️ 普通に話してください<br>
+                        話し終わったら「どうぞ」<br>
+                        → AIが応答 → また話す
+                    </div>
+                    <div class="guide-buttons">
+                        <button onclick="nextGuideStep()" class="glass-button">次へ</button>
+                        <button onclick="prevGuideStep()" class="glass-button">戻る</button>
+                    </div>
+                </div>
+
+                <div id="guideStep4" class="guide-step hidden">
+                    <h2>🚀 セッション開始！ (4/4)</h2>
+                    <p>準備完了です！左側に音声操作ヘルプを表示します</p>
+                    <div class="guide-example">
+                        ✨ 困ったときは左のガイドを参考に<br>
+                        自然に話すだけでOKです
+                    </div>
+                    <div class="guide-buttons">
+                        <button onclick="completeGuide()" class="glass-button">セッション開始</button>
+                        <button onclick="prevGuideStep()" class="glass-button">戻る</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- テーマ選択モーダル -->
+        <div id="themeSelectionModal" class="theme-selection-modal hidden" onclick="closeThemeSelection()">
+            <div class="theme-selection-panel" onclick="event.stopPropagation()">
+                <div class="theme-selection-header">
+                    <h2 class="theme-selection-title" id="themeModalTitle">📋 テーマを選択してください</h2>
+                    <button onclick="closeThemeSelection()" class="glass-button" id="themeModalCloseBtn">✕ 閉じる</button>
+                </div>
+
+                <!-- 解析中表示 -->
+                <div id="analysisProgress" class="analysis-progress">
+                    <div class="progress-spinner"></div>
+                    <div class="progress-text" id="progressText">ファイルを解析中...</div>
+                    <div class="progress-detail" id="progressDetail">文書を読み込んでいます...</div>
+                </div>
+
+                <!-- テーマ選択表示 -->
+                <div id="themeSelectionContent" class="hidden">
+                    <!-- フローティング選択パネル -->
+                    <div id="floatingSelectionPanel" class="floating-selection-panel">
+                        <div class="selection-status">
+                            <span id="selectedCount">0件のテーマが選択されています</span>
+                        </div>
+                        <div class="selection-guidance">
+                            <span id="selectionGuidance">⬇️ 他のテーマも確認してください</span>
+                        </div>
+                        <button id="floatingCompleteBtn" onclick="scrollToConfirmation()" class="glass-button floating-complete-btn">選択内容を確認</button>
+                    </div>
+
+                    <!-- 文書要約 -->
+                    <div class="document-summary">
+                        <h4>📄 文書の概要</h4>
+                        <p id="documentSummaryText"></p>
+                    </div>
+
+                    <!-- テーマリスト -->
+                    <div class="theme-list" id="themeList">
+                        <!-- テーマアイテムが動的に追加される -->
+                    </div>
+
+                    <!-- アクションボタン -->
+                    <div class="theme-selection-actions">
+                        <button onclick="cancelThemeSelection()" class="glass-button danger">中止</button>
+                        <button onclick="selectAllThemes()" class="glass-button">全て選択</button>
+                        <button onclick="deselectAllThemes()" class="glass-button">全て解除</button>
+                        <button onclick="confirmThemeSelection()" class="glass-button" id="confirmThemeBtn">選択したテーマで開始</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 初期設定パネル -->
+        <div id="setupPanel" class="setup-panel glass-panel">
+            <!-- ロゴヘッダー -->
+            <div class="header setup-header-override">
+                <div class="logo-container">
+                    <img src="assets/fukabori_logo_main.png" alt="深堀くん" class="setup-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                    <h1 id="mainTitle" class="setup-title-fallback" style="display: none;">🔍 深堀くん</h1>
+                </div>
+            </div>
+
+            <!-- その他設定モーダル -->
+            <div id="advancedSettingsModal" class="hidden" onclick="handleModalBackgroundClick(event)">
+                <div class="glass-panel" onclick="event.stopPropagation();">
+                    <div class="modal-header">
+                        <h2>⚙️ その他設定</h2>
+                        <button onclick="closeAdvancedSettings()" class="glass-button modal-close-btn">✕ 閉じる</button>
+                    </div>
+
+                    <!-- APIキー管理 -->
+                    <div class="settings-section">
+                        <h3>🔑 OpenAI API キー管理</h3>
+                        
+                        <div class="setup-row">
+                            <input type="password" id="apiKeyInput" class="setup-input" placeholder="sk-...で始まるAPIキーを入力">
+                            <input type="password" id="apiPasswordInput" class="setup-input" placeholder="暗号化パスワード">
+                            <button onclick="setupApiKey()" class="glass-button">設定</button>
+                        </div>
+                        
+                        <div class="setup-row">
+                            <button onclick="testApiKey()" class="glass-button" id="testApiButton" disabled>接続テスト</button>
+                            <button onclick="clearApiKey()" class="glass-button danger">削除</button>
+                            <button onclick="changePassword()" class="glass-button">パスワード変更</button>
+                        </div>
+                    </div>
+
+                    <!-- 音声設定 -->
+                    <div class="settings-section">
+                        <h3>🎵 音声設定</h3>
+                        
+                        <!-- プリセット選択 -->
+                        <div class="voice-preset-controls">
+                            <label>音声プリセット:</label>
+                            <select id="voicePresetSelect" class="setup-input" onchange="loadVoicePreset()">
+                                <option value="default">デフォルト設定</option>
+                            </select>
+                            <button onclick="saveVoicePreset()" class="glass-button">現在の設定を保存</button>
+                            <button onclick="deleteVoicePreset()" class="glass-button danger">選択したプリセットを削除</button>
+                        </div>
+
+                        <!-- ねほりーの設定 -->
+                        <div class="character-voice-settings nehori-settings">
+                            <h4>ねほりーの (質問担当)</h4>
+                            <div class="voice-settings">
+                                <div class="voice-setting">
+                                    <label>Voice:</label>
+                                    <select id="nehoriVoice" class="setup-input">
+                                        <option value="sage">Sage (知的・落ち着いた)</option>
+                                        <option value="nova">Nova (クリア・明瞭)</option>
+                                        <option value="shimmer">Shimmer (温かい・優しい)</option>
+                                        <option value="onyx">Onyx (深い・安定)</option>
+                                        <option value="echo">Echo (男性・フレンドリー)</option>
+                                        <option value="fable">Fable (英国・上品)</option>
+                                    </select>
+                                </div>
+                                <div class="voice-setting">
+                                    <label>Speed: <span id="nehoriSpeedValue">1.2</span></label>
+                                    <input type="range" id="nehoriSpeed" min="0.5" max="2.0" step="0.1" value="1.2" class="setup-input">
+                                </div>
+                                <div class="voice-setting">
+                                    <label>Volume: <span id="nehoriVolumeValue">0.8</span></label>
+                                    <input type="range" id="nehoriVolume" min="0.1" max="1.0" step="0.1" value="0.8" class="setup-input">
+                                </div>
+                            </div>
+                            <div class="custom-prompt-area">
+                                <label>カスタムプロンプト:</label>
+                                <textarea id="nehoriPrompt" class="setup-input" rows="3" placeholder="ねほりーののキャラクター設定プロンプト"></textarea>
+                            </div>
+                            <button onclick="testCharacterVoice('nehori')" class="glass-button test-voice-btn">ねほりーの音声テスト</button>
+                        </div>
+
+                        <!-- はほりーの設定 -->
+                        <div class="character-voice-settings hahori-settings">
+                            <h4>はほりーの (進行担当)</h4>
+                            <div class="voice-settings">
+                                <div class="voice-setting">
+                                    <label>Voice:</label>
+                                    <select id="hahoriVoice" class="setup-input">
+                                        <option value="nova">Nova (クリア・明瞭)</option>
+                                        <option value="sage">Sage (知的・落ち着いた)</option>
+                                        <option value="shimmer">Shimmer (温かい・優しい)</option>
+                                        <option value="onyx">Onyx (深い・安定)</option>
+                                        <option value="echo">Echo (男性・フレンドリー)</option>
+                                        <option value="fable">Fable (英国・上品)</option>
+                                    </select>
+                                </div>
+                                <div class="voice-setting">
+                                    <label>Speed: <span id="hahoriSpeedValue">1.1</span></label>
+                                    <input type="range" id="hahoriSpeed" min="0.5" max="2.0" step="0.1" value="1.1" class="setup-input">
+                                </div>
+                                <div class="voice-setting">
+                                    <label>Volume: <span id="hahoriVolumeValue">0.8</span></label>
+                                    <input type="range" id="hahoriVolume" min="0.1" max="1.0" step="0.1" value="0.8" class="setup-input">
+                                </div>
+                            </div>
+                            <div class="custom-prompt-area">
+                                <label>カスタムプロンプト:</label>
+                                <textarea id="hahoriPrompt" class="setup-input" rows="3" placeholder="はほりーののキャラクター設定プロンプト"></textarea>
+                            </div>
+                            <button onclick="testCharacterVoice('hahori')" class="glass-button test-voice-btn">はほりーの音声テスト</button>
+                        </div>
+                    </div>
+
+                    <!-- 発声短縮設定 -->
+                    <div class="settings-section">
+                        <h3>🎤 発声短縮設定 <span class="shortening-phase1-header">Phase 1</span></h3>
+                        
+                        <!-- メイン切り替えスイッチ -->
+                        <div class="shortening-toggle-section">
+                            <div class="shortening-toggle-header">
+                                <label class="shortening-toggle-label">🔄 発声短縮機能を有効化 (試験機能)</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="speechShorteningEnabled" onchange="toggleSpeechShortening()">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="shortening-toggle-description">
+                                ※ 有効化すると、長い発話が自動的に短縮されて音声再生されます（表示は元のまま）
+                            </div>
+                        </div>
+
+                        <!-- 短縮レベル設定 -->
+                        <div id="shorteningSettings" style="opacity: 0.5; pointer-events: none;">
+                            <div style="margin-bottom: 15px;">
+                                <label style="font-weight: 600; margin-bottom: 10px; display: block;">短縮レベル: <span id="shorteningLevelValue">3</span></label>
+                                <input type="range" id="shorteningLevel" min="1" max="5" step="1" value="3" class="setup-input" onchange="updateShorteningLevel()">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-secondary); margin-top: 5px;">
+                                    <span>軽微(1)</span>
+                                    <span>標準(3)</span>
+                                    <span>強力(5)</span>
+                                </div>
+                            </div>
+
+                            <!-- 個別設定 -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                                <label style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="checkbox" id="shortenGreetings" checked>
+                                    <span style="font-size: 0.8rem;">挨拶短縮</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="checkbox" id="shortenHonorific" checked>
+                                    <span style="font-size: 0.8rem;">敬語簡素化</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="checkbox" id="shortenThemes" checked>
+                                    <span style="font-size: 0.8rem;">テーマ名短縮</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="checkbox" id="removeRedundancy" checked>
+                                    <span style="font-size: 0.8rem;">重複表現削除</span>
+                                </label>
+                            </div>
+
+                            <!-- 文字数制限 -->
+                            <div style="margin-bottom: 15px;">
+                                <label style="font-weight: 600; margin-bottom: 10px; display: block;">最大文字数: <span id="maxCharactersValue">150</span>文字</label>
+                                <input type="range" id="maxCharacters" min="80" max="300" step="10" value="150" class="setup-input" onchange="updateMaxCharacters()">
+                            </div>
+
+                            <!-- テスト機能 -->
+                            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+                                <button onclick="testSpeechShortening()" class="glass-button" style="background: rgba(255, 165, 0, 0.2); border: 1px solid #ffa500;">
+                                    🧪 短縮機能テスト
+                                </button>
+                                <button onclick="resetShorteningSettings()" class="glass-button" style="margin-left: 10px;">
+                                    🔄 設定リセット
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Phase 1: デバッグ・修復機能 -->
+                        <div class="shortening-debug-section">
+                            <h4>🔧 デバッグ・修復機能</h4>
+                            
+                            <div class="shortening-option">
+                                <button onclick="checkShorteningSync()" class="advanced-button debug-button">
+                                    📊 設定同期状況確認
+                                </button>
+                                <button onclick="forceShorteningSync()" class="advanced-button fix-button">
+                                    🔧 強制同期修復
+                                </button>
+                            </div>
+                            
+                            <div class="shortening-option">
+                                <button onclick="directShorteningTest()" class="advanced-button test-button">
+                                    🎯 エンジン直接テスト
+                                </button>
+                                <button onclick="clearShorteningCache()" class="advanced-button clear-button">
+                                    🗑️ キャッシュクリア
+                                </button>
+                            </div>
+                            
+                            <div id="shorteningDebugInfo" class="debug-info-display" style="display: none;">
+                                <h5>📋 デバッグ情報</h5>
+                                <pre id="debugInfoContent"></pre>
+                            </div>
+                        </div>
+                        
+                        <!-- 🚀 Phase 2: 実用拡張機能 -->
+                        <div class="shortening-phase2-section">
+                            <h4>🚀 Phase 2: 実用拡張機能</h4>
+                            
+                            <!-- 統計表示 -->
+                            <div class="phase2-stats-container">
+                                <div class="phase2-title">📊 統計情報</div>
+                                <div id="phase2StatsDisplay" class="phase2-stats">
+                                    <div class="stats-item">
+                                        <span class="stats-label">累計処理数:</span>
+                                        <span class="stats-value">0回</span>
+                                    </div>
+                                    <div class="stats-item">
+                                        <span class="stats-label">平均短縮率:</span>
+                                        <span class="stats-value">0%</span>
+                                    </div>
+                                    <div class="stats-item">
+                                        <span class="stats-label">文字数削減:</span>
+                                        <span class="stats-value">0文字</span>
+                                    </div>
+                                    <div class="stats-item">
+                                        <span class="stats-label">セッション数:</span>
+                                        <span class="stats-value">0回</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- セッション統合設定 -->
+                            <div class="shortening-option">
+                                <label style="display: flex; align-items: center; justify-content: space-between;">
+                                    <span>実際のセッションで自動適用:</span>
+                                    <label class="switch" style="margin-left: 15px;">
+                                        <input type="checkbox" id="autoApplyToggle" checked onchange="toggleAutoApply()">
+                                        <span class="slider"></span>
+                                    </label>
+                                </label>
+                            </div>
+                            
+                            <!-- Phase 2テスト機能 -->
+                            <div class="shortening-option">
+                                <button onclick="runPhase2Test()" class="advanced-button test-button">
+                                    🧪 実用テスト実行
+                                </button>
+                                <button onclick="showPhase2Statistics()" class="advanced-button debug-button">
+                                    📊 統計詳細
+                                </button>
+                                <button onclick="resetPhase2Statistics()" class="advanced-button clear-button">
+                                    🔄 統計リセット
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- デザインテーマ -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px; color: var(--text-primary);">🎨 デザインテーマ</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                            <button onclick="changeTheme('white')" class="theme-button" data-theme="white" style="padding: 15px; border-radius: 10px; border: 2px solid transparent; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); color: #333;">
+                                ⚪ ホワイト
+                            </button>
+                            <button onclick="changeTheme('blue')" class="theme-button" data-theme="blue" style="padding: 15px; border-radius: 10px; border: 2px solid var(--accent-color); background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); color: #333;">
+                                🔵 ブルー (現在)
+                            </button>
+                            <button onclick="changeTheme('dark')" class="theme-button" data-theme="dark" style="padding: 15px; border-radius: 10px; border: 2px solid transparent; background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: #ecf0f1;">
+                                ⚫ ダーク
+                            </button>
+                            <button onclick="changeTheme('colorful')" class="theme-button" data-theme="colorful" style="padding: 15px; border-radius: 10px; border: 2px solid transparent; background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%); color: #2c3e50;">
+                                🌈 カラフル
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 0: API KEY設定 (初回のみ表示) -->
+            <div class="setup-section" id="step0Section" style="display: none;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <div class="step-checkbox" id="step0Checkbox" style="width: 24px; height: 24px; border: 2px solid #ccc; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: white; font-size: 16px; color: #4caf50;">
+                        ❌
+                    </div>
+                    <h3 style="margin: 0; color: var(--text-primary);">🔑 Step 0: API KEY設定 (初回設定)</h3>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <button onclick="openApiKeySetupModal()" class="glass-button" style="background: linear-gradient(135deg, #ff9800, #f57c00); color: white; padding: 12px 24px; font-weight: 600;">
+                        🔑 API KEY設定
+                    </button>
+                    <button onclick="showApiKeyHelpModal()" class="glass-button" style="margin-left: 10px; padding: 8px 16px; font-size: 12px;">
+                        ❓ 取得方法
+                    </button>
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;" id="step0Description">
+                    深堀くんを利用するにはOpenAI APIキーが必要です
+                </div>
+            </div>
+
+            <!-- API KEY設定専用モーダル -->
+            <div id="apiKeySetupModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;" onclick="closeApiKeySetupModal(event)">
+                <div class="glass-panel" style="width: 90%; max-width: 600px; padding: 30px; border-radius: 20px;" onclick="event.stopPropagation();">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                        <h2 style="color: var(--text-primary); margin: 0;">🔑 API KEY設定 (初回設定)</h2>
+                        <button onclick="closeApiKeySetupModal()" class="glass-button" style="padding: 8px 16px;">✕ 閉じる</button>
+                    </div>
+
+                    <!-- ステップ表示 -->
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <div id="setupStepIndicator" style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 10px;">
+                            <span id="setupStepText">ステップ 1/2: OpenAI API KEY</span>
+                        </div>
+                    </div>
+
+                    <!-- ステップ1: API KEY入力 -->
+                    <div id="setupStep1" class="setup-step">
+                        <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 15px; color: var(--text-primary);">OpenAI API KEY</h3>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <input type="password" id="apiKeySetupInput" class="setup-input" placeholder="sk-で始まるAPIキーを入力してください" style="width: 100%; margin-bottom: 10px;">
+                                <div style="font-size: 12px; color: var(--text-secondary);">
+                                    ※ APIキーは暗号化して安全に保存されます
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                <button onclick="testApiKeySetup()" class="glass-button" id="testApiSetupButton" disabled style="background: linear-gradient(135deg, #4caf50, #45a049); color: white;">
+                                    🔍 接続テスト
+                                </button>
+                                <button onclick="showApiKeyHelpModal()" class="glass-button">
+                                    ❓ 取得方法
+                                </button>
+                            </div>
+                            
+                            <div id="apiTestResult" style="margin-top: 15px; padding: 10px; border-radius: 8px; display: none;">
+                                <!-- テスト結果がここに表示される -->
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center;">
+                            <button onclick="proceedToStep2()" class="glass-button" id="proceedStep2Button" disabled style="background: linear-gradient(135deg, var(--accent-color), rgba(102, 126, 234, 0.8)); color: white; padding: 12px 30px;">
+                                次へ: パスワード設定
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ステップ2: パスワード設定 -->
+                    <div id="setupStep2" class="setup-step" style="display: none;">
+                        <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 15px; color: var(--text-primary);">暗号化パスワード設定</h3>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <input type="password" id="apiPasswordSetupInput" class="setup-input" placeholder="暗号化パスワードを入力" style="width: 100%; margin-bottom: 10px;">
+                                <input type="password" id="apiPasswordConfirmInput" class="setup-input" placeholder="パスワードを再入力して確認" style="width: 100%; margin-bottom: 10px;">
+                                <div style="font-size: 12px; color: var(--text-secondary);">
+                                    ※ このパスワードでAPIキーを暗号化します。忘れないよう注意してください
+                                </div>
+                            </div>
+                            
+                            <div id="passwordMatchResult" style="margin-top: 10px; font-size: 12px; display: none;">
+                                <!-- パスワード一致確認結果 -->
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; display: flex; gap: 15px; justify-content: center;">
+                            <button onclick="backToStep1()" class="glass-button">
+                                ← 戻る
+                            </button>
+                            <button onclick="completeApiKeySetup()" class="glass-button" id="completeSetupButton" disabled style="background: linear-gradient(135deg, #4caf50, #45a049); color: white; padding: 12px 30px;">
+                                設定完了
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API KEY取得方法ヘルプモーダル -->
+            <div id="apiKeyHelpModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;" onclick="closeApiKeyHelpModal(event)">
+                <div class="glass-panel" style="width: 90%; max-width: 500px; padding: 30px; border-radius: 20px;" onclick="event.stopPropagation();">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="color: var(--text-primary); margin: 0;">❓ OpenAI API KEY取得方法</h2>
+                        <button onclick="closeApiKeyHelpModal()" class="glass-button" style="padding: 8px 16px;">✕ 閉じる</button>
+                    </div>
+
+                    <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px; color: var(--text-primary);">手順</h3>
+                        <ol style="margin: 0; padding-left: 20px; color: var(--text-primary);">
+                            <li style="margin-bottom: 10px;">
+                                <a href="https://platform.openai.com/" target="_blank" style="color: var(--accent-color); text-decoration: none;">OpenAI Platform</a> にアクセス
+                            </li>
+                            <li style="margin-bottom: 10px;">
+                                右上の「Sign up」または「Log in」でアカウント作成・ログイン
+                            </li>
+                            <li style="margin-bottom: 10px;">
+                                左メニューの「API keys」をクリック
+                            </li>
+                            <li style="margin-bottom: 10px;">
+                                「Create new secret key」でAPIキーを作成
+                            </li>
+                            <li style="margin-bottom: 10px;">
+                                「sk-」で始まるキーをコピーして深堀くんに設定
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div style="background: rgba(255, 193, 7, 0.2); border: 1px solid #ffc107; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: #f57c00;">⚠️ 重要な注意点</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: var(--text-primary); font-size: 14px;">
+                            <li>APIキーは他人に教えないでください</li>
+                            <li>使用量に応じて課金されます</li>
+                            <li>初回登録時は無料クレジットが付与されます</li>
+                        </ul>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <button onclick="closeApiKeyHelpModal()" class="glass-button" style="background: linear-gradient(135deg, var(--accent-color), rgba(102, 126, 234, 0.8)); color: white; padding: 10px 20px;">
+                            理解しました
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 対応ファイル形式モーダル -->
+            <div id="supportedFilesModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;" onclick="closeSupportedFilesModal(event)">
+                <div class="glass-panel" style="width: 90%; max-width: 500px; padding: 30px; border-radius: 20px;" onclick="event.stopPropagation();">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="color: var(--text-primary); margin: 0;">📁 対応ファイル形式</h2>
+                        <button onclick="closeSupportedFilesModal()" class="glass-button" style="padding: 8px 16px;">✕ 閉じる</button>
+                    </div>
+
+                    <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px; color: var(--text-primary);">📝 テキスト形式</h3>
+                        <ul style="margin: 0 0 15px 0; padding-left: 20px; color: var(--text-primary);">
+                            <li>.txt - テキストファイル</li>
+                            <li>.md - Markdownファイル</li>
+                            <li>.csv - CSVファイル</li>
+                        </ul>
+
+                        <h3 style="margin-bottom: 15px; color: var(--text-primary);">📄 文書形式</h3>
+                        <ul style="margin: 0 0 15px 0; padding-left: 20px; color: var(--text-primary);">
+                            <li>.pdf - PDFファイル</li>
+                            <li>.doc, .docx - Wordファイル</li>
+                            <li>.ppt, .pptx - PowerPointファイル</li>
+                        </ul>
+
+                        <h3 style="margin-bottom: 15px; color: var(--text-primary);">📊 表計算形式</h3>
+                        <ul style="margin: 0; padding-left: 20px; color: var(--text-primary);">
+                            <li>.xls, .xlsx - Excelファイル</li>
+                        </ul>
+                    </div>
+
+                    <div style="background: rgba(255, 193, 7, 0.2); border: 1px solid #ffc107; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: #f57c00;">📏 ファイル容量制限</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: var(--text-primary); font-size: 14px;">
+                            <li>最大ファイルサイズ: 10MB</li>
+                            <li>推奨サイズ: 5MB以下</li>
+                            <li>大きすぎるファイルは処理に時間がかかる場合があります</li>
+                        </ul>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <button onclick="closeSupportedFilesModal()" class="glass-button" style="background: linear-gradient(135deg, var(--accent-color), rgba(102, 126, 234, 0.8)); color: white; padding: 10px 20px;">
+                            理解しました
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: パスワードログイン -->
+            <div class="setup-section" id="step1Section" style="margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <div class="step-checkbox" id="step1Checkbox" style="width: 20px; height: 20px; border: 2px solid #ccc; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: white; font-size: 14px; color: #4caf50;">
+                        ❌
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                        <h3 style="margin: 0; color: var(--text-primary); font-size: 1.1rem;">🔐 Step 1: パスワードでログイン</h3>
+                        <span id="step1Status" style="font-size: 1rem; color: var(--text-secondary); font-weight: bold;">未設定</span>
+                    </div>
+                </div>
+                <div class="setup-row">
+                    <input type="password" id="passwordInput" class="setup-input" placeholder="パスワードを入力して、ログインしてください" style="flex: 1;">
+                    <button id="step1ActionButton" onclick="loginWithPassword()" class="glass-button" style="padding: 10px 16px;">ログイン</button>
+                </div>
+            </div>
+
+            <!-- Step 2: 深堀テーマ設定 -->
+            <div class="setup-section" id="step2Section" style="margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <div class="step-checkbox" id="step2Checkbox" style="width: 20px; height: 20px; border: 2px solid #ccc; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: white; font-size: 14px; color: #4caf50;">
+                        ❌
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                        <h3 style="margin: 0; color: var(--text-primary); font-size: 1.1rem;">🎯 Step 2: 深堀テーマ設定</h3>
+                        <span id="step2Status" style="font-size: 1rem; color: var(--text-secondary); font-weight: bold;">未設定</span>
+                    </div>
+                </div>
+                <div class="setup-row">
+                    <input type="text" id="themeInput" class="setup-input" placeholder="深掘りしたいテーマを手入力するか添付してください。" style="flex: 1;">
+                    <button id="step2ActionButton" onclick="focusThemeInput()" class="glass-button">設定</button>
+                </div>
+                <div class="setup-row" style="margin-top: 5px;">
+                    <div class="custom-file-input" style="flex: 1;">
+                        <input type="file" id="themeFileInput" class="setup-input file-input-hidden" accept=".txt,.pdf,.doc,.docx,.xlsx,.xls,.csv,.md,.pptx,.ppt" onchange="handleThemeFile()">
+                        <div class="file-input-display" id="fileInputDisplay">
+                            <span class="file-input-text" id="fileInputText">選択されていません</span>
+                            <span class="file-input-button">📁 ファイルを選択</span>
+                        </div>
+                    </div>
+                    <button onclick="showSupportedFileFormats()" class="glass-button" style="padding: 8px 16px; font-size: 11px; white-space: nowrap;">対応ファイルはこちら</button>
+                </div>
+            </div>
+
+            <!-- セッション開始 -->
+            <div id="sessionStartSection" style="display: none; justify-content: center; margin-bottom: 12px; margin-top: 8px;">
+                <button onclick="startSession()" class="glass-button" style="padding: 13px 38px; font-size: 16px; font-weight: 700; background: linear-gradient(135deg, var(--accent-color), rgba(102, 126, 234, 0.8)); display: flex; flex-direction: column; align-items: center; justify-content: center;" disabled id="startButton">
+                    <span>🚀 セッション開始</span>
+                    <span id="startButtonSubText" style="font-size: 11px; font-weight: 400; margin-top: 4px;">Step1・2完了後開始できます</span>
+                </button>
+            </div>
+
+            <!-- 罫線 -->
+            <div style="border-top: 1px solid var(--glass-border); margin: 15px 0;"></div>
+
+            <!-- その他設定ボタン -->
+            <div style="text-align: center; margin-bottom: 12px;">
+                <button onclick="openAdvancedSettings()" class="glass-button" style="padding: 8px 24px;">
+                    ⚙️ その他設定
+                </button>
+            </div>
+
+            <!-- ナビゲーションボタン -->
+            <div style="text-align: center; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="window.location.href='pages/overview.html'" class="glass-button" data-page="overview" style="padding: 6px 16px; font-size: 12px;">
+                        📖 概要
+                    </button>
+                    <button onclick="window.location.href='pages/screenshots.html'" class="glass-button" data-page="screenshots" style="padding: 6px 16px; font-size: 12px;">
+                        📱 画面説明
+                    </button>
+                    <button onclick="window.location.href='pages/technical.html'" class="glass-button" data-page="technical" style="padding: 6px 16px; font-size: 12px;">
+                        🔧 技術仕様
+                    </button>
+                    <button onclick="window.location.href='pages/changelog.html'" class="glass-button" data-page="changelog" style="padding: 6px 16px; font-size: 12px;">
+                        📝 更新履歴
+                    </button>
+                    <button onclick="window.location.href='pages/faq.html'" class="glass-button" data-page="faq" style="padding: 6px 16px; font-size: 12px;">
+                        ❓ よくある質問
+                    </button>
+                </div>
+            </div>
+
+            <!-- フッター -->
+            <div style="text-align: center; font-size: 10px; color: var(--text-secondary); margin-top: 16px; padding: 8px;">
+                属人知見のAIによる深掘り収集とAI知見・組織知化
+            </div>
+        </div>
+
+        <!-- メインチャットエリア -->
+        <div id="chatArea" class="chat-area hidden">
+            <!-- ガイド表示切り替えボタン（非表示時に表示） -->
+            <div class="main-guide-toggle" id="mainGuideToggle" onclick="toggleVoiceGuide()">
+                ヘルプ表示
+            </div>
+
+            <!-- 音声ガイドパネル（左ペイン: 0→280px） -->
+            <div class="voice-guide-panel glass-panel" id="voiceGuidePanel">
+                <!-- 閉じるボタン -->
+                <button class="guide-toggle-btn" onclick="toggleVoiceGuide()">
+                    ✕
+                </button>
+
+
+                <!-- 音声コマンド -->
+                <div class="guide-section">
+                    <h3>💬 音声コマンド</h3>
+                    <div class="guide-content">
+                        <ul class="command-list">
+                            <li>
+                                <span class="command-key">どうぞ</span>
+                                <span>AIが応答開始</span>
+                            </li>
+                            <li>
+                                <span class="command-key">文字消して</span>
+                                <span>文字起こしクリア</span>
+                            </li>
+                            <li>
+                                <span class="command-key">テーマ変更</span>
+                                <span>新しいテーマに変更</span>
+                            </li>
+                            <li>
+                                <span class="command-key">質問変更</span>
+                                <span>別の質問をリクエスト</span>
+                            </li>
+                            <li>
+                                <span class="command-key">終了して</span>
+                                <span>セッション終了</span>
+                            </li>
+                        </ul>
+                        
+                        <!-- 知見確認用コマンド -->
+                        <div id="knowledgeCommands" class="hidden" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+                            <h4 style="font-size: 0.75rem; color: #ffa500; margin-bottom: 8px;">💡 知見確認時</h4>
+                            <ul class="command-list">
+                                <li>
+                                    <span class="command-key" style="background: #4caf50;">はい/OK</span>
+                                    <span>記録</span>
+                                </li>
+                                <li>
+                                    <span class="command-key" style="background: #f44336;">いいえ/NO</span>
+                                    <span>削除</span>
+                                </li>
+                                <li>
+                                    <span class="command-key" style="background: #2196f3;">詳しく</span>
+                                    <span>詳細説明</span>
+                                </li>
+                            </ul>
+                            
+                            <h4 style="font-size: 0.75rem; color: #06b6d4; margin: 12px 0 8px 0;">⚙️ 設定変更</h4>
+                            <ul class="command-list">
+                                <li>
+                                    <span class="command-key" style="background: #9c27b0;">閾値を○○点に変更</span>
+                                    <span style="font-size: 0.6rem;">自動記録基準変更</span>
+                                </li>
+                                <li>
+                                    <span class="command-key" style="background: #607d8b;">現在の設定は？</span>
+                                    <span style="font-size: 0.6rem;">設定確認</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 状況別アドバイス -->
+                <div class="guide-section">
+                    <h3>🎯 今すべきこと</h3>
+                    <div class="guide-content" id="situationAdvice">
+                        <div style="text-align: center; padding: 15px; font-size: 0.7rem;">
+                            セッション開始をお待ちしています
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 困ったときのヘルプ -->
+                <div class="guide-section">
+                    <h3>🆘 困ったら</h3>
+                    <div class="guide-content">
+                        <ul class="command-list">
+                            <li>
+                                <span style="color: #ff6b6b; font-size: 0.65rem;">🔇 音声認識不調</span>
+                                <span>→ 「強制停止」</span>
+                            </li>
+                            <li>
+                                <span style="color: #ffa500; font-size: 0.65rem;">🎭 AI無応答</span>
+                                <span>→ 「どうぞ」と言う</span>
+                            </li>
+                            <li>
+                                <span style="color: #4ecdc4; font-size: 0.65rem;">📝 文字残存</span>
+                                <span>→ 「文字消して」</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 進行状況 -->
+                <div class="guide-section">
+                    <h3>📈 セッション進行</h3>
+                    <div class="guide-content">
+                        <div class="progress-steps" id="sessionProgress">
+                            <div class="progress-step">
+                                <div class="step-icon step-pending" id="step1">1</div>
+                                <span>自己紹介</span>
+                            </div>
+                            <div class="progress-step">
+                                <div class="step-icon step-pending" id="step2">2</div>
+                                <span>基本情報確認</span>
+                            </div>
+                            <div class="progress-step">
+                                <div class="step-icon step-pending" id="step3">3</div>
+                                <span>具体例を深掘り</span>
+                            </div>
+                            <div class="progress-step">
+                                <div class="step-icon step-pending" id="step4">4</div>
+                                <span>知見の整理</span>
+                            </div>
+                            <div class="progress-step">
+                                <div class="step-icon step-pending" id="step5">5</div>
+                                <span>まとめ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- メイン会話エリア（中央ペイン: flex: 1） -->
+            <div class="conversation-panel glass-panel">
+                <!-- 現在のテーマ（固定表示） -->
+                <div style="background: rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; border-left: 3px solid #3b82f6; border-right: 3px solid #3b82f6; text-align: center;">
+                    <div id="currentThemeFixed" style="font-size: 16px; font-weight: 600; color: #333;">未設定</div>
+                </div>
+                
+                <!-- メッセージ表示エリア -->
+                <div class="messages-container" id="messagesContainer">
+                    <!-- メッセージがここに追加される -->
+                </div>
+
+                <!-- 音声認識表示 -->
+                <div class="transcript-display" id="transcriptDisplay">
+                    音声認識待機中...（「どうぞ」と言うとAIが応答します）
+                </div>
+
+                <!-- 音声コントロール -->
+                <div class="voice-controls">
+                    <button id="micButton" class="mic-button idle" onclick="toggleMicrophone()">
+                        🎤
+                    </button>
+                    <button class="glass-button" onclick="forceStopAllActivity()">⏹️ 強制停止</button>
+                    <button class="glass-button" onclick="endConversationSession()">🚪 終了</button>
+                </div>
+            </div>
+
+            <!-- ステータスパネル（右ペイン: 300px固定） -->
+            <div class="status-panel glass-panel">
+                <div class="status-section status-logo-section" style="text-align: center; border-radius: 15px; padding: 20px;">
+                    <div id="statusLogo" style="display: flex; align-items: center; justify-content: center; min-height: 80px; cursor: pointer;" onclick="returnToLogin()" title="ログイン画面に戻る">
+                        <img src="assets/fukabori_logo.png" alt="深堀くん" style="max-width: 150px; max-height: 60px; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                        <span style="font-size: 1.5rem; color: white; font-weight: 700; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); display: none;">🔍 深堀くん</span>
+                    </div>
+                </div>
+                
+                <div class="status-section">
+                    <div class="ai-avatars" style="margin: 5px 0;">
+                        <div style="text-align: center;">
+                            <div class="avatar nehori" id="nehoriAvatar">
+                                <img src="assets/nehori_avatar.png" alt="ねほりーの" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.style.display='none'; this.parentElement.textContent='ね';">
+                            </div>
+                            <div style="font-size: 11px; margin-top: 3.5px; color: #8b5cf6; font-weight: 600;">ねほりーの</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div class="avatar hahori" id="hahoriAvatar">
+                                <img src="assets/hahori_avatar.png" alt="はほりーの" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.style.display='none'; this.parentElement.textContent='は';">
+                            </div>
+                            <div style="font-size: 11px; margin-top: 3.5px; color: #06b6d4; font-weight: 600;">はほりーの</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="status-section">
+                    <div class="status-title">📊 セッション状況</div>
+                    <div class="status-content" id="sessionStatus">
+                        準備中...
+                    </div>
+                </div>
+
+                <div class="status-section">
+                    <div class="status-title">🎯 知見記録設定</div>
+                    <div class="status-content" id="knowledgeSettings">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="font-size: 11px;">自動記録閾値:</span>
+                            <div style="display: flex; align-items: center;">
+                                <input type="number" id="thresholdInput" min="0" max="100" value="70" 
+                                       style="width: 50px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 11px; text-align: center;"
+                                       onchange="updateThresholdFromInput()">
+                                <span style="font-size: 11px; margin-left: 4px;">点</span>
+                            </div>
+                        </div>
+                        <div style="font-size: 9px; color: #666; text-align: center; margin-bottom: 8px;">
+                            この点数以上で自動記録
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 9px; color: #999;" id="sessionStatsDisplay">
+                            <span>自動: <span id="autoRecordCount">0</span>件</span>
+                            <span>手動: <span id="manualConfirmCount">0</span>件</span>
+                            <span>拒否: <span id="rejectedCount">0</span>件</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="status-section">
+                    <div class="status-title">💡 抽出された知見</div>
+                    <div class="status-content" id="extractedKnowledge" style="max-height: 200px; overflow-y: auto; padding: 0;">
+                        <div style="padding: 10px; color: #666; font-size: 12px; text-align: center;">まだありません</div>
+                    </div>
+                </div>
+
+                <div class="status-section">
+                    <div class="status-title">⚙️ システム状態</div>
+                    <div class="status-content" id="systemStatus">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        待機中
+                    </div>
+                </div>
+
+                <div class="status-section">
+                    <div class="status-title">💾 データ管理</div>
+                    <div class="status-content">
+                        <button onclick="downloadMarkdownReport()" class="glass-button" style="width: 100%; margin-bottom: 5px; font-size: 12px;">📄 今回をDL</button>
+                        <button onclick="downloadKnowledgeFile()" class="glass-button" style="width: 100%; margin-bottom: 5px; font-size: 12px;">💡 知見をDL</button>
+                        <button onclick="downloadAllKnowledge()" class="glass-button" style="width: 100%; margin-bottom: 5px; font-size: 12px;">🧬 全知見DL</button>
+                        <button onclick="generateSessionInfographic()" class="glass-button" style="width: 100%; margin-bottom: 5px; font-size: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white;">📊 セッション可視化</button>
+                        <button onclick="generateAllKnowledgeInfographic()" class="glass-button" style="width: 100%; font-size: 12px; background: linear-gradient(135deg, #43e97b, #38d9a9); color: white;">🌐 全知見可視化</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設定データファイル読み込み -->
+    <script src="config/app_settings.js"></script>
+    <script src="config/app_config_loader.js"></script>
+    
+    <!-- 🎨 知見インフォグラフィック生成システム（遅延読み込み）-->
+    <script>
+        // インフォグラフィック機能の遅延読み込み
+        window.loadInfographicSystem = function() {
+            return new Promise((resolve, reject) => {
+                if (window.FukaboriInfographic) {
+                    resolve();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = 'config/infographic_system.js';
+                script.onload = () => {
+                    console.log('📊 インフォグラフィックシステム読み込み完了');
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.warn('⚠️ インフォグラフィックシステムの読み込みに失敗（会話システム影響なし）');
+                    reject(new Error('インフォグラフィックシステム読み込み失敗'));
+                };
+                document.head.appendChild(script);
+            });
+        };
+
+        // 実験的機能の条件付き読み込み（開発モード時のみ）
+        window.loadExperimentalFeatures = function() {
+            const isDevMode = localStorage.getItem('fukabori_dev_mode') === 'true';
+            if (!isDevMode) return Promise.resolve();
+            
+            const experimentalScripts = [
+                'config/safety_backup.js',
+                'config/speech_shortening_engine.js',
+                'config/speech_shortening_phase2.js',
+                'config/phase2_integration.js'
+            ];
+            
+            const loadPromises = experimentalScripts.map(src => {
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.onload = () => resolve();
+                    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+                    document.head.appendChild(script);
+                });
+            });
+            
+            return Promise.all(loadPromises)
+                .then(() => console.log('🧪 実験的機能読み込み完了（開発モード）'))
+                .catch(error => console.warn('⚠️ 実験的機能の読み込みに失敗:', error));
+        };
+    </script>
+    
+    <script src="config/prompts.js"></script>
+    <!-- カスタム音声設定（存在しない場合はエラーを無視） -->
+    <script src="config/voice_config.js" onerror="console.log('💡 カスタム音声設定ファイルは未設定です')"></script>
+    <!-- ユーティリティ関数 -->
+    <script src="app/utils.js"></script>
+    <!-- ファイル処理システム -->
+    <script src="app/file-processing.js"></script>
+    <!-- 知見管理システム -->
+    <script src="app/knowledge-management.js"></script>
+    <!-- APIキー設定モーダル -->
+    <script src="app/api-key-setup.js"></script>
+    <script src="app/script.js"></script>
+    
+    <!-- prompts.js読み込み後の初期化 -->
+    <script>
+        // prompts.jsの読み込み完了後に音声設定UIを更新
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                if (typeof updateVoiceSettingsUI === 'function') {
+                    updateVoiceSettingsUI();
+                    console.log('🔄 prompts.js読み込み後に音声設定UIを更新');
+                }
+                
+                // 🧪 開発モード機能の初期化
+                const isDevMode = localStorage.getItem('fukabori_dev_mode') === 'true';
+                if (isDevMode) {
+                    console.log('🧪 開発モード有効 - 実験的機能を読み込みます');
+                    if (typeof loadExperimentalFeatures === 'function') {
+                        loadExperimentalFeatures();
+                    }
+                } else {
+                    console.log('✅ 本番モード - コア機能のみ読み込み済み');
+                }
+                
+                // 🛡️ マイク許可状態の初期チェック（マイク許可は一回だけルール遵守）
+                const permissionDenied = localStorage.getItem('microphonePermissionDenied') === 'true';
+                if (permissionDenied) {
+                    console.log('🚫 マイク許可が拒否済み - 音声機能は使用できません');
+                    if (typeof showMessage === 'function') {
+                        showMessage('warning', 'マイクの使用許可が拒否されています。音声機能を使用するにはブラウザの設定で許可し、ページを再読み込みしてください。');
+                    }
+                } else {
+                    const permissionGranted = localStorage.getItem('microphonePermissionGranted') === 'true';
+                    if (permissionGranted) {
+                        console.log('✅ マイク許可は既に取得済み');
+                    } else {
+                        console.log('📝 マイク許可は未取得 - セッション開始時に一回だけ要求します');
+                    }
+                }
+                
+                // 📁 ファイル入力のイベントリスナー設定
+                const fileInputDisplay = document.getElementById('fileInputDisplay');
+                if (fileInputDisplay) {
+                    fileInputDisplay.addEventListener('click', function() {
+                        console.log('📁 ファイル入力表示がクリックされました');
+                        if (typeof triggerFileInput === 'function') {
+                            triggerFileInput();
+                        } else {
+                            console.error('❌ triggerFileInput関数が見つかりません');
+                        }
+                    });
+                    console.log('✅ ファイル入力のイベントリスナーを設定しました');
+                } else {
+                    console.error('❌ ファイル入力表示要素が見つかりません');
+                }
+            }, 200);
+        });
+        
+        // グローバル関数として公開
+        window.checkLoginBeforeFileSelect = function(event) {
+            if (typeof checkLoginBeforeFileSelect === 'function') {
+                return checkLoginBeforeFileSelect(event);
+            }
+            return true;
+        };
+        
+        window.triggerFileInput = function() {
+            const fileInput = document.getElementById('themeFileInput');
+            if (fileInput) {
+                fileInput.click();
+            } else {
+                console.error('❌ ファイル入力要素が見つかりません');
+            }
+        };
+        
+        window.closeFileErrorModal = function() {
+            if (typeof closeFileErrorModal === 'function') {
+                closeFileErrorModal();
+            }
+        };
+        
+        window.returnToLoginFromError = function() {
+            if (typeof returnToLoginFromError === 'function') {
+                returnToLoginFromError();
+            }
+        };
+        
+        // インフォグラフィック機能のフォールバック関数
+        window.generateSessionInfographic = async function() {
+            try {
+                await loadInfographicSystem();
+                if (window.FukaboriInfographic && window.FukaboriInfographic.generateSessionInfographic) {
+                    window.FukaboriInfographic.generateSessionInfographic();
+                } else {
+                    console.warn('⚠️ インフォグラフィック機能が利用できません');
+                    if (typeof showMessage === 'function') {
+                        showMessage('warning', 'インフォグラフィック機能の読み込みに失敗しました');
+                    }
+                }
+            } catch (error) {
+                console.error('❌ セッション可視化エラー:', error);
+            }
+        };
+        
+        window.generateAllKnowledgeInfographic = async function() {
+            try {
+                await loadInfographicSystem();
+                if (window.FukaboriInfographic && window.FukaboriInfographic.generateAllKnowledgeInfographic) {
+                    window.FukaboriInfographic.generateAllKnowledgeInfographic();
+                } else {
+                    console.warn('⚠️ インフォグラフィック機能が利用できません');
+                    if (typeof showMessage === 'function') {
+                        showMessage('warning', 'インフォグラフィック機能の読み込みに失敗しました');
+                    }
+                }
+            } catch (error) {
+                console.error('❌ 全知見可視化エラー:', error);
+            }
+        };
+    </script>
+</body>
+</html>
