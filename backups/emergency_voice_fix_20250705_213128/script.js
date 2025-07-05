@@ -41,7 +41,7 @@ class RecognitionManager {
         // 🔄 旧システム統合: 安定性管理（指数バックオフ対応）
         this.stability = {
             consecutiveErrorCount: 0,
-            maxConsecutiveErrors: 10, // 🔧 エラー許容回数を大幅増加（一時的対応）
+            maxConsecutiveErrors: 5, // 🔧 エラー許容回数を増加
             lastRestartTime: 0,
             minRestartInterval: 2000,
             isRecognitionActive: false,
@@ -182,16 +182,8 @@ class RecognitionManager {
             // 🔄 統合チェック: 連続エラー制御
             if (this.stability.consecutiveErrorCount >= this.stability.maxConsecutiveErrors) {
                 console.warn(`🚫 連続エラーが${this.stability.maxConsecutiveErrors}回を超えたため一時停止`);
-                
-                // 🔧 エラーカウントリセット機能追加
-                const timeSinceLastError = now - this.stability.lastErrorTime;
-                if (timeSinceLastError > 60000) { // 60秒経過でリセット
-                    console.log('🔄 60秒経過によりエラーカウントをリセット');
-                    this.stability.consecutiveErrorCount = 0;
-                } else {
-                    this.isStarting = false;
-                    return false;
-                }
+                this.isStarting = false;
+                return false;
             }
             
             // 🔧 完全クリーンアップ
@@ -228,8 +220,8 @@ class RecognitionManager {
             this.notifyListeners();
             this.syncWithAppState();
             
-            // 🔧 新機能: プリエンプティブ再開をスケジュール - 一時的に無効化
-            // this.schedulePreemptiveRestart(); // マイク許可頻発問題のため無効化
+            // 🔧 新機能: プリエンプティブ再開をスケジュール
+            this.schedulePreemptiveRestart();
             
             console.log('✅ 統合音声認識開始成功');
             return true;
@@ -435,23 +427,12 @@ class RecognitionManager {
         switch (event.error) {
             case 'not-allowed':
             case 'service-not-allowed':
-                console.error('🚫 マイク許可エラー - 自動再開を停止');
+                console.error('🚫 マイク許可エラー');
                 this.permissionManager.state = 'denied';
                 this.permissionManager.notifyListeners();
                 this.stability.isRecognitionActive = false;
-                this.stability.consecutiveErrorCount = 0; // エラーカウントリセット
                 this.syncWithAppState();
-                
-                // 🔧 自動再開を完全に停止
-                if (this.preemptiveRestartTimer) {
-                    clearTimeout(this.preemptiveRestartTimer);
-                    this.preemptiveRestartTimer = null;
-                }
-                
-                // 状態をidleに強制変更
-                this.state = 'idle';
-                this.notifyListeners();
-                return; // エラー処理を終了
+                break;
                 
             case 'no-speech':
                 console.log('😶 音声が検出されませんでした');
@@ -528,8 +509,8 @@ class RecognitionManager {
             }, 2000); // 2秒後に再開
         }
         
-        // 🔧 プリエンプティブ再開の設定 - 一時的に無効化
-        // this.schedulePreemptiveRestart(); // マイク許可頻発問題のため無効化
+        // 🔧 プリエンプティブ再開の設定
+        this.schedulePreemptiveRestart();
     }
     
     // 🔧 新機能: プリエンプティブ再開スケジューラ
@@ -602,8 +583,8 @@ class RecognitionManager {
             this.notifyListeners();
             this.syncWithAppState();
             
-            // 次回の予防的再開をスケジュール - 一時的に無効化
-            // this.schedulePreemptiveRestart(); // マイク許可頻発問題のため無効化
+            // 次回の予防的再開をスケジュール
+            this.schedulePreemptiveRestart();
             
             console.log('✅ 軽量再開完了（マイク許可保持）');
             
@@ -778,14 +759,11 @@ class RecognitionManager {
                     this.state = 'idle';
                     this.notifyListeners();
                     
-                    // 自動再開も検討（許可状態チェック追加）
+                    // 自動再開も検討
                     if (window.AppState?.sessionActive && 
-                        !this.conversationControl.speakingInProgress &&
-                        this.permissionManager.state === 'granted') {
+                        !this.conversationControl.speakingInProgress) {
                         console.log('🔄 エラー回復後の自動再開（指数バックオフ適用）');
                         this.start();
-                    } else if (this.permissionManager.state === 'denied') {
-                        console.log('🚫 許可拒否のため自動再開を中止');
                     }
                 }
             }, 'general_error_recovery');
@@ -830,16 +808,9 @@ class RecognitionManager {
 class StateManager {
     constructor() {
         // 🆕 新しい音声コアシステムを使用
-        this.permissionManager = window.VoiceCore?.permission || new PermissionManager();
+        this.permissionManager = window.VoiceCore.permission || new PermissionManager();
         this.recognitionManager = new RecognitionManager(this.permissionManager);
-        this.audioManager = window.VoiceCore?.audio || new AudioManager();
-        
-        // 🔧 許可状態の同期強化
-        if (window.VoiceCore?.permission) {
-            console.log('🔄 VoiceCore許可マネージャーを使用');
-        } else {
-            console.log('⚠️ VoiceCore未読み込み - フォールバック使用');
-        }
+        this.audioManager = window.VoiceCore.audio || new AudioManager();
         
         this.setupStateSync();
         console.log('✅ StateManager初期化完了');

@@ -22,8 +22,136 @@ window.stateManager = null;
 // 音声認識システム - 抜本解決版
 // =================================================================================
 
-// 🔧 PermissionManager: voice-core.jsに移動済み
-// 新しい音声コアシステムを使用: window.VoiceCore.permission
+// 🔧 PermissionManager: マイク許可の一元管理
+class PermissionManager {
+    constructor() {
+        this.state = 'unknown'; // unknown, granted, denied, requesting
+        this.listeners = new Set();
+        this.requestQueue = [];
+        this.isRequesting = false;
+        this.lastRequestTime = 0;
+        this.minRequestInterval = 5000; // 5秒間隔制限
+    }
+    
+    // 許可状態の取得（非同期）
+    async getPermission() {
+        console.log('🔍 許可状態確認:', this.state);
+        
+        if (this.state === 'granted') {
+            console.log('✅ 許可済み - 即座に返却');
+            return true;
+        }
+        
+        if (this.state === 'denied') {
+            console.log('🚫 拒否済み - 即座に返却');
+            return false;
+        }
+        
+        // 時間間隔チェック
+        const now = Date.now();
+        if (now - this.lastRequestTime < this.minRequestInterval) {
+            console.log('⏰ 要求間隔不足 - 待機');
+            return new Promise((resolve) => {
+                this.requestQueue.push(resolve);
+            });
+        }
+        
+        return this.requestPermission();
+    }
+    
+    // 許可要求（重複防止・一回だけルール）
+    async requestPermission() {
+        if (this.isRequesting) {
+            console.log('🔄 要求進行中 - キューに追加');
+            return new Promise((resolve) => {
+                this.requestQueue.push(resolve);
+            });
+        }
+        
+        console.log('🎤 マイク許可要求開始（一回だけルール）');
+        this.isRequesting = true;
+        this.state = 'requesting';
+        this.lastRequestTime = Date.now();
+        
+        try {
+            // ブラウザレベルでの許可状態確認
+            const permissionStatus = await navigator.permissions.query({ name: 'microphone' }).catch(() => null);
+            
+            if (permissionStatus && permissionStatus.state === 'granted') {
+                console.log('✅ ブラウザレベルで許可済み');
+                this.state = 'granted';
+                this.notifyListeners();
+                this.processQueue(true);
+                return true;
+            }
+            
+            // 一回だけの許可取得
+            console.log('🔄 getUserMediaによる許可取得');
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                } 
+            });
+            
+            // ストリームを即座に停止（許可のみが目的）
+            stream.getTracks().forEach(track => track.stop());
+            
+            console.log('✅ マイク許可取得成功');
+            this.state = 'granted';
+            this.notifyListeners();
+            this.processQueue(true);
+            return true;
+            
+        } catch (error) {
+            console.error('❌ マイク許可取得失敗:', error);
+            this.state = 'denied';
+            this.notifyListeners();
+            this.processQueue(false);
+            return false;
+        } finally {
+            this.isRequesting = false;
+        }
+    }
+    
+    // キュー処理
+    processQueue(result) {
+        while (this.requestQueue.length > 0) {
+            const resolve = this.requestQueue.shift();
+            resolve(result);
+        }
+    }
+    
+    // リスナー登録
+    addListener(callback) {
+        this.listeners.add(callback);
+    }
+    
+    // リスナー削除
+    removeListener(callback) {
+        this.listeners.delete(callback);
+    }
+    
+    // 状態通知
+    notifyListeners() {
+        this.listeners.forEach(callback => {
+            try {
+                callback(this.state);
+            } catch (error) {
+                console.error('リスナー実行エラー:', error);
+            }
+        });
+    }
+    
+    // 状態リセット（テスト用）
+    reset() {
+        this.state = 'unknown';
+        this.isRequesting = false;
+        this.requestQueue = [];
+        this.notifyListeners();
+    }
+}
 
 // 🔧 RecognitionManager: 音声認識の一元管理（新旧統合版）
 class RecognitionManager {
@@ -41,7 +169,7 @@ class RecognitionManager {
         // 🔄 旧システム統合: 安定性管理（指数バックオフ対応）
         this.stability = {
             consecutiveErrorCount: 0,
-            maxConsecutiveErrors: 10, // 🔧 エラー許容回数を大幅増加（一時的対応）
+            maxConsecutiveErrors: 5, // 🔧 エラー許容回数を増加
             lastRestartTime: 0,
             minRestartInterval: 2000,
             isRecognitionActive: false,
@@ -182,16 +310,8 @@ class RecognitionManager {
             // 🔄 統合チェック: 連続エラー制御
             if (this.stability.consecutiveErrorCount >= this.stability.maxConsecutiveErrors) {
                 console.warn(`🚫 連続エラーが${this.stability.maxConsecutiveErrors}回を超えたため一時停止`);
-                
-                // 🔧 エラーカウントリセット機能追加
-                const timeSinceLastError = now - this.stability.lastErrorTime;
-                if (timeSinceLastError > 60000) { // 60秒経過でリセット
-                    console.log('🔄 60秒経過によりエラーカウントをリセット');
-                    this.stability.consecutiveErrorCount = 0;
-                } else {
-                    this.isStarting = false;
-                    return false;
-                }
+                this.isStarting = false;
+                return false;
             }
             
             // 🔧 完全クリーンアップ
@@ -228,8 +348,8 @@ class RecognitionManager {
             this.notifyListeners();
             this.syncWithAppState();
             
-            // 🔧 新機能: プリエンプティブ再開をスケジュール - 一時的に無効化
-            // this.schedulePreemptiveRestart(); // マイク許可頻発問題のため無効化
+            // 🔧 新機能: プリエンプティブ再開をスケジュール
+            this.schedulePreemptiveRestart();
             
             console.log('✅ 統合音声認識開始成功');
             return true;
@@ -435,23 +555,12 @@ class RecognitionManager {
         switch (event.error) {
             case 'not-allowed':
             case 'service-not-allowed':
-                console.error('🚫 マイク許可エラー - 自動再開を停止');
+                console.error('🚫 マイク許可エラー');
                 this.permissionManager.state = 'denied';
                 this.permissionManager.notifyListeners();
                 this.stability.isRecognitionActive = false;
-                this.stability.consecutiveErrorCount = 0; // エラーカウントリセット
                 this.syncWithAppState();
-                
-                // 🔧 自動再開を完全に停止
-                if (this.preemptiveRestartTimer) {
-                    clearTimeout(this.preemptiveRestartTimer);
-                    this.preemptiveRestartTimer = null;
-                }
-                
-                // 状態をidleに強制変更
-                this.state = 'idle';
-                this.notifyListeners();
-                return; // エラー処理を終了
+                break;
                 
             case 'no-speech':
                 console.log('😶 音声が検出されませんでした');
@@ -528,8 +637,8 @@ class RecognitionManager {
             }, 2000); // 2秒後に再開
         }
         
-        // 🔧 プリエンプティブ再開の設定 - 一時的に無効化
-        // this.schedulePreemptiveRestart(); // マイク許可頻発問題のため無効化
+        // 🔧 プリエンプティブ再開の設定
+        this.schedulePreemptiveRestart();
     }
     
     // 🔧 新機能: プリエンプティブ再開スケジューラ
@@ -602,8 +711,8 @@ class RecognitionManager {
             this.notifyListeners();
             this.syncWithAppState();
             
-            // 次回の予防的再開をスケジュール - 一時的に無効化
-            // this.schedulePreemptiveRestart(); // マイク許可頻発問題のため無効化
+            // 次回の予防的再開をスケジュール
+            this.schedulePreemptiveRestart();
             
             console.log('✅ 軽量再開完了（マイク許可保持）');
             
@@ -778,14 +887,11 @@ class RecognitionManager {
                     this.state = 'idle';
                     this.notifyListeners();
                     
-                    // 自動再開も検討（許可状態チェック追加）
+                    // 自動再開も検討
                     if (window.AppState?.sessionActive && 
-                        !this.conversationControl.speakingInProgress &&
-                        this.permissionManager.state === 'granted') {
+                        !this.conversationControl.speakingInProgress) {
                         console.log('🔄 エラー回復後の自動再開（指数バックオフ適用）');
                         this.start();
-                    } else if (this.permissionManager.state === 'denied') {
-                        console.log('🚫 許可拒否のため自動再開を中止');
                     }
                 }
             }, 'general_error_recovery');
@@ -823,23 +929,134 @@ class RecognitionManager {
     }
 }
 
-// 🔧 AudioManager: voice-core.jsに移動済み
-// 新しい音声コアシステムを使用: window.VoiceCore.audio
+// 🔧 AudioManager: 音声再生の一元管理
+class AudioManager {
+    constructor() {
+        this.activeAudioSources = new Set();
+        this.listeners = new Set();
+    }
+    
+    // 音声登録
+    registerAudio(audioElement, source, speaker) {
+        const audioData = {
+            audio: audioElement,
+            source: source,
+            speaker: speaker,
+            startTime: Date.now(),
+            id: `audio_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        };
+        
+        this.activeAudioSources.add(audioData);
+        console.log(`🎵 音声登録: ${speaker} (ID: ${audioData.id})`);
+        
+        // 音声終了時の自動削除
+        audioElement.addEventListener('ended', () => {
+            this.unregisterAudio(audioData);
+        });
+        
+        audioElement.addEventListener('error', () => {
+            this.unregisterAudio(audioData);
+        });
+        
+        this.notifyListeners();
+        return audioData.id;
+    }
+    
+    // 音声登録解除
+    unregisterAudio(audioData) {
+        this.activeAudioSources.delete(audioData);
+        console.log(`🔇 音声登録解除: ${audioData.speaker} (ID: ${audioData.id})`);
+        this.notifyListeners();
+    }
+    
+    // 全音声強制停止
+    forceStopAllAudio(reason = 'user_request') {
+        console.log(`🛑 全音声強制停止開始: ${reason} (対象: ${this.activeAudioSources.size}件)`);
+        
+        let stoppedCount = 0;
+        this.activeAudioSources.forEach(audioData => {
+            try {
+                audioData.audio.pause();
+                audioData.audio.currentTime = 0;
+                stoppedCount++;
+            } catch (error) {
+                console.error('音声停止エラー:', error);
+            }
+        });
+        
+        this.activeAudioSources.clear();
+        this.notifyListeners();
+        
+        console.log(`✅ 全音声停止完了: ${stoppedCount}件`);
+        return stoppedCount;
+    }
+    
+    // 特定スピーカーの音声停止
+    stopSpeakerAudio(speaker, reason = 'speaker_control') {
+        console.log(`🛑 ${speaker}の音声停止: ${reason}`);
+        
+        let stoppedCount = 0;
+        this.activeAudioSources.forEach(audioData => {
+            if (audioData.speaker === speaker) {
+                try {
+                    audioData.audio.pause();
+                    audioData.audio.currentTime = 0;
+                    stoppedCount++;
+                } catch (error) {
+                    console.error('音声停止エラー:', error);
+                }
+            }
+        });
+        
+        // 停止した音声を登録解除
+        this.activeAudioSources.forEach(audioData => {
+            if (audioData.speaker === speaker) {
+                this.unregisterAudio(audioData);
+            }
+        });
+        
+        console.log(`✅ ${speaker}音声停止完了: ${stoppedCount}件`);
+        return stoppedCount;
+    }
+    
+    // アクティブ音声情報取得
+    getActiveAudioInfo() {
+        return Array.from(this.activeAudioSources).map(audioData => ({
+            speaker: audioData.speaker,
+            source: audioData.source,
+            id: audioData.id,
+            duration: Date.now() - audioData.startTime
+        }));
+    }
+    
+    // リスナー登録
+    addListener(callback) {
+        this.listeners.add(callback);
+    }
+    
+    // リスナー削除
+    removeListener(callback) {
+        this.listeners.delete(callback);
+    }
+    
+    // 状態通知
+    notifyListeners() {
+        this.listeners.forEach(callback => {
+            try {
+                callback(this.getActiveAudioInfo());
+            } catch (error) {
+                console.error('リスナー実行エラー:', error);
+            }
+        });
+    }
+}
 
 // 🔧 StateManager: 全体状態の一元管理
 class StateManager {
     constructor() {
-        // 🆕 新しい音声コアシステムを使用
-        this.permissionManager = window.VoiceCore?.permission || new PermissionManager();
+        this.permissionManager = new PermissionManager();
         this.recognitionManager = new RecognitionManager(this.permissionManager);
-        this.audioManager = window.VoiceCore?.audio || new AudioManager();
-        
-        // 🔧 許可状態の同期強化
-        if (window.VoiceCore?.permission) {
-            console.log('🔄 VoiceCore許可マネージャーを使用');
-        } else {
-            console.log('⚠️ VoiceCore未読み込み - フォールバック使用');
-        }
+        this.audioManager = new AudioManager();
         
         this.setupStateSync();
         console.log('✅ StateManager初期化完了');
@@ -1963,55 +2180,6 @@ function initializeVoiceSettings() {
 }
 
 // 🆕 音声設定UIの更新関数
-function updateVoiceSettingsUI() {
-    try {
-        // prompts.jsの設定を確認
-        let nehoriSettings = VoiceSettings[SPEAKERS.NEHORI];
-        let hahoriSettings = VoiceSettings[SPEAKERS.HAHORI];
-        
-        // prompts.jsから再読み込み（優先）
-        if (window.VoicePresets && window.VoicePresets.default) {
-            nehoriSettings = { ...nehoriSettings, ...window.VoicePresets.default.settings[SPEAKERS.NEHORI] };
-            hahoriSettings = { ...hahoriSettings, ...window.VoicePresets.default.settings[SPEAKERS.HAHORI] };
-            console.log('🔄 prompts.jsから音声設定を再読み込み');
-        }
-        
-        // ねほりーの設定
-        const nehoriVoice = window.UIManager.DOMUtils.get('nehoriVoice');
-        const nehoriSpeed = window.UIManager.DOMUtils.get('nehoriSpeed');
-        const nehoriVolume = window.UIManager.DOMUtils.get('nehoriVolume');
-        const nehoriSpeedValue = window.UIManager.DOMUtils.get('nehoriSpeedValue');
-        const nehoriVolumeValue = window.UIManager.DOMUtils.get('nehoriVolumeValue');
-        
-        if (nehoriVoice) nehoriVoice.value = nehoriSettings.voice || 'sage';
-        if (nehoriSpeed) nehoriSpeed.value = nehoriSettings.speed || 1.3;
-        if (nehoriVolume) nehoriVolume.value = Math.min(nehoriSettings.volume || 0.9, 1.0); // 上限1.0
-        if (nehoriSpeedValue) nehoriSpeedValue.textContent = nehoriSpeed?.value || '1.3';
-        if (nehoriVolumeValue) nehoriVolumeValue.textContent = nehoriVolume?.value || '0.9';
-        
-        // はほりーの設定
-        const hahoriVoice = window.UIManager.DOMUtils.get('hahoriVoice');
-        const hahoriSpeed = window.UIManager.DOMUtils.get('hahoriSpeed');
-        const hahoriVolume = window.UIManager.DOMUtils.get('hahoriVolume');
-        const hahoriSpeedValue = window.UIManager.DOMUtils.get('hahoriSpeedValue');
-        const hahoriVolumeValue = window.UIManager.DOMUtils.get('hahoriVolumeValue');
-        
-        if (hahoriVoice) hahoriVoice.value = hahoriSettings.voice || 'shimmer';
-        if (hahoriSpeed) hahoriSpeed.value = hahoriSettings.speed || 1.3;
-        if (hahoriVolume) hahoriVolume.value = Math.min(hahoriSettings.volume || 0.7, 1.0); // 上限1.0
-        if (hahoriSpeedValue) hahoriSpeedValue.textContent = hahoriSpeed?.value || '1.3';
-        if (hahoriVolumeValue) hahoriVolumeValue.textContent = hahoriVolume?.value || '0.7';
-        
-        // VoiceSettingsも更新
-        VoiceSettings[SPEAKERS.NEHORI] = nehoriSettings;
-        VoiceSettings[SPEAKERS.HAHORI] = hahoriSettings;
-        
-        console.log('✅ 音声設定UIを更新しました', { nehoriSettings, hahoriSettings });
-        
-    } catch (error) {
-        console.error('❌ 音声設定UI更新エラー:', error);
-    }
-}
 
 // =================================================================================
 // LOGIN & AUTHENTICATION - ログイン・認証
@@ -2109,23 +2277,6 @@ function closeAdvancedSettings() {
     }
 }
 
-function updateAdvancedSettingsDisplay() {
-    // カスタムプロンプト表示更新
-    const nehoriPrompt = window.UIManager.DOMUtils.get('nehoriPrompt');
-    const hahoriPrompt = window.UIManager.DOMUtils.get('hahoriPrompt');
-    
-    if (nehoriPrompt) {
-        nehoriPrompt.value = getCharacterPrompt(SPEAKERS.NEHORI);
-    }
-    if (hahoriPrompt) {
-        hahoriPrompt.value = getCharacterPrompt(SPEAKERS.HAHORI);
-    }
-    
-    // 🆕 音声設定UIも更新
-    setTimeout(() => {
-        updateVoiceSettingsUI();
-    }, 100); // prompts.jsの読み込み完了を待つ
-}
 
 function saveVoicePreset() {
     try {
@@ -2562,28 +2713,6 @@ function restartSpeechRecognition() {
     }, 500);
 }
 
-function updateTranscriptDisplay() {
-    const transcriptDisplay = window.UIManager.DOMUtils.get('transcriptDisplay');
-    if (transcriptDisplay) {
-        if (AppState.currentTranscript) {
-            // リアルタイム文字起こし（確定済み + 入力中）を表示
-            transcriptDisplay.textContent = AppState.currentTranscript;
-        } else if (AppState.transcriptHistory.length > 0) {
-            // 確定済みの文字起こしのみを表示
-            const allText = AppState.transcriptHistory.join(' ');
-            transcriptDisplay.textContent = allText;
-        } else {
-            // 現在の状態に応じたメッセージを表示
-            if (AppState.currentSpeaker !== SPEAKERS.NULL) {
-                transcriptDisplay.textContent = 'AI応答中...音声認識は一時停止中です';
-            } else if (AppState.sessionActive) {
-                transcriptDisplay.textContent = '音声認識待機中...（「どうぞ」と言うとAIが応答します）';
-            } else {
-                transcriptDisplay.textContent = 'セッション未開始';
-            }
-        }
-    }
-}
 
 async function processFinalTranscript(text) {
     if (AppState.currentSpeaker !== SPEAKERS.NULL) {
@@ -3772,135 +3901,6 @@ function evaluate2StepStatus() {
 }
 
 // 🔄 2ステップUI更新機能
-function update2StepUI() {
-    try {
-        const status = evaluate2StepStatus();
-        
-        // Step 1: ログイン状態の更新
-        const step1Checkbox = window.UIManager.DOMUtils.get('step1Checkbox');
-        const step1Status = window.UIManager.DOMUtils.get('step1Status');
-        const step1ActionButton = window.UIManager.DOMUtils.get('step1ActionButton');
-        
-        if (step1Checkbox && step1Status && step1ActionButton) {
-            if (status.loginComplete) {
-                // ログイン済みの場合
-                step1Checkbox.textContent = '✅';
-                step1Checkbox.style.border = '2px solid #4caf50';
-                step1Status.innerHTML = '<strong>ログイン済み ✓</strong>';
-                step1Status.style.color = '#4caf50';
-                step1ActionButton.textContent = 'クリア';
-                step1ActionButton.onclick = handleLogout;
-                // 🎨 クリア機能として統一されたスタイル
-                step1ActionButton.style.background = 'linear-gradient(135deg, #ff9800, #f57c00)';
-                step1ActionButton.style.color = 'white';
-            } else if (isApiKeyConfigured()) {
-                // API KEY設定済みだが未ログインの場合
-                step1Checkbox.textContent = '⚠️';
-                step1Checkbox.style.border = '2px solid #ff9800';
-                step1Status.innerHTML = '<strong>API KEY・パスワード設定済</strong>';
-                step1Status.style.color = '#ff9800';
-                step1ActionButton.textContent = 'ログイン';
-                step1ActionButton.onclick = loginWithPassword;
-                step1ActionButton.style.background = '';
-                step1ActionButton.style.color = '';
-            } else {
-                // 未設定の場合
-                step1Checkbox.textContent = '❌';
-                step1Checkbox.style.border = '2px solid #ccc';
-                step1Status.innerHTML = '<strong>未設定</strong>';
-                step1Status.style.color = 'var(--text-secondary)';
-                step1ActionButton.textContent = 'ログイン';
-                step1ActionButton.onclick = loginWithPassword;
-                step1ActionButton.style.background = '';
-                step1ActionButton.style.color = '';
-            }
-        }
-        
-        // Step 2: テーマ状態の更新
-        const step2Checkbox = window.UIManager.DOMUtils.get('step2Checkbox');
-        const step2Status = window.UIManager.DOMUtils.get('step2Status');
-        const step2ActionButton = window.UIManager.DOMUtils.get('step2ActionButton');
-        
-        if (step2Checkbox && step2Status && step2ActionButton) {
-            if (status.themeComplete) {
-                const currentTheme = window.StorageManager.theme.loadInput();
-                const displayTheme = currentTheme.length > 30 ? currentTheme.substring(0, 30) + '...' : currentTheme;
-                step2Checkbox.textContent = '✅';
-                step2Checkbox.style.border = '2px solid #4caf50';
-                step2Status.innerHTML = `<strong>テーマは"${displayTheme}" ✓</strong>`;
-                step2Status.style.color = '#4caf50';
-                step2ActionButton.textContent = 'クリア';
-                step2ActionButton.onclick = handleThemeClear;
-                // 🎨 クリア機能として統一されたスタイル
-                step2ActionButton.style.background = 'linear-gradient(135deg, #ff9800, #f57c00)';
-                step2ActionButton.style.color = 'white';
-            } else {
-                step2Checkbox.textContent = '❌';
-                step2Checkbox.style.border = '2px solid #ccc';
-                step2Status.innerHTML = '<strong>未設定</strong>';
-                step2Status.style.color = 'var(--text-secondary)';
-                step2ActionButton.textContent = '設定';
-                step2ActionButton.onclick = focusThemeInput;
-                step2ActionButton.style.background = '';
-                step2ActionButton.style.color = '';
-            }
-        }
-        
-        // ファイル添付ボタンの状態制御
-        const fileInput = window.UIManager.DOMUtils.get('themeFileInput');
-        const fileInputDisplay = window.UIManager.DOMUtils.get('fileInputDisplay');
-        const fileInputText = window.UIManager.DOMUtils.get('fileInputText');
-        
-        console.log('🔄 ファイル入力状態更新:', {
-            fileInput: !!fileInput,
-            fileInputDisplay: !!fileInputDisplay,
-            fileInputText: !!fileInputText,
-            loginComplete: status.loginComplete
-        });
-        
-        if (fileInput && fileInputDisplay && fileInputText) {
-            if (status.loginComplete) {
-                console.log('✅ ログイン完了 - ファイル入力を有効化');
-                fileInput.disabled = false;
-                fileInputDisplay.classList.remove('disabled');
-                fileInputDisplay.title = '';
-                fileInputDisplay.style.pointerEvents = 'auto';
-                fileInputDisplay.style.cursor = 'pointer';
-                
-                // ファイルが選択されていない場合の表示
-                if (!fileInput.files || fileInput.files.length === 0) {
-                    fileInputText.textContent = '選択されていません';
-                    fileInputText.classList.add('placeholder');
-                }
-            } else {
-                console.log('❌ 未ログイン - ファイル入力を無効化');
-                fileInput.disabled = true;
-                fileInputDisplay.classList.add('disabled');
-                fileInputDisplay.title = 'ログインしてからファイル添付をご利用ください';
-                fileInputDisplay.style.pointerEvents = 'none';
-                fileInputDisplay.style.cursor = 'not-allowed';
-                fileInputText.textContent = 'ログイン後添付出来ます';
-                fileInputText.classList.add('placeholder');
-                // ファイル選択をクリア
-                fileInput.value = '';
-            }
-        } else {
-            console.log('⚠️ ファイル入力要素が見つかりません');
-        }
-        
-        // セッション開始ボタンの状態更新
-        updateSessionStartButton(status.allComplete);
-        
-        // Step0の表示制御も更新
-        if (window.updateStep0Visibility) {
-            window.updateStep0Visibility();
-        }
-        
-        console.log('✅ 2ステップUI更新完了:', status);
-    } catch (error) {
-        console.error('❌ 2ステップUI更新エラー:', error);
-    }
-}
 
 // 🎯 フォーカス制御関数
 function focusPasswordInput() {

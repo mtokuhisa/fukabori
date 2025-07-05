@@ -41,7 +41,7 @@ class RecognitionManager {
         // 🔄 旧システム統合: 安定性管理（指数バックオフ対応）
         this.stability = {
             consecutiveErrorCount: 0,
-            maxConsecutiveErrors: 10, // 🔧 エラー許容回数を大幅増加（一時的対応）
+            maxConsecutiveErrors: 5, // 🔧 エラー許容回数を増加
             lastRestartTime: 0,
             minRestartInterval: 2000,
             isRecognitionActive: false,
@@ -182,16 +182,8 @@ class RecognitionManager {
             // 🔄 統合チェック: 連続エラー制御
             if (this.stability.consecutiveErrorCount >= this.stability.maxConsecutiveErrors) {
                 console.warn(`🚫 連続エラーが${this.stability.maxConsecutiveErrors}回を超えたため一時停止`);
-                
-                // 🔧 エラーカウントリセット機能追加
-                const timeSinceLastError = now - this.stability.lastErrorTime;
-                if (timeSinceLastError > 60000) { // 60秒経過でリセット
-                    console.log('🔄 60秒経過によりエラーカウントをリセット');
-                    this.stability.consecutiveErrorCount = 0;
-                } else {
-                    this.isStarting = false;
-                    return false;
-                }
+                this.isStarting = false;
+                return false;
             }
             
             // 🔧 完全クリーンアップ
@@ -228,8 +220,8 @@ class RecognitionManager {
             this.notifyListeners();
             this.syncWithAppState();
             
-            // 🔧 新機能: プリエンプティブ再開をスケジュール - 一時的に無効化
-            // this.schedulePreemptiveRestart(); // マイク許可頻発問題のため無効化
+            // 🔧 新機能: プリエンプティブ再開をスケジュール
+            this.schedulePreemptiveRestart();
             
             console.log('✅ 統合音声認識開始成功');
             return true;
@@ -528,8 +520,8 @@ class RecognitionManager {
             }, 2000); // 2秒後に再開
         }
         
-        // 🔧 プリエンプティブ再開の設定 - 一時的に無効化
-        // this.schedulePreemptiveRestart(); // マイク許可頻発問題のため無効化
+        // 🔧 プリエンプティブ再開の設定
+        this.schedulePreemptiveRestart();
     }
     
     // 🔧 新機能: プリエンプティブ再開スケジューラ
@@ -602,8 +594,8 @@ class RecognitionManager {
             this.notifyListeners();
             this.syncWithAppState();
             
-            // 次回の予防的再開をスケジュール - 一時的に無効化
-            // this.schedulePreemptiveRestart(); // マイク許可頻発問題のため無効化
+            // 次回の予防的再開をスケジュール
+            this.schedulePreemptiveRestart();
             
             console.log('✅ 軽量再開完了（マイク許可保持）');
             
