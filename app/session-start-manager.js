@@ -35,17 +35,23 @@ const SessionStartManager = {
     },
     
     validateDependencies() {
-        const requiredDependencies = [
-            'window.UIManager',
-            'window.StorageManager',
-            'window.PhaseManager',
-            'window.stateManager'
-        ];
+        const required = ['UIManager', 'StorageManager', 'PhaseManager'];
+        const missing = required.filter(dep => typeof window[dep] === 'undefined');
         
-        const missing = requiredDependencies.filter(dep => !this.getDependency(dep));
         if (missing.length > 0) {
             console.warn('⚠️ SessionStartManager依存関係不足:', missing);
+            console.log('📝 不足している依存関係は後で利用可能になる予定です');
+            
+            // 詳細診断
+            required.forEach(dep => {
+                const exists = typeof window[dep] !== 'undefined';
+                console.log(`  ${exists ? '✅' : '❌'} window.${dep}: ${exists ? 'OK' : 'MISSING'}`);
+            });
+            
+            return false;
         }
+        
+        return true;
     },
     
     getDependency(path) {
@@ -532,6 +538,40 @@ const SessionStartManager = {
             return await window.initializeMicrophoneRecording();
         } else {
             console.error('❌ initializeMicrophoneRecording関数が見つかりません');
+            return false;
+        }
+    },
+
+    // 音声システムの初期化
+    initializeVoiceSystem() {
+        console.log('🎤 音声システム初期化開始');
+        
+        // stateManagerが利用可能かチェック
+        if (!window.stateManager) {
+            console.log('⚠️ stateManagerが未初期化のため音声システム初期化をスキップ');
+            return false;
+        }
+        
+        try {
+            // 音声システムの初期化
+            window.stateManager.permissionManager.getPermission()
+                .then(granted => {
+                    if (granted) {
+                        console.log('✅ 音声システム初期化完了');
+                        window.AppState.voiceRecognitionStability.micPermissionGranted = true;
+                    } else {
+                        console.log('🚫 マイク許可が拒否されました');
+                        window.AppState.voiceRecognitionStability.micPermissionGranted = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ 音声システム初期化エラー:', error);
+                    window.AppState.voiceRecognitionStability.micPermissionGranted = false;
+                });
+            
+            return true;
+        } catch (error) {
+            console.error('❌ 音声システム初期化エラー:', error);
             return false;
         }
     }
