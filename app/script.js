@@ -8003,14 +8003,30 @@ class ContinuousRecognitionTester {
     
     // 🧪 現在の統計取得
     getCurrentStats() {
+        // セッション状態チェック
+        const sessionActive = window.AppState?.sessionActive;
         const recognitionManager = window.stateManager?.recognitionManager;
+        
+        if (!sessionActive) {
+            return { 
+                error: 'Session not active',
+                sessionActive: false,
+                message: '会話セッションが開始されていません'
+            };
+        }
+        
         if (!recognitionManager || !recognitionManager.getMicrophonePermissionStats) {
-            return { error: 'RecognitionManager unavailable' };
+            return { 
+                error: 'RecognitionManager unavailable',
+                sessionActive: sessionActive,
+                message: '音声認識システムが初期化されていません'
+            };
         }
         
         const stats = recognitionManager.getMicrophonePermissionStats();
         return {
             ...stats,
+            sessionActive: sessionActive,
             timestamp: Date.now(),
             testElapsed: this.startTime ? Math.floor((Date.now() - this.startTime) / 1000) : 0
         };
@@ -8020,6 +8036,26 @@ class ContinuousRecognitionTester {
     checkAlerts(stats) {
         const alerts = [];
         
+        // セッション未開始の場合は特別な警告
+        if (!stats.sessionActive) {
+            alerts.push({
+                type: 'SESSION_NOT_ACTIVE',
+                message: '会話セッションが開始されていません',
+                severity: 'CRITICAL'
+            });
+            return alerts; // セッション未開始の場合は他のチェックをスキップ
+        }
+        
+        // エラーがある場合は警告
+        if (stats.error) {
+            alerts.push({
+                type: 'SYSTEM_ERROR',
+                message: stats.message || stats.error,
+                severity: 'HIGH'
+            });
+            return alerts;
+        }
+        
         if (stats.startCount > this.alertThreshold.startCount) {
             alerts.push({
                 type: 'START_COUNT_HIGH',
@@ -8028,7 +8064,7 @@ class ContinuousRecognitionTester {
             });
         }
         
-        if (stats.efficiency < this.alertThreshold.efficiency) {
+        if (stats.efficiency < this.alertThreshold.efficiency && stats.efficiency !== Infinity) {
             alerts.push({
                 type: 'EFFICIENCY_LOW',
                 message: `効率性が${stats.efficiency}% (閾値: ${this.alertThreshold.efficiency}%)`,
@@ -8209,8 +8245,35 @@ class ContinuousRecognitionTester {
 // 🧪 グローバルテストインスタンス
 window.continuousRecognitionTester = new ContinuousRecognitionTester();
 
-// 🧪 便利関数: 簡単テスト開始
+// 🧪 セッション状態チェック関数
+function checkSessionStatus() {
+    const sessionActive = window.AppState?.sessionActive;
+    const recognitionManager = window.stateManager?.recognitionManager;
+    
+    console.log('🔍 セッション状態チェック:');
+    console.log(`  - セッション開始: ${sessionActive ? '✅' : '❌'}`);
+    console.log(`  - 音声認識システム: ${recognitionManager ? '✅' : '❌'}`);
+    
+    if (!sessionActive) {
+        console.log('⚠️ 会話セッションを開始してからテストを実行してください');
+        console.log('💡 手順: ログイン → ファイル選択 → テーマ設定 → セッション開始');
+        return false;
+    }
+    
+    if (!recognitionManager) {
+        console.log('⚠️ 音声認識システムが初期化されていません');
+        return false;
+    }
+    
+    console.log('✅ テスト実行可能な状態です');
+    return true;
+}
+
+// 🧪 便利関数: 簡単テスト開始（セッション状態チェック付き）
 function testContinuousRecognition(durationMinutes = 5) {
+    if (!checkSessionStatus()) {
+        return false;
+    }
     const duration = durationMinutes * 60 * 1000;
     return window.continuousRecognitionTester.startAutoTest(duration);
 }
@@ -8222,23 +8285,31 @@ function stopContinuousRecognitionTest() {
 
 // 🧪 便利関数: クイックチェック（30秒）
 function quickTestContinuousRecognition() {
+    if (!checkSessionStatus()) {
+        return false;
+    }
     return window.continuousRecognitionTester.startAutoTest(30000);
 }
 
 // 🧪 便利関数: 超短時間テスト（10秒）
 function ultraQuickTest() {
+    if (!checkSessionStatus()) {
+        return false;
+    }
     return window.continuousRecognitionTester.startAutoTest(10000);
 }
 
 // 🧪 グローバル公開
+window.checkSessionStatus = checkSessionStatus;
 window.testContinuousRecognition = testContinuousRecognition;
 window.stopContinuousRecognitionTest = stopContinuousRecognitionTest;
 window.quickTestContinuousRecognition = quickTestContinuousRecognition;
 window.ultraQuickTest = ultraQuickTest;
 
 console.log('🧪 継続的音声認識自動テストシステムを公開しました');
-console.log('💡 テスト開始: testContinuousRecognition(5) | クイックテスト: quickTestContinuousRecognition()');
-console.log('💡 超短時間テスト: ultraQuickTest() | テスト停止: stopContinuousRecognitionTest()');
+console.log('💡 セッション状態確認: checkSessionStatus() | テスト開始: testContinuousRecognition(5)');
+console.log('💡 クイックテスト: quickTestContinuousRecognition() | 超短時間テスト: ultraQuickTest()');
+console.log('💡 テスト停止: stopContinuousRecognitionTest()');
 
 // =================================================================================
 // 🔄 自動ロールバック・品質監視システム
@@ -8299,6 +8370,12 @@ class QualityMonitor {
     // 🔄 品質チェック
     checkQuality() {
         if (!this.isMonitoring) return;
+        
+        const sessionActive = window.AppState?.sessionActive;
+        if (!sessionActive) {
+            console.warn('🔄 品質監視: セッション未開始 - 監視を一時停止');
+            return;
+        }
         
         const recognitionManager = window.stateManager?.recognitionManager;
         if (!recognitionManager || !recognitionManager.getMicrophonePermissionStats) {
@@ -8441,8 +8518,14 @@ class QualityMonitor {
 // 🔄 グローバル品質監視インスタンス
 window.qualityMonitor = new QualityMonitor();
 
-// 🔄 便利関数: 品質監視開始
+// 🔄 便利関数: 品質監視開始（セッション状態チェック付き）
 function startQualityMonitoring(intervalSeconds = 30) {
+    const sessionActive = window.AppState?.sessionActive;
+    if (!sessionActive) {
+        console.warn('⚠️ 品質監視: セッション未開始 - 監視を開始できません');
+        console.log('💡 セッション開始後に品質監視を実行してください');
+        return false;
+    }
     return window.qualityMonitor.startMonitoring(intervalSeconds * 1000);
 }
 
@@ -8473,6 +8556,14 @@ console.log('💡 品質監視開始: startQualityMonitoring(30) | 品質レポ�
 // 🚀 総合テスト実行
 async function runComprehensiveTest() {
     console.log('🚀 ===== 総合テストシステム開始 =====');
+    
+    // 0. セッション状態チェック
+    console.log('🔍 セッション状態チェック...');
+    if (!checkSessionStatus()) {
+        console.log('❌ 総合テスト中止: セッションが開始されていません');
+        console.log('💡 セッション開始後に再実行してください');
+        return false;
+    }
     
     // 1. 品質監視開始
     console.log('🔄 品質監視開始...');
