@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深堀くんv2.0 - 継続的音声認識テストシステム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .card h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .status-active {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        .status-inactive {
+            background: #dc3545;
+        }
+
+        .status-warning {
+            background: #ffc107;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+        }
+
+        .btn-copy {
+            background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+        }
+
+        .progress-container {
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .results-section {
+            margin-top: 30px;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border-left: 5px solid #4facfe;
+        }
+
+        .grade-A {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+
+        .grade-B {
+            border-left-color: #17a2b8;
+            background: #d1ecf1;
+        }
+
+        .grade-C {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+
+        .grade-D {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #4facfe;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .log-container {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #4a5568;
+        }
+
+        .log-timestamp {
+            color: #9ca3af;
+            font-size: 0.8rem;
+        }
+
+        .alert {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border: 1px solid transparent;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+
+        .recommendations {
+            background: #e7f3ff;
+            border: 1px solid #b8daff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .recommendations h4 {
+            color: #004085;
+            margin-bottom: 15px;
+        }
+
+        .recommendations ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .recommendations li {
+            padding: 5px 0;
+            color: #004085;
+        }
+
+        .recommendations li:before {
+            content: "💡 ";
+            margin-right: 10px;
+        }
+
+        .copy-container {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .copy-text {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .footer p {
+            color: #6c757d;
+            margin: 5px 0;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 継続的音声認識テストシステム</h1>
+            <p>深堀くんv2.0 - ユーザーフレンドリーテストダッシュボード</p>
+        </div>
+
+        <div class="main-content">
+            <!-- システム状態ダッシュボード -->
+            <div class="dashboard">
+                <div class="card">
+                    <h3>🔍 システム状態</h3>
+                    <div class="status-indicator">
+                        <div class="status-dot status-inactive" id="sessionStatus"></div>
+                        <span id="sessionStatusText">セッション未開始</span>
+                    </div>
+                    <div class="status-indicator">
+                        <div class="status-dot status-inactive" id="recognitionStatus"></div>
+                        <span id="recognitionStatusText">音声認識未初期化</span>
+                    </div>
+                    <div class="status-indicator">
+                        <div class="status-dot status-inactive" id="continuousStatus"></div>
+                        <span id="continuousStatusText">継続的音声認識停止中</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>⚡ 現在の統計</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value" id="startCountStat">0</div>
+                            <div class="stat-label">start()呼び出し</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="efficiencyStat">0%</div>
+                            <div class="stat-label">効率性</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- テスト実行セクション -->
+            <div class="card">
+                <h3>🚀 テスト実行</h3>
+                <p style="margin-bottom: 20px;">継続的音声認識の品質を自動測定します。セッション開始後に実行してください。</p>
+                
+                <div>
+                    <button class="btn" id="checkStatusBtn" onclick="checkSystemStatus()">
+                        🔍 システム状態確認
+                    </button>
+                    <button class="btn btn-success" id="startTestBtn" onclick="startContinuousTest()" disabled>
+                        🧪 継続的音声認識テスト開始
+                    </button>
+                    <button class="btn btn-warning" id="quickTestBtn" onclick="startQuickTest()" disabled>
+                        ⚡ クイックテスト（30秒）
+                    </button>
+                    <button class="btn btn-danger" id="stopTestBtn" onclick="stopTest()" disabled>
+                        🛑 テスト停止
+                    </button>
+                </div>
+
+                <div class="progress-container" id="progressContainer" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">テスト準備中...</div>
+                </div>
+            </div>
+
+            <!-- テスト結果セクション -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="card">
+                    <h3>📊 テスト結果</h3>
+                    <div class="result-card" id="resultCard">
+                        <div class="stats-grid" id="resultsStats">
+                            <!-- 結果統計が動的に挿入される -->
+                        </div>
+                        <div id="gradeDisplay"></div>
+                        <div id="alertsDisplay"></div>
+                    </div>
+                </div>
+
+                <!-- 推奨事項 -->
+                <div class="recommendations" id="recommendationsSection" style="display: none;">
+                    <h4>💡 推奨事項</h4>
+                    <ul id="recommendationsList">
+                        <!-- 推奨事項が動的に挿入される -->
+                    </ul>
+                </div>
+
+                <!-- 結果コピー機能 -->
+                <div class="copy-container">
+                    <h4>📋 結果コピー（報告用）</h4>
+                    <div class="copy-text" id="copyText">
+                        テスト結果がここに表示されます...
+                    </div>
+                    <button class="btn btn-copy" onclick="copyResults()">
+                        📋 結果をコピー
+                    </button>
+                </div>
+            </div>
+
+            <!-- リアルタイムログ -->
+            <div class="card">
+                <h3>📝 リアルタイムログ</h3>
+                <div class="log-container" id="logContainer">
+                    <div class="log-entry">
+                        <span class="log-timestamp">[起動時刻]</span>
+                        テストシステムが初期化されました
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>深堀くんv2.0 継続的音声認識テストシステム</p>
+            <p>UIファースト・テスト戦略により、簡単操作で詳細なテスト結果を取得できます</p>
+        </div>
+    </div>
+
+    <script>
+        // グローバル変数
+        let currentTest = null;
+        let testStartTime = null;
+        let progressInterval = null;
+        let logUpdateInterval = null;
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('テストシステムが初期化されました');
+            updateSystemStatus();
+            
+            // 定期的にシステム状態を更新
+            setInterval(updateSystemStatus, 5000);
+        });
+
+        // システム状態確認
+        function checkSystemStatus() {
+            addLog('システム状態を確認中...');
+            
+            try {
+                // 親ウィンドウの状態を確認
+                const parentWindow = window.parent;
+                const sessionActive = parentWindow.AppState?.sessionActive;
+                const recognitionManager = parentWindow.stateManager?.recognitionManager;
+                
+                updateStatusDisplay(sessionActive, recognitionManager);
+                
+                if (sessionActive && recognitionManager) {
+                    addLog('✅ システム状態: テスト実行可能');
+                    enableTestButtons();
+                } else {
+                    addLog('❌ システム状態: テスト実行不可');
+                    if (!sessionActive) {
+                        addLog('💡 セッション未開始: ログイン→ファイル選択→テーマ設定→セッション開始');
+                    }
+                    disableTestButtons();
+                }
+            } catch (error) {
+                addLog('❌ システム状態確認エラー: ' + error.message);
+                disableTestButtons();
+            }
+        }
+
+        // システム状態表示更新
+        function updateSystemStatus() {
+            try {
+                const parentWindow = window.parent;
+                const sessionActive = parentWindow.AppState?.sessionActive;
+                const recognitionManager = parentWindow.stateManager?.recognitionManager;
+                
+                updateStatusDisplay(sessionActive, recognitionManager);
+                updateCurrentStats();
+                
+                if (sessionActive && recognitionManager) {
+                    enableTestButtons();
+                } else {
+                    disableTestButtons();
+                }
+            } catch (error) {
+                // 親ウィンドウにアクセスできない場合は何もしない
+            }
+        }
+
+        // 状態表示更新
+        function updateStatusDisplay(sessionActive, recognitionManager) {
+            const sessionStatusEl = document.getElementById('sessionStatus');
+            const sessionStatusTextEl = document.getElementById('sessionStatusText');
+            const recognitionStatusEl = document.getElementById('recognitionStatus');
+            const recognitionStatusTextEl = document.getElementById('recognitionStatusText');
+            
+            if (sessionActive) {
+                sessionStatusEl.className = 'status-dot status-active';
+                sessionStatusTextEl.textContent = 'セッション開始済み';
+            } else {
+                sessionStatusEl.className = 'status-dot status-inactive';
+                sessionStatusTextEl.textContent = 'セッション未開始';
+            }
+            
+            if (recognitionManager) {
+                recognitionStatusEl.className = 'status-dot status-active';
+                recognitionStatusTextEl.textContent = '音声認識システム動作中';
+            } else {
+                recognitionStatusEl.className = 'status-dot status-inactive';
+                recognitionStatusTextEl.textContent = '音声認識未初期化';
+            }
+        }
+
+        // 現在の統計情報更新
+        function updateCurrentStats() {
+            try {
+                const parentWindow = window.parent;
+                const recognitionManager = parentWindow.stateManager?.recognitionManager;
+                
+                if (recognitionManager && recognitionManager.getMicrophonePermissionStats) {
+                    const stats = recognitionManager.getMicrophonePermissionStats();
+                    document.getElementById('startCountStat').textContent = stats.startCount || 0;
+                    document.getElementById('efficiencyStat').textContent = 
+                        (stats.efficiency === Infinity ? '∞' : stats.efficiency || 0) + '%';
+                }
+            } catch (error) {
+                // エラーは無視
+            }
+        }
+
+        // テストボタンの有効化
+        function enableTestButtons() {
+            document.getElementById('startTestBtn').disabled = false;
+            document.getElementById('quickTestBtn').disabled = false;
+        }
+
+        // テストボタンの無効化
+        function disableTestButtons() {
+            document.getElementById('startTestBtn').disabled = true;
+            document.getElementById('quickTestBtn').disabled = true;
+        }
+
+        // 継続的音声認識テスト開始
+        function startContinuousTest() {
+            startTest(300000); // 5分間
+        }
+
+        // クイックテスト開始
+        function startQuickTest() {
+            startTest(30000); // 30秒間
+        }
+
+        // テスト開始
+        function startTest(duration) {
+            if (currentTest) {
+                addLog('⚠️ 既にテスト実行中です');
+                return;
+            }
+
+            try {
+                const parentWindow = window.parent;
+                const sessionActive = parentWindow.AppState?.sessionActive;
+                
+                if (!sessionActive) {
+                    addLog('❌ セッションが開始されていません');
+                    showAlert('セッションが開始されていません。ログイン→ファイル選択→テーマ設定→セッション開始の手順を完了してください。', 'warning');
+                    return;
+                }
+
+                // テスト開始
+                const success = parentWindow.continuousRecognitionTester.startAutoTest(duration);
+                
+                if (success) {
+                    currentTest = {
+                        startTime: Date.now(),
+                        duration: duration
+                    };
+                    
+                    addLog(`🧪 テスト開始: ${duration/1000}秒間の継続的音声認識テスト`);
+                    startProgressMonitoring(duration);
+                    
+                    // ボタン状態更新
+                    document.getElementById('startTestBtn').disabled = true;
+                    document.getElementById('quickTestBtn').disabled = true;
+                    document.getElementById('stopTestBtn').disabled = false;
+                    
+                    // 進捗表示
+                    document.getElementById('progressContainer').style.display = 'block';
+                    
+                    // テスト終了の監視
+                    setTimeout(() => {
+                        if (currentTest) {
+                            finishTest();
+                        }
+                    }, duration + 1000);
+                } else {
+                    addLog('❌ テスト開始に失敗しました');
+                }
+            } catch (error) {
+                addLog('❌ テスト開始エラー: ' + error.message);
+                showAlert('テスト開始に失敗しました: ' + error.message, 'danger');
+            }
+        }
+
+        // テスト停止
+        function stopTest() {
+            if (!currentTest) {
+                addLog('⚠️ 実行中のテストがありません');
+                return;
+            }
+
+            try {
+                const parentWindow = window.parent;
+                const success = parentWindow.continuousRecognitionTester.stopAutoTest();
+                
+                if (success) {
+                    addLog('🛑 テストを手動停止しました');
+                    finishTest();
+                } else {
+                    addLog('❌ テスト停止に失敗しました');
+                }
+            } catch (error) {
+                addLog('❌ テスト停止エラー: ' + error.message);
+            }
+        }
+
+        // 進捗監視開始
+        function startProgressMonitoring(duration) {
+            const startTime = Date.now();
+            
+            progressInterval = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min((elapsed / duration) * 100, 100);
+                
+                document.getElementById('progressFill').style.width = progress + '%';
+                document.getElementById('progressText').textContent = 
+                    `テスト進行中: ${Math.floor(elapsed/1000)}秒 / ${Math.floor(duration/1000)}秒 (${Math.floor(progress)}%)`;
+                
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                }
+            }, 1000);
+        }
+
+        // テスト終了処理
+        function finishTest() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+            
+            currentTest = null;
+            
+            // ボタン状態復元
+            document.getElementById('startTestBtn').disabled = false;
+            document.getElementById('quickTestBtn').disabled = false;
+            document.getElementById('stopTestBtn').disabled = true;
+            
+            // 進捗バー非表示
+            document.getElementById('progressContainer').style.display = 'none';
+            
+            // テスト結果表示
+            setTimeout(() => {
+                displayTestResults();
+            }, 1000);
+            
+            addLog('✅ テスト完了');
+        }
+
+        // テスト結果表示
+        function displayTestResults() {
+            try {
+                const parentWindow = window.parent;
+                const recognitionManager = parentWindow.stateManager?.recognitionManager;
+                
+                if (!recognitionManager) {
+                    addLog('❌ 結果取得失敗: 音声認識システムが利用できません');
+                    return;
+                }
+                
+                const stats = recognitionManager.getMicrophonePermissionStats();
+                const analysis = analyzeResults(stats);
+                
+                // 結果表示
+                showResults(analysis, stats);
+                
+                // コピー用テキスト生成
+                generateCopyText(analysis, stats);
+                
+                addLog('📊 テスト結果を表示しました');
+                
+            } catch (error) {
+                addLog('❌ 結果表示エラー: ' + error.message);
+                showAlert('結果表示に失敗しました: ' + error.message, 'danger');
+            }
+        }
+
+        // 結果分析
+        function analyzeResults(stats) {
+            const analysis = {
+                grade: 'N/A',
+                passed: false,
+                issues: [],
+                recommendations: []
+            };
+            
+            // 効率性チェック
+            if (stats.efficiency >= 95) {
+                analysis.grade = 'A+ (優秀)';
+                analysis.passed = true;
+            } else if (stats.efficiency >= 85) {
+                analysis.grade = 'A (良好)';
+                analysis.passed = true;
+            } else if (stats.efficiency >= 70) {
+                analysis.grade = 'B (普通)';
+                analysis.passed = true;
+            } else if (stats.efficiency >= 50) {
+                analysis.grade = 'C (要改善)';
+                analysis.passed = false;
+                analysis.issues.push('効率性が低い');
+            } else {
+                analysis.grade = 'D (問題あり)';
+                analysis.passed = false;
+                analysis.issues.push('効率性が極めて低い');
+            }
+            
+            // start()回数チェック
+            if (stats.startCount > 5) {
+                analysis.issues.push('start()呼び出しが多すぎる');
+            }
+            
+            // 推奨事項生成
+            if (analysis.passed) {
+                analysis.recommendations.push('継続的音声認識は正常に動作しています');
+                if (stats.efficiency === 100) {
+                    analysis.recommendations.push('完璧な効率性を達成しました！');
+                }
+            } else {
+                if (stats.startCount > 3) {
+                    analysis.recommendations.push('start()呼び出しが多すぎます - 戦略見直しが必要');
+                }
+                if (stats.efficiency < 70) {
+                    analysis.recommendations.push('効率性が低いです - マイク許可設定を確認してください');
+                }
+            }
+            
+            return analysis;
+        }
+
+        // 結果表示
+        function showResults(analysis, stats) {
+            const resultsSection = document.getElementById('resultsSection');
+            const resultCard = document.getElementById('resultCard');
+            const resultsStats = document.getElementById('resultsStats');
+            const gradeDisplay = document.getElementById('gradeDisplay');
+            const alertsDisplay = document.getElementById('alertsDisplay');
+            
+            // 統計情報表示
+            resultsStats.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-value">${stats.startCount || 0}</div>
+                    <div class="stat-label">start()呼び出し</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${stats.microphonePermissionRequests || 0}</div>
+                    <div class="stat-label">マイク許可要求</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${stats.efficiency === Infinity ? '∞' : stats.efficiency || 0}%</div>
+                    <div class="stat-label">効率性</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${stats.continuousRecognition ? '✅' : '❌'}</div>
+                    <div class="stat-label">継続的音声認識</div>
+                </div>
+            `;
+            
+            // グレード表示
+            const gradeClass = analysis.grade.includes('A') ? 'grade-A' : 
+                             analysis.grade.includes('B') ? 'grade-B' : 
+                             analysis.grade.includes('C') ? 'grade-C' : 'grade-D';
+            
+            resultCard.className = `result-card ${gradeClass}`;
+            gradeDisplay.innerHTML = `
+                <h4>🎯 品質グレード: ${analysis.grade}</h4>
+                <p>テスト結果: ${analysis.passed ? '✅ 合格' : '❌ 不合格'}</p>
+            `;
+            
+            // アラート表示
+            if (analysis.issues.length > 0) {
+                alertsDisplay.innerHTML = `
+                    <div class="alert alert-warning">
+                        <h5>⚠️ 検出された問題</h5>
+                        <ul>
+                            ${analysis.issues.map(issue => `<li>${issue}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            } else {
+                alertsDisplay.innerHTML = `
+                    <div class="alert alert-success">
+                        <h5>✅ 問題なし</h5>
+                        <p>継続的音声認識は正常に動作しています。</p>
+                    </div>
+                `;
+            }
+            
+            // 推奨事項表示
+            if (analysis.recommendations.length > 0) {
+                const recommendationsSection = document.getElementById('recommendationsSection');
+                const recommendationsList = document.getElementById('recommendationsList');
+                
+                recommendationsList.innerHTML = analysis.recommendations
+                    .map(rec => `<li>${rec}</li>`)
+                    .join('');
+                
+                recommendationsSection.style.display = 'block';
+            }
+            
+            resultsSection.style.display = 'block';
+        }
+
+        // コピー用テキスト生成
+        function generateCopyText(analysis, stats) {
+            const now = new Date();
+            const timestamp = now.toLocaleString('ja-JP');
+            
+            const copyText = `
+深堀くんv2.0 継続的音声認識テスト結果
+=====================================
+
+実行時刻: ${timestamp}
+テスト種別: 継続的音声認識品質テスト
+
+📊 統計情報:
+- start()呼び出し: ${stats.startCount || 0}回
+- マイク許可要求: ${stats.microphonePermissionRequests || 0}回
+- 効率性: ${stats.efficiency === Infinity ? '∞' : stats.efficiency || 0}%
+- 継続的音声認識: ${stats.continuousRecognition ? '動作中' : '停止中'}
+- 戦略: ${stats.strategy || 'unknown'}
+
+🎯 評価結果:
+- 品質グレード: ${analysis.grade}
+- テスト結果: ${analysis.passed ? '合格' : '不合格'}
+
+${analysis.issues.length > 0 ? `
+⚠️ 検出された問題:
+${analysis.issues.map(issue => `- ${issue}`).join('\n')}
+` : '✅ 問題なし: 継続的音声認識は正常に動作しています。'}
+
+${analysis.recommendations.length > 0 ? `
+💡 推奨事項:
+${analysis.recommendations.map(rec => `- ${rec}`).join('\n')}
+` : ''}
+
+=====================================
+深堀くんv2.0 UIテストシステム
+テスト負荷軽減・自動品質監視システム
+            `.trim();
+            
+            document.getElementById('copyText').textContent = copyText;
+        }
+
+        // 結果コピー
+        function copyResults() {
+            const copyText = document.getElementById('copyText').textContent;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(copyText).then(() => {
+                    addLog('📋 結果をクリップボードにコピーしました');
+                    showAlert('テスト結果をクリップボードにコピーしました', 'success');
+                }).catch(err => {
+                    addLog('❌ コピー失敗: ' + err.message);
+                    showAlert('コピーに失敗しました', 'danger');
+                });
+            } else {
+                // フォールバック
+                const textArea = document.createElement('textarea');
+                textArea.value = copyText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                addLog('📋 結果をクリップボードにコピーしました');
+                showAlert('テスト結果をクリップボードにコピーしました', 'success');
+            }
+        }
+
+        // ログ追加
+        function addLog(message) {
+            const now = new Date();
+            const timestamp = now.toLocaleTimeString('ja-JP');
+            const logContainer = document.getElementById('logContainer');
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <span class="log-timestamp">[${timestamp}]</span>
+                ${message}
+            `;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // アラート表示
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = message;
+            
+            const mainContent = document.querySelector('.main-content');
+            mainContent.insertBefore(alertDiv, mainContent.firstChild);
+            
+            // 5秒後に自動削除
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html> 
