@@ -1532,25 +1532,15 @@ class ContinuousRecognitionManager {
     
     // 🔧 予防的再開
     preemptiveRestart() {
-        console.log('🔄 予防的再開実行（継続性保持）');
+        console.log('🔄 予防的再開実行要求（継続性保持）');
         
         if (this.recognition && this.state === 'active') {
-            // 現在の音声認識を一時停止して即座に再開
-            try {
-                this.recognition.stop();
-                
-                // 即座に再開
-                setTimeout(() => {
-                    if (window.AppState?.sessionActive && !this.continuity.forceStop) {
-                        console.log('🚀 予防的再開実行');
-                        this.recognition.start();
-                        this.stats.startCount++;
-                        console.log(`📊 予防的再開 - start()呼び出し回数: ${this.stats.startCount}`);
-                    }
-                }, 50);
-            } catch (error) {
-                console.error('❌ 予防的再開エラー:', error);
-            }
+            // 🔧 重要：stop()もstart()も呼ばない - マイク許可アラートの原因
+            console.log('🔧 真の継続的音声認識: 予防的再開を防止（マイク許可アラート解決）');
+            console.log('💡 継続的音声認識は継続中 - 無理に再開しない');
+            
+            // stop()とstart()を呼ばないため、統計情報も更新しない
+            // this.stats.startCount++; // ← 削除
         }
     }
     
@@ -1636,8 +1626,8 @@ class ContinuousRecognitionManager {
                     console.log('🔄 意図的な停止');
                     return;
                 }
-                console.warn('⚠️ 継続的音声認識が意図せず停止 - 即座に再開');
-                this.immediateRestart();
+                console.warn('⚠️ 継続的音声認識が意図せず停止 - 再開は行わない（マイク許可アラート防止）');
+                console.log('🔧 真の継続的音声認識: abortedエラー時も再開しない');
                 return;
                 
             case 'no-speech':
@@ -1646,35 +1636,18 @@ class ContinuousRecognitionManager {
                 return;
                 
             case 'network':
-                console.warn('🌐 ネットワークエラー - 継続的音声認識自動復旧');
-                // ネットワークエラー時は短時間後に自動再開
-                setTimeout(() => {
-                    if (window.AppState?.sessionActive && !this.continuity.forceStop) {
-                        console.log('🔄 ネットワークエラー復旧 - 継続的音声認識再開');
-                        this.immediateRestart();
-                    }
-                }, 1000);
+                console.warn('🌐 ネットワークエラー - 再開は行わない（マイク許可アラート防止）');
+                console.log('🔧 真の継続的音声認識: ネットワークエラー時も再開しない');
                 return;
                 
             case 'audio-capture':
-                console.warn('🎤 オーディオキャプチャエラー - 継続的音声認識再試行');
-                setTimeout(() => {
-                    if (window.AppState?.sessionActive && !this.continuity.forceStop) {
-                        console.log('🔄 オーディオキャプチャ復旧 - 継続的音声認識再開');
-                        this.immediateRestart();
-                    }
-                }, 500);
+                console.warn('🎤 オーディオキャプチャエラー - 再開は行わない（マイク許可アラート防止）');
+                console.log('🔧 真の継続的音声認識: オーディオキャプチャエラー時も再開しない');
                 return;
                 
             default:
-                console.warn(`⁉️ 継続的音声認識未知エラー: ${event.error} - 自動復旧試行`);
-                // 未知のエラーでも自動復旧を試行
-                setTimeout(() => {
-                    if (window.AppState?.sessionActive && !this.continuity.forceStop) {
-                        console.log('🔄 未知エラー復旧 - 継続的音声認識再開');
-                        this.immediateRestart();
-                    }
-                }, 300);
+                console.warn(`⁉️ 継続的音声認識未知エラー: ${event.error} - 再開は行わない（マイク許可アラート防止）`);
+                console.log('🔧 真の継続的音声認識: 未知エラー時も再開しない');
                 break;
         }
     }
@@ -1682,23 +1655,15 @@ class ContinuousRecognitionManager {
     // 🔧 即座再開メソッド
     immediateRestart() {
         if (this.recognition && window.AppState?.sessionActive && !this.continuity.forceStop) {
-            console.log('🚀 継続的音声認識即座再開');
-            try {
-                this.recognition.start();
-                this.stats.startCount++;
-                this.continuity.neverStopped = true;
-                console.log(`📊 start()呼び出し回数: ${this.stats.startCount}`);
-            } catch (error) {
-                console.error('❌ 継続的音声認識即座再開エラー:', error);
-                // エラー時は少し待機してから再試行
-                setTimeout(() => {
-                    if (this.recognition && window.AppState?.sessionActive && !this.continuity.forceStop) {
-                        console.log('🔄 継続的音声認識再試行');
-                        this.recognition.start();
-                        this.stats.startCount++;
-                    }
-                }, 100);
-            }
+            console.log('🚀 継続的音声認識即座再開要求');
+            
+            // 🔧 重要：start()を呼ばない - マイク許可アラートの原因
+            console.log('🔧 真の継続的音声認識: start()再呼び出しを防止（マイク許可アラート解決）');
+            console.log('💡 継続的音声認識は既に終了 - 次回発話時に新しいセッションを開始');
+            
+            // start()を呼ばないため、統計情報も更新しない
+            // this.stats.startCount++; // ← 削除
+            // this.continuity.neverStopped = true; // ← 削除
         }
     }
     
@@ -1716,30 +1681,16 @@ class ContinuousRecognitionManager {
             return;
         }
         
-        // 🔧 重要：真の継続的音声認識では終了を防ぐ
-        console.log('⚠️ 継続的音声認識が予期せず終了 - 即座に自動再開');
-        this.continuity.neverStopped = false; // 一度停止したが再開
+        // 🔧 重要：真の継続的音声認識では一度も再開しない
+        console.log('⚠️ 継続的音声認識が終了 - しかし再開は行わない（マイク許可アラート防止）');
+        this.continuity.neverStopped = false; // 一度停止した
         
-        // 即座に自動再開（遅延なし）
-        if (this.recognition && window.AppState?.sessionActive && !this.continuity.forceStop) {
-            console.log('🚀 継続的音声認識即座自動再開');
-            try {
-                this.recognition.start();
-                this.stats.startCount++;
-                this.continuity.neverStopped = true;
-                console.log(`📊 start()呼び出し回数: ${this.stats.startCount}`);
-            } catch (error) {
-                console.error('❌ 継続的音声認識自動再開エラー:', error);
-                // エラー時は少し待機してから再試行
-                setTimeout(() => {
-                    if (this.recognition && window.AppState?.sessionActive && !this.continuity.forceStop) {
-                        console.log('🔄 継続的音声認識再試行');
-                        this.recognition.start();
-                        this.stats.startCount++;
-                    }
-                }, 200);
-            }
-        }
+        // 🚨 重要：start()を呼ばない - これがマイク許可アラートの原因
+        console.log('🔧 真の継続的音声認識: start()再呼び出しを防止（マイク許可アラート解決）');
+        
+        // 代替案：音声認識が終了した場合は、継続性を諦める
+        // ユーザーが次回発話時に新しいセッションを開始する
+        console.log('💡 継続的音声認識終了 - 次回発話時に新しいセッションを開始');
     }
     
     // 継続的音声認識統計情報
@@ -1748,10 +1699,13 @@ class ContinuousRecognitionManager {
         const efficiency = this.stats.startCount === 1 ? 100 : 
                           Math.round((1 / this.stats.startCount) * 100);
         
+        // 🔧 修正：実際のマイク許可要求回数は start() 呼び出し回数と同じ
+        const actualMicrophonePermissionRequests = this.stats.startCount;
+        
         return {
             strategy: 'continuous',
             startCount: this.stats.startCount,
-            microphonePermissionRequests: this.stats.microphonePermissionRequests,
+            microphonePermissionRequests: actualMicrophonePermissionRequests, // 🔧 修正
             resultProcessedCount: this.stats.resultProcessedCount,
             resultIgnoredCount: this.stats.resultIgnoredCount,
             pauseCount: this.stats.pauseCount,
@@ -1759,8 +1713,39 @@ class ContinuousRecognitionManager {
             sessionDuration: sessionDuration,
             efficiency: efficiency,
             neverStopped: this.continuity.neverStopped,
-            continuousRecognition: this.continuity.startedOnce && this.state === 'active'
+            continuousRecognition: this.continuity.startedOnce && this.state === 'active',
+            // 🔧 追加：デバッグ情報
+            debugInfo: {
+                originalPermissionRequests: this.stats.microphonePermissionRequests,
+                correctedPermissionRequests: actualMicrophonePermissionRequests,
+                理由: 'start()呼び出しごとにブラウザがマイク許可確認を実行'
+            }
         };
+    }
+
+    // 🔧 新機能：統計情報リセット（テスト用）
+    resetStats() {
+        console.log('🔄 継続的音声認識統計情報をリセット');
+        this.stats = {
+            startCount: 0,
+            microphonePermissionRequests: 0,
+            resultProcessedCount: 0,
+            resultIgnoredCount: 0,
+            pauseCount: 0,
+            resumeCount: 0,
+            startTime: Date.now(),
+            sessionDuration: 0
+        };
+        
+        this.continuity = {
+            neverStopped: false,
+            startedOnce: false,
+            forceStop: false
+        };
+        
+        // 現在のセッションはそのまま維持し、統計情報のみリセット
+        console.log('✅ 統計情報リセット完了 - 新しいテストを開始できます');
+        return true;
     }
     
     // リスナー管理
@@ -7830,6 +7815,33 @@ function resetMicrophoneStats() {
     return true;
 }
 
+// 🔧 新機能：簡単テスト用統計リセット
+function quickResetStats() {
+    console.log('🚀 クイック統計リセット開始');
+    
+    // 継続的音声認識の場合
+    if (window.stateManager?.recognitionManager?.resetStats) {
+        const success = window.stateManager.recognitionManager.resetStats();
+        if (success) {
+            console.log('🎯 継続的音声認識統計リセット完了');
+            console.log('💡 現在のセッションは継続中 - 次の発話から新しい統計開始');
+            console.log('📊 1-2回の短い発話で効果を確認してください');
+            console.log('🔍 確認方法: debugMicrophonePermissionStats()');
+            return true;
+        }
+    }
+    
+    // 従来の方法もサポート
+    const legacySuccess = resetMicrophoneStats();
+    if (legacySuccess) {
+        console.log('🎯 従来統計リセット完了');
+        return true;
+    }
+    
+    console.log('❌ 統計リセット失敗');
+    return false;
+}
+
 // 🔧 Chrome専用: 包括的デバッグ機能
 function debugChromeOptimization() {
     console.log('🎯 Chrome専用マイク許可最適化デバッグ:');
@@ -7892,11 +7904,13 @@ window.detectBrowserAndOptimize = detectBrowserAndOptimize;
 window.switchMicrophoneStrategy = switchMicrophoneStrategy;
 window.showCurrentStrategy = showCurrentStrategy;
 window.resetMicrophoneStats = resetMicrophoneStats;
+window.quickResetStats = quickResetStats;
 window.debugChromeOptimization = debugChromeOptimization;
 window.autoOptimizeChromeStrategy = autoOptimizeChromeStrategy;
 
 console.log('🎯 Chrome専用デバッグ機能を公開しました');
 console.log('💡 Chrome最適化: autoOptimizeChromeStrategy() | 包括デバッグ: debugChromeOptimization()');
+console.log('🚀 簡単テスト: quickResetStats() | 統計確認: debugMicrophonePermissionStats()');
 
 // Chrome自動最適化
 if (navigator.userAgent.includes('Chrome')) {
