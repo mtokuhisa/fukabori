@@ -7903,3 +7903,624 @@ if (navigator.userAgent.includes('Chrome')) {
     console.log('🎯 Chrome検出 - 自動最適化を提案します');
     console.log('💡 自動最適化を実行するには: autoOptimizeChromeStrategy()');
 }
+
+// =================================================================================
+// 🧪 自動テスト・監視システム - ユーザーテスト負荷軽減
+// =================================================================================
+
+// 🧪 継続的音声認識自動テストシステム
+class ContinuousRecognitionTester {
+    constructor() {
+        this.isRunning = false;
+        this.testResults = [];
+        this.testInterval = null;
+        this.startTime = null;
+        this.testDuration = 300000; // 5分間テスト
+        this.alertThreshold = {
+            startCount: 3,           // start()呼び出し3回以上で警告
+            efficiency: 70,          // 効率性70%未満で警告
+            permissionRequests: 2    // マイク許可要求2回以上で警告
+        };
+        
+        console.log('🧪 継続的音声認識自動テストシステム初期化');
+    }
+    
+    // 🧪 自動テスト開始
+    startAutoTest(duration = 300000) {
+        if (this.isRunning) {
+            console.log('⚠️ 自動テスト既に実行中');
+            return false;
+        }
+        
+        console.log(`🧪 継続的音声認識自動テスト開始 (${duration/1000}秒間)`);
+        this.isRunning = true;
+        this.startTime = Date.now();
+        this.testDuration = duration;
+        this.testResults = [];
+        
+        // 初期状態記録
+        this.recordTestResult('TEST_START', this.getCurrentStats());
+        
+        // 10秒間隔で監視
+        this.testInterval = setInterval(() => {
+            this.monitorSystem();
+        }, 10000);
+        
+        // テスト終了タイマー
+        setTimeout(() => {
+            this.stopAutoTest();
+        }, duration);
+        
+        // ユーザーへの通知
+        this.showTestNotification('テスト開始', `${duration/1000}秒間の自動監視を開始しました`);
+        return true;
+    }
+    
+    // 🧪 自動テスト停止
+    stopAutoTest() {
+        if (!this.isRunning) {
+            console.log('⚠️ 自動テスト実行中ではありません');
+            return false;
+        }
+        
+        console.log('🧪 継続的音声認識自動テスト終了');
+        this.isRunning = false;
+        
+        if (this.testInterval) {
+            clearInterval(this.testInterval);
+            this.testInterval = null;
+        }
+        
+        // 最終状態記録
+        this.recordTestResult('TEST_END', this.getCurrentStats());
+        
+        // テスト結果分析
+        const analysis = this.analyzeTestResults();
+        this.showTestReport(analysis);
+        
+        return true;
+    }
+    
+    // 🧪 システム監視
+    monitorSystem() {
+        if (!this.isRunning) return;
+        
+        const stats = this.getCurrentStats();
+        const alerts = this.checkAlerts(stats);
+        
+        this.recordTestResult('MONITOR', stats, alerts);
+        
+        if (alerts.length > 0) {
+            console.warn('🚨 自動テストアラート:', alerts);
+            this.showTestNotification('品質警告', `${alerts.length}件の問題を検出`);
+        }
+        
+        // 実行時間表示
+        const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+        const remaining = Math.floor((this.testDuration - (Date.now() - this.startTime)) / 1000);
+        console.log(`🧪 自動テスト進行中: ${elapsed}秒経過, 残り${remaining}秒`);
+    }
+    
+    // 🧪 現在の統計取得
+    getCurrentStats() {
+        const recognitionManager = window.stateManager?.recognitionManager;
+        if (!recognitionManager || !recognitionManager.getMicrophonePermissionStats) {
+            return { error: 'RecognitionManager unavailable' };
+        }
+        
+        const stats = recognitionManager.getMicrophonePermissionStats();
+        return {
+            ...stats,
+            timestamp: Date.now(),
+            testElapsed: this.startTime ? Math.floor((Date.now() - this.startTime) / 1000) : 0
+        };
+    }
+    
+    // 🧪 アラートチェック
+    checkAlerts(stats) {
+        const alerts = [];
+        
+        if (stats.startCount > this.alertThreshold.startCount) {
+            alerts.push({
+                type: 'START_COUNT_HIGH',
+                message: `start()呼び出しが${stats.startCount}回 (閾値: ${this.alertThreshold.startCount})`,
+                severity: 'HIGH'
+            });
+        }
+        
+        if (stats.efficiency < this.alertThreshold.efficiency) {
+            alerts.push({
+                type: 'EFFICIENCY_LOW',
+                message: `効率性が${stats.efficiency}% (閾値: ${this.alertThreshold.efficiency}%)`,
+                severity: 'MEDIUM'
+            });
+        }
+        
+        if (stats.microphonePermissionRequests > this.alertThreshold.permissionRequests) {
+            alerts.push({
+                type: 'PERMISSION_REQUESTS_HIGH',
+                message: `マイク許可要求が${stats.microphonePermissionRequests}回 (閾値: ${this.alertThreshold.permissionRequests})`,
+                severity: 'HIGH'
+            });
+        }
+        
+        if (!stats.continuousRecognition && stats.strategy === 'continuous') {
+            alerts.push({
+                type: 'CONTINUITY_BROKEN',
+                message: '継続的音声認識が停止',
+                severity: 'CRITICAL'
+            });
+        }
+        
+        return alerts;
+    }
+    
+    // 🧪 テスト結果記録
+    recordTestResult(event, stats, alerts = []) {
+        this.testResults.push({
+            event,
+            stats,
+            alerts,
+            timestamp: Date.now()
+        });
+    }
+    
+    // 🧪 テスト結果分析
+    analyzeTestResults() {
+        if (this.testResults.length === 0) {
+            return { error: 'No test data available' };
+        }
+        
+        const startResult = this.testResults.find(r => r.event === 'TEST_START');
+        const endResult = this.testResults.find(r => r.event === 'TEST_END');
+        const monitorResults = this.testResults.filter(r => r.event === 'MONITOR');
+        
+        const allAlerts = this.testResults.flatMap(r => r.alerts || []);
+        const criticalAlerts = allAlerts.filter(a => a.severity === 'CRITICAL');
+        const highAlerts = allAlerts.filter(a => a.severity === 'HIGH');
+        const mediumAlerts = allAlerts.filter(a => a.severity === 'MEDIUM');
+        
+        const finalStats = endResult?.stats || monitorResults[monitorResults.length - 1]?.stats;
+        
+        return {
+            duration: Math.floor((Date.now() - this.startTime) / 1000),
+            totalAlerts: allAlerts.length,
+            criticalAlerts: criticalAlerts.length,
+            highAlerts: highAlerts.length,
+            mediumAlerts: mediumAlerts.length,
+            finalStats,
+            passed: criticalAlerts.length === 0 && highAlerts.length === 0,
+            grade: this.calculateGrade(finalStats, allAlerts)
+        };
+    }
+    
+    // 🧪 品質グレード計算
+    calculateGrade(stats, alerts) {
+        if (!stats) return 'N/A';
+        
+        let score = 100;
+        
+        // 効率性評価
+        if (stats.efficiency >= 95) score += 10;
+        else if (stats.efficiency >= 80) score += 5;
+        else if (stats.efficiency < 50) score -= 20;
+        
+        // start()回数評価
+        if (stats.startCount === 1) score += 15;
+        else if (stats.startCount <= 2) score += 10;
+        else if (stats.startCount >= 5) score -= 25;
+        
+        // アラート評価
+        score -= alerts.filter(a => a.severity === 'CRITICAL').length * 30;
+        score -= alerts.filter(a => a.severity === 'HIGH').length * 15;
+        score -= alerts.filter(a => a.severity === 'MEDIUM').length * 5;
+        
+        if (score >= 95) return 'A+ (優秀)';
+        if (score >= 85) return 'A (良好)';
+        if (score >= 70) return 'B (普通)';
+        if (score >= 50) return 'C (要改善)';
+        return 'D (問題あり)';
+    }
+    
+    // 🧪 テスト通知表示
+    showTestNotification(title, message) {
+        console.log(`🧪 ${title}: ${message}`);
+        
+        // UI通知（利用可能な場合）
+        if (typeof showMessage === 'function') {
+            showMessage('info', `${title}: ${message}`);
+        }
+    }
+    
+    // 🧪 テストレポート表示
+    showTestReport(analysis) {
+        console.log('🧪 ===== 継続的音声認識 自動テストレポート =====');
+        console.log(`📊 テスト時間: ${analysis.duration}秒`);
+        console.log(`🎯 品質グレード: ${analysis.grade}`);
+        console.log(`✅ テスト結果: ${analysis.passed ? '合格' : '不合格'}`);
+        console.log(`🚨 アラート総数: ${analysis.totalAlerts}件`);
+        
+        if (analysis.criticalAlerts > 0) {
+            console.log(`🔴 重大アラート: ${analysis.criticalAlerts}件`);
+        }
+        if (analysis.highAlerts > 0) {
+            console.log(`🟠 高優先度アラート: ${analysis.highAlerts}件`);
+        }
+        if (analysis.mediumAlerts > 0) {
+            console.log(`🟡 中優先度アラート: ${analysis.mediumAlerts}件`);
+        }
+        
+        if (analysis.finalStats) {
+            const stats = analysis.finalStats;
+            console.log('📈 最終統計:');
+            console.log(`  - start()呼び出し: ${stats.startCount}回`);
+            console.log(`  - マイク許可要求: ${stats.microphonePermissionRequests}回`);
+            console.log(`  - 効率性: ${stats.efficiency}%`);
+            console.log(`  - 継続性: ${stats.continuousRecognition ? '✅' : '❌'}`);
+        }
+        
+        // 推奨事項
+        this.showRecommendations(analysis);
+        
+        // UI通知
+        const status = analysis.passed ? '✅ 合格' : '❌ 不合格';
+        this.showTestNotification('テスト完了', `${status} - グレード: ${analysis.grade}`);
+    }
+    
+    // 🧪 推奨事項表示
+    showRecommendations(analysis) {
+        console.log('💡 推奨事項:');
+        
+        if (analysis.passed) {
+            console.log('  ✅ 継続的音声認識は正常に動作しています');
+            if (analysis.finalStats?.efficiency === 100) {
+                console.log('  🎯 完璧な効率性を達成しました！');
+            }
+        } else {
+            if (analysis.criticalAlerts > 0) {
+                console.log('  🔴 重大な問題があります - システム再起動を推奨');
+            }
+            if (analysis.finalStats?.startCount > 3) {
+                console.log('  📊 start()呼び出しが多すぎます - 戦略見直しが必要');
+            }
+            if (analysis.finalStats?.efficiency < 70) {
+                console.log('  📈 効率性が低いです - マイク許可設定を確認してください');
+            }
+        }
+    }
+    
+    // 🧪 テスト結果エクスポート
+    exportTestResults() {
+        const data = {
+            testInfo: {
+                startTime: this.startTime,
+                duration: this.testDuration,
+                timestamp: new Date().toISOString()
+            },
+            results: this.testResults,
+            analysis: this.analyzeTestResults()
+        };
+        
+        console.log('🧪 テスト結果エクスポート:', data);
+        return data;
+    }
+}
+
+// 🧪 グローバルテストインスタンス
+window.continuousRecognitionTester = new ContinuousRecognitionTester();
+
+// 🧪 便利関数: 簡単テスト開始
+function testContinuousRecognition(durationMinutes = 5) {
+    const duration = durationMinutes * 60 * 1000;
+    return window.continuousRecognitionTester.startAutoTest(duration);
+}
+
+// 🧪 便利関数: テスト停止
+function stopContinuousRecognitionTest() {
+    return window.continuousRecognitionTester.stopAutoTest();
+}
+
+// 🧪 便利関数: クイックチェック（30秒）
+function quickTestContinuousRecognition() {
+    return window.continuousRecognitionTester.startAutoTest(30000);
+}
+
+// 🧪 便利関数: 超短時間テスト（10秒）
+function ultraQuickTest() {
+    return window.continuousRecognitionTester.startAutoTest(10000);
+}
+
+// 🧪 グローバル公開
+window.testContinuousRecognition = testContinuousRecognition;
+window.stopContinuousRecognitionTest = stopContinuousRecognitionTest;
+window.quickTestContinuousRecognition = quickTestContinuousRecognition;
+window.ultraQuickTest = ultraQuickTest;
+
+console.log('🧪 継続的音声認識自動テストシステムを公開しました');
+console.log('💡 テスト開始: testContinuousRecognition(5) | クイックテスト: quickTestContinuousRecognition()');
+console.log('💡 超短時間テスト: ultraQuickTest() | テスト停止: stopContinuousRecognitionTest()');
+
+// =================================================================================
+// 🔄 自動ロールバック・品質監視システム
+// =================================================================================
+
+// 🔄 品質監視とロールバック機能
+class QualityMonitor {
+    constructor() {
+        this.isMonitoring = false;
+        this.monitorInterval = null;
+        this.qualityHistory = [];
+        this.thresholds = {
+            criticalEfficiency: 30,  // 30%未満で緊急ロールバック
+            minEfficiency: 50,       // 50%未満で警告
+            maxStartCount: 10,       // 10回以上で警告
+            maxPermissionRequests: 5  // 5回以上で警告
+        };
+        
+        console.log('🔄 品質監視システム初期化');
+    }
+    
+    // 🔄 品質監視開始
+    startMonitoring(interval = 30000) {
+        if (this.isMonitoring) {
+            console.log('⚠️ 品質監視既に実行中');
+            return false;
+        }
+        
+        console.log(`🔄 品質監視開始 (${interval/1000}秒間隔)`);
+        this.isMonitoring = true;
+        this.qualityHistory = [];
+        
+        this.monitorInterval = setInterval(() => {
+            this.checkQuality();
+        }, interval);
+        
+        return true;
+    }
+    
+    // 🔄 品質監視停止
+    stopMonitoring() {
+        if (!this.isMonitoring) {
+            console.log('⚠️ 品質監視実行中ではありません');
+            return false;
+        }
+        
+        console.log('🔄 品質監視停止');
+        this.isMonitoring = false;
+        
+        if (this.monitorInterval) {
+            clearInterval(this.monitorInterval);
+            this.monitorInterval = null;
+        }
+        
+        return true;
+    }
+    
+    // 🔄 品質チェック
+    checkQuality() {
+        if (!this.isMonitoring) return;
+        
+        const recognitionManager = window.stateManager?.recognitionManager;
+        if (!recognitionManager || !recognitionManager.getMicrophonePermissionStats) {
+            console.warn('🔄 品質監視: RecognitionManager利用不可');
+            return;
+        }
+        
+        const stats = recognitionManager.getMicrophonePermissionStats();
+        const quality = this.evaluateQuality(stats);
+        
+        this.qualityHistory.push({
+            timestamp: Date.now(),
+            stats,
+            quality
+        });
+        
+        // 履歴の上限管理（最新100件）
+        if (this.qualityHistory.length > 100) {
+            this.qualityHistory.shift();
+        }
+        
+        // 品質レベルに基づく処理
+        if (quality.level === 'CRITICAL') {
+            this.handleCriticalQuality(stats, quality);
+        } else if (quality.level === 'WARNING') {
+            this.handleWarningQuality(stats, quality);
+        }
+        
+        console.log(`🔄 品質チェック: ${quality.level} (効率性: ${stats.efficiency}%)`);
+    }
+    
+    // 🔄 品質評価
+    evaluateQuality(stats) {
+        const issues = [];
+        
+        if (stats.efficiency < this.thresholds.criticalEfficiency) {
+            issues.push('効率性が極めて低い');
+        } else if (stats.efficiency < this.thresholds.minEfficiency) {
+            issues.push('効率性が低い');
+        }
+        
+        if (stats.startCount > this.thresholds.maxStartCount) {
+            issues.push('start()呼び出しが多すぎる');
+        }
+        
+        if (stats.microphonePermissionRequests > this.thresholds.maxPermissionRequests) {
+            issues.push('マイク許可要求が多すぎる');
+        }
+        
+        let level = 'GOOD';
+        if (stats.efficiency < this.thresholds.criticalEfficiency) {
+            level = 'CRITICAL';
+        } else if (issues.length > 0) {
+            level = 'WARNING';
+        }
+        
+        return {
+            level,
+            issues,
+            score: Math.max(0, 100 - issues.length * 20)
+        };
+    }
+    
+    // 🔄 重大品質問題への対応
+    handleCriticalQuality(stats, quality) {
+        console.error('🔴 重大品質問題検出 - 緊急対応開始');
+        console.error('🔴 問題:', quality.issues);
+        
+        // 自動ロールバック実行
+        this.performEmergencyRollback(stats);
+        
+        // ユーザーへの通知
+        if (typeof showMessage === 'function') {
+            showMessage('error', '重大品質問題を検出しました。システムを最適化しています。');
+        }
+    }
+    
+    // 🔄 警告レベル品質問題への対応
+    handleWarningQuality(stats, quality) {
+        console.warn('🟠 品質警告:', quality.issues);
+        
+        // 軽微な最適化実行
+        this.performLightOptimization(stats);
+    }
+    
+    // 🔄 緊急ロールバック実行
+    performEmergencyRollback(stats) {
+        console.log('🔄 緊急ロールバック実行');
+        
+        // 1. 統計リセット
+        if (typeof resetMicrophoneStats === 'function') {
+            resetMicrophoneStats();
+        }
+        
+        // 2. 戦略最適化
+        if (typeof autoOptimizeChromeStrategy === 'function') {
+            autoOptimizeChromeStrategy();
+        }
+        
+        // 3. 必要に応じてページリロード推奨
+        if (stats.efficiency < 10) {
+            console.log('🔄 緊急ロールバック: ページリロードを推奨');
+            if (typeof showMessage === 'function') {
+                showMessage('warning', 'システムの完全リセットのためページリロードを推奨します。');
+            }
+        }
+    }
+    
+    // 🔄 軽微な最適化実行
+    performLightOptimization(stats) {
+        console.log('🔄 軽微な最適化実行');
+        
+        // Chrome最適化の自動実行
+        if (typeof autoOptimizeChromeStrategy === 'function') {
+            autoOptimizeChromeStrategy();
+        }
+    }
+    
+    // 🔄 品質レポート生成
+    generateQualityReport() {
+        if (this.qualityHistory.length === 0) {
+            return { error: 'No quality data available' };
+        }
+        
+        const recent = this.qualityHistory.slice(-10);
+        const avgScore = recent.reduce((sum, item) => sum + item.quality.score, 0) / recent.length;
+        const criticalCount = recent.filter(item => item.quality.level === 'CRITICAL').length;
+        const warningCount = recent.filter(item => item.quality.level === 'WARNING').length;
+        
+        return {
+            averageScore: Math.round(avgScore),
+            criticalEvents: criticalCount,
+            warningEvents: warningCount,
+            totalChecks: recent.length,
+            currentStatus: recent[recent.length - 1]?.quality.level || 'UNKNOWN'
+        };
+    }
+}
+
+// 🔄 グローバル品質監視インスタンス
+window.qualityMonitor = new QualityMonitor();
+
+// 🔄 便利関数: 品質監視開始
+function startQualityMonitoring(intervalSeconds = 30) {
+    return window.qualityMonitor.startMonitoring(intervalSeconds * 1000);
+}
+
+// 🔄 便利関数: 品質監視停止
+function stopQualityMonitoring() {
+    return window.qualityMonitor.stopMonitoring();
+}
+
+// 🔄 便利関数: 品質レポート表示
+function showQualityReport() {
+    const report = window.qualityMonitor.generateQualityReport();
+    console.log('🔄 品質レポート:', report);
+    return report;
+}
+
+// 🔄 グローバル公開
+window.startQualityMonitoring = startQualityMonitoring;
+window.stopQualityMonitoring = stopQualityMonitoring;
+window.showQualityReport = showQualityReport;
+
+console.log('🔄 品質監視・自動ロールバックシステムを公開しました');
+console.log('💡 品質監視開始: startQualityMonitoring(30) | 品質レポート: showQualityReport()');
+
+// =================================================================================
+// 🚀 ワンクリック総合テストシステム
+// =================================================================================
+
+// 🚀 総合テスト実行
+async function runComprehensiveTest() {
+    console.log('🚀 ===== 総合テストシステム開始 =====');
+    
+    // 1. 品質監視開始
+    console.log('🔄 品質監視開始...');
+    startQualityMonitoring(10); // 10秒間隔
+    
+    // 2. 継続的音声認識テスト開始
+    console.log('🧪 継続的音声認識テスト開始...');
+    quickTestContinuousRecognition(); // 30秒テスト
+    
+    // 3. Chrome最適化実行
+    console.log('🎯 Chrome最適化実行...');
+    if (typeof autoOptimizeChromeStrategy === 'function') {
+        autoOptimizeChromeStrategy();
+    }
+    
+    // 4. 初期統計表示
+    console.log('📊 初期統計表示...');
+    if (typeof debugMicrophonePermissionStats === 'function') {
+        debugMicrophonePermissionStats();
+    }
+    
+    // 5. 40秒後に結果表示
+    console.log('⏱️ 40秒後に結果表示します...');
+    setTimeout(() => {
+        console.log('🚀 ===== 総合テスト結果 =====');
+        
+        // 品質レポート
+        const qualityReport = showQualityReport();
+        
+        // 最終統計
+        if (typeof debugMicrophonePermissionStats === 'function') {
+            debugMicrophonePermissionStats();
+        }
+        
+        // 監視停止
+        stopQualityMonitoring();
+        
+        console.log('🚀 総合テスト完了');
+        console.log('💡 詳細な分析: debugChromeOptimization()');
+        
+    }, 40000);
+    
+    return true;
+}
+
+// 🚀 グローバル公開
+window.runComprehensiveTest = runComprehensiveTest;
+
+console.log('🚀 ワンクリック総合テストシステムを公開しました');
+console.log('💡 総合テスト実行: runComprehensiveTest()');
+console.log('🎯 これで手動テストの負荷が大幅に軽減されます！');
