@@ -38,6 +38,23 @@ class RecognitionManager {
         this.isStopping = false;
         this.preemptiveRestartTimer = null; // 🔧 新機能: プリエンプティブ再開タイマー
         
+        // 🔧 新機能: マイク許可保持管理（一回だけルール対応）
+        this.microphonePermissionManager = {
+            hasInitialPermission: false,      // 初回許可取得済みフラグ
+            isFirstStartup: true,             // 初回起動フラグ
+            canPerformLightweightRestart: false, // 軽量リスタート可能フラグ
+            sessionStartTime: Date.now(),     // セッション開始時刻
+            completeBefore: 0,                // 完全クリーンアップ回数
+            lightweightCount: 0,              // 軽量リスタート回数
+            lastCleanupType: 'none',          // 最後のクリーンアップタイプ
+            // 完全クリーンアップが必要な条件定義
+            requiresCompleteCleanup: {
+                criticalErrors: ['network', 'service-not-allowed', 'audio-capture'],
+                consecutiveErrorThreshold: 5,
+                timeSinceLastComplete: 300000  // 5分経過で強制完全クリーンアップ
+            }
+        };
+        
         // 🔄 旧システム統合: 安定性管理（指数バックオフ対応）
         this.stability = {
             consecutiveErrorCount: 0,
@@ -67,7 +84,7 @@ class RecognitionManager {
         // 🔄 統合フラグ
         this.isUnifiedSystem = true;
         
-        console.log('✅ 統合音声認識マネージャー初期化完了');
+        console.log('✅ 統合音声認識マネージャー初期化完了（マイク許可保持対応）');
     }
     
     // 🔄 統合メソッド: セッション状態の同期
@@ -82,6 +99,68 @@ class RecognitionManager {
                 window.AppState.voiceRecognitionStability.isRecognitionActive = this.stability.isRecognitionActive;
             }
         }
+    }
+    
+    // 🔧 新機能: 完全クリーンアップ必要性判定
+    shouldPerformCompleteCleanup(errorType = null) {
+        const mgr = this.microphonePermissionManager;
+        
+        // 初回起動時は必ず完全クリーンアップ
+        if (mgr.isFirstStartup) {
+            console.log('🔧 初回起動のため完全クリーンアップ実行');
+            return true;
+        }
+        
+        // 致命的エラーが発生した場合
+        if (errorType && mgr.requiresCompleteCleanup.criticalErrors.includes(errorType)) {
+            console.log(`🔧 致命的エラー(${errorType})のため完全クリーンアップ実行`);
+            return true;
+        }
+        
+        // 連続エラーが閾値を超えた場合
+        if (this.stability.consecutiveErrorCount >= mgr.requiresCompleteCleanup.consecutiveErrorThreshold) {
+            console.log(`🔧 連続エラー(${this.stability.consecutiveErrorCount}回)のため完全クリーンアップ実行`);
+            return true;
+        }
+        
+        // 一定時間経過後は安全のため完全クリーンアップ
+        const timeSinceLastComplete = Date.now() - mgr.sessionStartTime;
+        if (timeSinceLastComplete > mgr.requiresCompleteCleanup.timeSinceLastComplete) {
+            console.log(`🔧 安全確保のため完全クリーンアップ実行 (${Math.floor(timeSinceLastComplete/60000)}分経過)`);
+            return true;
+        }
+        
+        // 通常時は軽量リスタート
+        console.log('🔧 軽量リスタートが適用可能 - マイク許可保持');
+        return false;
+    }
+    
+    // 🔧 新機能: 軽量クリーンアップ（マイク許可保持）
+    async performLightweightCleanup() {
+        console.log('🧹 軽量クリーンアップ開始（マイク許可保持）');
+        
+        // 既存の認識インスタンスを停止（abort使用でマイク許可保持）
+        if (this.recognition) {
+            try {
+                this.recognition.abort();
+                console.log('🛑 既存インスタンス停止（許可保持）');
+            } catch (error) {
+                console.warn('⚠️ インスタンス停止エラー:', error);
+            }
+        }
+        
+        // 状態リセット
+        this.state = 'idle';
+        this.stability.isRecognitionActive = false;
+        
+        // 短時間待機（ブラウザの内部状態調整）
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // 統計更新
+        this.microphonePermissionManager.lightweightCount++;
+        this.microphonePermissionManager.lastCleanupType = 'lightweight';
+        
+        console.log('✅ 軽量クリーンアップ完了（マイク許可保持）');
     }
     
     // 音声認識開始（統合版）
@@ -194,11 +273,30 @@ class RecognitionManager {
                 }
             }
             
-            // 🔧 完全クリーンアップ
-            await this.performCompleteCleanup();
+            // 🔧 条件付きクリーンアップ（マイク許可保持対応）
+            if (this.shouldPerformCompleteCleanup()) {
+                await this.performCompleteCleanup();
+                this.microphonePermissionManager.completeBefore++;
+                this.microphonePermissionManager.lastCleanupType = 'complete';
+                this.microphonePermissionManager.sessionStartTime = Date.now(); // 完全クリーンアップ時刻更新
+            } else {
+                await this.performLightweightCleanup();
+            }
             
-            // 許可確認
-            const hasPermission = await this.permissionManager.getPermission();
+            // 許可確認（初回のみ実行または完全クリーンアップ時のみ）
+            let hasPermission = this.microphonePermissionManager.hasInitialPermission;
+            if (!hasPermission || this.microphonePermissionManager.lastCleanupType === 'complete') {
+                console.log('🔍 マイク許可確認実行');
+                hasPermission = await this.permissionManager.getPermission();
+                if (hasPermission) {
+                    this.microphonePermissionManager.hasInitialPermission = true;
+                    this.microphonePermissionManager.canPerformLightweightRestart = true;
+                    console.log('✅ マイク許可取得成功 - 以降は軽量リスタート可能');
+                }
+            } else {
+                console.log('✅ マイク許可済み - 確認スキップ');
+            }
+            
             if (!hasPermission) {
                 console.log('🚫 マイク許可なし - 開始不可');
                 this.isStarting = false;
@@ -222,6 +320,12 @@ class RecognitionManager {
             this.stability.consecutiveErrorCount = 0; // 成功時はリセット
             this.errorCount = 0; // 従来のエラーカウントもリセット
             
+            // 🔧 新機能: 初回起動フラグ更新
+            if (this.microphonePermissionManager.isFirstStartup) {
+                this.microphonePermissionManager.isFirstStartup = false;
+                console.log('✅ 初回起動完了 - 以降は軽量リスタート優先');
+            }
+            
             // 🔧 新機能: 指数バックオフリセット処理
             this.resetExponentialBackoff();
             
@@ -231,7 +335,9 @@ class RecognitionManager {
             // 🔧 新機能: プリエンプティブ再開をスケジュール - 一時的に無効化
             // this.schedulePreemptiveRestart(); // マイク許可頻発問題のため無効化
             
-            console.log('✅ 統合音声認識開始成功');
+            // 🔧 統計情報ログ
+            const mgr = this.microphonePermissionManager;
+            console.log(`✅ 統合音声認識開始成功 - 統計: 完全:${mgr.completeBefore}回 軽量:${mgr.lightweightCount}回`);
             return true;
             
         } catch (error) {
@@ -245,7 +351,7 @@ class RecognitionManager {
     
     // 🔧 完全クリーンアップメソッド（強化版）
     async performCompleteCleanup() {
-        console.log('🧹 完全クリーンアップ開始');
+        console.log('🧹 完全クリーンアップ開始（マイク許可再要求のリスク有）');
         
         // 既存の新システムインスタンスを停止
         if (this.recognition) {
@@ -287,7 +393,7 @@ class RecognitionManager {
         // 長めの待機時間（ブラウザの内部状態完全安定化）
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        console.log('✅ 完全クリーンアップ完了');
+        console.log('✅ 完全クリーンアップ完了（マイク許可再要求のリスク有）');
     }
     
     // 🔧 開始エラーハンドリング
@@ -432,6 +538,15 @@ class RecognitionManager {
     handleRecognitionError(event) {
         console.error('😨 統合音声認識エラー:', event.error);
         
+        // 🔧 新機能: 致命的エラーの場合、次回完全クリーンアップを強制
+        const criticalErrors = ['not-allowed', 'service-not-allowed', 'network', 'audio-capture'];
+        if (criticalErrors.includes(event.error)) {
+            console.log(`🔧 致命的エラー(${event.error})検出 - 次回完全クリーンアップを強制`);
+            // 許可状態をリセット（次回完全クリーンアップとマイク許可再取得が必要）
+            this.microphonePermissionManager.hasInitialPermission = false;
+            this.microphonePermissionManager.canPerformLightweightRestart = false;
+        }
+        
         switch (event.error) {
             case 'not-allowed':
             case 'service-not-allowed':
@@ -456,6 +571,22 @@ class RecognitionManager {
             case 'no-speech':
                 console.log('😶 音声が検出されませんでした');
                 // no-speechはエラーカウントに含めない
+                
+                // 🔧 自動再開機能を追加
+                this.state = 'idle';
+                this.stability.isRecognitionActive = false;
+                this.notifyListeners();
+                this.syncWithAppState();
+                
+                // 1秒後に自動再開（セッション中のみ）
+                setTimeout(() => {
+                    if (window.AppState?.sessionActive && 
+                        !this.conversationControl.speakingInProgress &&
+                        this.state === 'idle') {
+                        console.log('🔄 no-speech後の自動再開');
+                        this.start();
+                    }
+                }, 1000);
                 return;
                 
             case 'aborted':
@@ -681,19 +812,11 @@ class RecognitionManager {
     
     // abortedエラーの統合処理
     handleAbortedError() {
-        console.log('🔧 abortedエラーの統合処理開始');
+        console.log('🔧 abortedエラー処理');
         
         // 状態を安全にリセット
         this.state = 'idle';
         this.stability.isRecognitionActive = false;
-        this.stability.consecutiveErrorCount++;
-        this.stability.lastErrorTime = Date.now();
-        
-        // 🔧 新機能: プリエンプティブ再開タイマーをクリア
-        if (this.preemptiveRestartTimer) {
-            clearTimeout(this.preemptiveRestartTimer);
-            this.preemptiveRestartTimer = null;
-        }
         
         // 認識インスタンスをクリア
         if (this.recognition) {
@@ -704,21 +827,7 @@ class RecognitionManager {
         this.syncWithAppState();
         this.notifyListeners();
         
-        // 連続エラー制限チェック
-        if (this.stability.consecutiveErrorCount >= this.stability.maxConsecutiveErrors) {
-            console.warn(`🚫 連続エラーが${this.stability.maxConsecutiveErrors}回を超えました - 自動再開を停止`);
-            return;
-        }
-        
-        // 🔧 新機能: 指数バックオフを適用した自動再開
-        this.applyExponentialBackoff(() => {
-            if (this.state === 'idle' && 
-                window.AppState?.sessionActive && 
-                !this.conversationControl.speakingInProgress) {
-                console.log('🔄 abortedエラー回復のため自動再開（指数バックオフ適用）');
-                this.start();
-            }
-        }, 'aborted_error_recovery');
+        console.log('✅ abortedエラー処理完了 - 自動再開は行いません');
     }
     
     // 🗑️ 旧メソッド削除: 統合システムでは不要
@@ -727,34 +836,13 @@ class RecognitionManager {
     handleEnd() {
         console.log('🏁 音声認識終了');
         
-        if (this.state === 'stopping') {
-            // 正常終了
-            this.state = 'idle';
-            this.notifyListeners();
-            return;
-        }
+        // 状態をidleに戻す
+        this.state = 'idle';
+        this.stability.isRecognitionActive = false;
+        this.notifyListeners();
+        this.syncWithAppState();
         
-        // 異常終了の場合は自動再開を検討
-        if (this.state === 'active' && AppState.sessionActive) {
-            console.log('🔄 異常終了 - 状態をリセットして自動再開を検討');
-            // 🔧 修正: 異常終了時も状態を即座にidleに戻す
-            this.state = 'idle';
-            
-            // 🔧 新機能: プリエンプティブ再開タイマーをクリア
-            if (this.preemptiveRestartTimer) {
-                clearTimeout(this.preemptiveRestartTimer);
-                this.preemptiveRestartTimer = null;
-            }
-            
-            this.notifyListeners();
-            
-            setTimeout(() => {
-                if (this.state === 'idle' && AppState.sessionActive) {
-                    console.log('🔄 自動再開実行');
-                    this.start();
-                }
-            }, 1000);
-        }
+        console.log('✅ 音声認識終了処理完了');
     }
     
     // エラーハンドリング（状態リセット）
@@ -820,6 +908,22 @@ class RecognitionManager {
                 console.error('リスナー実行エラー:', error);
             }
         });
+    }
+    
+    // 🔧 新機能: マイク許可保持統計情報取得
+    getMicrophonePermissionStats() {
+        const mgr = this.microphonePermissionManager;
+        return {
+            hasInitialPermission: mgr.hasInitialPermission,
+            isFirstStartup: mgr.isFirstStartup,
+            canPerformLightweightRestart: mgr.canPerformLightweightRestart,
+            completeBefore: mgr.completeBefore,
+            lightweightCount: mgr.lightweightCount,
+            lastCleanupType: mgr.lastCleanupType,
+            sessionDuration: Math.floor((Date.now() - mgr.sessionStartTime) / 1000),
+            efficiency: mgr.lightweightCount > 0 ? 
+                Math.round((mgr.lightweightCount / (mgr.completeBefore + mgr.lightweightCount)) * 100) : 0
+        };
     }
 }
 
@@ -1755,6 +1859,46 @@ function checkLegacyFlagMigration() {
     }
 }
 
+// 🔧 新機能: マイク許可保持統計情報デバッグ
+function debugMicrophonePermissionStats() {
+    console.log('🎤 マイク許可保持統計情報:');
+    
+    if (!window.stateManager?.recognitionManager) {
+        console.log('❌ 統合システム未初期化');
+        return;
+    }
+    
+    const stats = window.stateManager.recognitionManager.getMicrophonePermissionStats();
+    
+    console.log('📊 許可管理状態:');
+    console.log('- 初回許可取得済み:', stats.hasInitialPermission ? '✅' : '❌');
+    console.log('- 初回起動状態:', stats.isFirstStartup ? '初回' : '完了');
+    console.log('- 軽量リスタート可能:', stats.canPerformLightweightRestart ? '✅' : '❌');
+    
+    console.log('📈 実行統計:');
+    console.log('- 完全クリーンアップ回数:', stats.completeBefore);
+    console.log('- 軽量リスタート回数:', stats.lightweightCount);
+    console.log('- 最新クリーンアップタイプ:', stats.lastCleanupType);
+    console.log('- セッション継続時間:', stats.sessionDuration + '秒');
+    
+    console.log('🏆 効率性:');
+    console.log('- 軽量リスタート効率:', stats.efficiency + '%');
+    
+    if (stats.efficiency >= 80) {
+        console.log('✅ 優秀: マイク許可保持が効果的に機能しています');
+    } else if (stats.efficiency >= 50) {
+        console.log('⚠️ 普通: 一部でマイク許可保持が機能しています');
+    } else {
+        console.log('❌ 要改善: マイク許可保持の効果が限定的です');
+    }
+    
+    console.log('🎯 推奨操作:');
+    console.log('- この統計情報を定期的に確認してください');
+    console.log('- 軽量リスタート効率が低い場合は致命的エラーが多発している可能性があります');
+    
+    return stats;
+}
+
 // =================================================================================
 // VOICE RECOGNITION PATTERNS - 音声認識パターン
 // =================================================================================
@@ -2121,6 +2265,21 @@ async function ttsTextToAudioBlob(text, character) {
 }
 
 async function gptMessagesToCharacterResponse(messages, character) {
+    console.warn('⚠️ gptMessagesToCharacterResponse は非推奨です。AIManager.sendToCharacter を使用してください');
+    
+    // AIManagerが利用可能かチェック
+    if (window.AIManager && window.AIManager.isInitialized) {
+        try {
+            return await window.AIManager.sendToCharacter(messages, character);
+        } catch (error) {
+            console.error('❌ AIManager.sendToCharacter実行エラー:', error);
+            // フォールバック処理へ
+        }
+    }
+    
+    // フォールバック実装（AIManager未使用時）
+    console.warn('⚠️ AIManagerが未初期化のため、レガシー実装を使用します');
+    
     if (!AppState.apiKey) {
         throw new Error('APIキーが設定されていません');
     }
@@ -2280,8 +2439,6 @@ function safeStartSpeechRecognition(reason = 'unknown') {
     
     console.error('❌ 統合音声システムが未初期化です');
     return false;
-    
-
 }
 
 // 🔧 新関数: 音声認識を安全に停止
@@ -2309,15 +2466,10 @@ function safeStopSpeechRecognition(reason = 'unknown') {
 }
 
 function restartSpeechRecognition() {
+    console.log('🔄 音声認識再開処理開始（マイク許可保持対応）');
+    
     // AI発言終了後に音声認識を確実に再開する関数
     const stability = AppState.voiceRecognitionStability;
-    
-    // 🛡️ マイク許可状態の厳格チェック
-    const permissionDenied = localStorage.getItem('microphonePermissionDenied') === 'true';
-    if (permissionDenied) {
-        console.log('🚫 マイク許可が拒否済み - 再開をスキップ');
-        return;
-    }
     
     // 🔧 新システムの許可状態も確認
     const newSystemPermission = window.stateManager?.permissionManager?.state === 'granted';
@@ -2333,15 +2485,72 @@ function restartSpeechRecognition() {
         stability.micPermissionGranted = true;
     }
     
-    setTimeout(() => {
-        // 🛡️ 再開時にも許可状態を再確認
-        const currentPermissionDenied = localStorage.getItem('microphonePermissionDenied') === 'true';
-        if (stability.micPermissionGranted && !currentPermissionDenied) {
-            safeStartSpeechRecognition('restartSpeechRecognition');
-        } else {
-            console.log('🚫 再開時の許可チェックでNG - スキップ');
+    // 🔧 重要: マイク許可保持を優先した再開処理
+    if (window.stateManager && window.stateManager.recognitionManager) {
+        const recognitionManager = window.stateManager.recognitionManager;
+        const currentState = recognitionManager.state;
+        console.log(`🔍 現在の音声認識状態: ${currentState}`);
+        
+        // 🔧 新機能: 軽量リスタート優先（マイク許可保持）
+        if (recognitionManager.microphonePermissionManager?.canPerformLightweightRestart) {
+            console.log('🔄 軽量リスタート実行（マイク許可保持）');
+            
+            // 現在の状態に応じて処理
+            if (currentState === 'active') {
+                // 軽量リスタート実行
+                recognitionManager.performLightweightRestart();
+            } else if (currentState === 'idle') {
+                // 直接開始（軽量クリーンアップ適用）
+                recognitionManager.start();
+            } else {
+                // 停止完了を待機してから軽量リスタート
+                setTimeout(() => {
+                    if (recognitionManager.state === 'idle') {
+                        recognitionManager.start();
+                    }
+                }, 300); // 短時間待機
+            }
+            return;
         }
-    }, 500);
+        
+        // 🔧 フォールバック: 従来の処理（完全クリーンアップ）
+        console.log('⚠️ 軽量リスタート不可 - 従来処理で再開');
+        
+        if (currentState !== 'idle') {
+            console.log('🛑 現在の音声認識を停止中...');
+            window.stateManager.stopRecognition();
+            
+            // 停止完了を待機してから再開
+            setTimeout(() => {
+                console.log('✨ 音声認識再開実行');
+                if (stability.micPermissionGranted) {
+                    safeStartSpeechRecognition('restartSpeechRecognition');
+                } else {
+                    console.log('🚫 再開時の許可チェックでNG - スキップ');
+                }
+            }, 800); // 停止時間を800msに延長
+        } else {
+            // 既にidleの場合は即座に再開
+            setTimeout(() => {
+                console.log('✨ 音声認識即座再開');
+                if (stability.micPermissionGranted) {
+                    safeStartSpeechRecognition('restartSpeechRecognition');
+                } else {
+                    console.log('🚫 再開時の許可チェックでNG - スキップ');
+                }
+            }, 200);
+        }
+    } else {
+        // 統合システムが利用できない場合のフォールバック
+        console.warn('⚠️ 統合システム未初期化 - レガシー再開処理');
+        setTimeout(() => {
+            if (stability.micPermissionGranted) {
+                safeStartSpeechRecognition('restartSpeechRecognition');
+            } else {
+                console.log('🚫 再開時の許可チェックでNG - スキップ');
+            }
+        }, 500);
+    }
 }
 
 function updateTranscriptDisplay() {
@@ -2622,7 +2831,24 @@ async function processDeepdiveUserResponse(text) {
                 
             } else {
                 // ❌ 知見が却下された場合
-                console.log(`❌ 知見却下: ${voiceResult.reason}`);
+                const reason = voiceResult?.reason || 'unknown_error';
+                const details = voiceResult?.details || '';
+                
+                console.log(`❌ 知見却下: ${reason}${details ? ' - ' + details : ''}`);
+                
+                // エラーの種類に応じた処理
+                if (reason === 'prerequisites_not_met') {
+                    window.showMessage('warning', `知見評価の前提条件エラー: ${details}`);
+                } else if (reason === 'process_error') {
+                    window.showMessage('error', `知見評価処理エラー: ${details}`);
+                } else if (reason === 'manual_fallback_error') {
+                    window.showMessage('error', '知見評価システムが利用できません。後でもう一度お試しください。');
+                } else if (reason === 'manual_rejection') {
+                    window.showMessage('info', '知見は保存されませんでした。');
+                } else {
+                    console.log(`❌ 知見却下: ${reason}`);
+                }
+                
                 updateKnowledgeSettingsDisplay();
                 
                 // 次の質問へ
@@ -4353,12 +4579,58 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
     
+    // 🎯 SessionController初期化
+    if (typeof SessionController !== 'undefined') {
+        try {
+            SessionController.init();
+            console.log('✅ SessionController初期化完了');
+        } catch (error) {
+            console.error('❌ SessionController初期化エラー:', error);
+        }
+    }
+    
+    // 📊 Phase 2-2: DataManager初期化
+    if (typeof window.initializeDataManager === 'function') {
+        try {
+            await window.initializeDataManager();
+            console.log('✅ DataManager初期化完了');
+        } catch (error) {
+            console.error('❌ DataManager初期化エラー:', error);
+        }
+    } else {
+        console.warn('⚠️ DataManager が利用できません');
+    }
+    
+    // 📄 Phase 2-3: FileManager初期化
+    if (typeof window.initializeFileManager === 'function') {
+        try {
+            await window.initializeFileManager();
+            console.log('✅ FileManager初期化完了');
+        } catch (error) {
+            console.error('❌ FileManager初期化エラー:', error);
+        }
+    } else {
+        console.warn('⚠️ FileManager が利用できません');
+    }
+    
+    // 🤖 Phase 2-4: AIManager初期化
+    if (typeof window.initializeAIManager === 'function') {
+        try {
+            await window.initializeAIManager();
+            console.log('✅ AIManager初期化完了');
+        } catch (error) {
+            console.error('❌ AIManager初期化エラー:', error);
+        }
+    } else {
+        console.warn('⚠️ AIManager が利用できません');
+    }
+    
     // 🎤 Phase B: スマート音声操作パネルの初期化
     if (typeof SmartVoicePanelManager !== 'undefined') {
         SmartVoicePanelManager.init();
     }
     
-    console.log('✅ 初期化完了（状態管理・知見管理・スマート音声パネル機能付き）');
+    console.log('✅ 初期化完了（状態管理・知見管理・SessionController・スマート音声パネル機能付き）');
 });
 
 // =================================================================================
@@ -4371,65 +4643,80 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // 📄 知見ファイル管理システム
 const KnowledgeFileManager = {
-    // セッション開始時のファイル初期化
+    // 依存関係インターフェース
+    interface: null,
+    
+    // インターフェース初期化
+    _ensureInterface() {
+        if (!this.interface) {
+            this.interface = window.KnowledgeFileManagerInterface;
+            if (!this.interface) {
+                throw new Error('KnowledgeFileManagerInterface が見つかりません');
+            }
+        }
+        return this.interface;
+    },
+
+    // セッション管理機能はSessionControllerに移動されました
+    // 後方互換性のための転送メソッド
     async createSessionFile(sessionMeta) {
-        const timestamp = this.formatTimestamp(new Date());
-        const category = sessionMeta.category || 'その他';
-        const titleSummary = this.generateTitleSummary(sessionMeta.theme);
-        
-        const filename = `${timestamp}_${category}_${titleSummary}.md`;
-        
-        const knowledgeFile = {
-            filename: filename,
-            meta: {
-                session_id: sessionMeta.session_id,
-                date: new Date().toISOString(),
-                category: category,
-                title: titleSummary,
-                participant: sessionMeta.participant || '未設定',
-                participant_role: sessionMeta.participant_role || '未設定',
-                theme: sessionMeta.theme,
-                session_start: new Date().toISOString()
-            },
-            insights: [],
-            conversations: [],
-            isActive: true
-        };
-        
-        window.KnowledgeState.currentSession = knowledgeFile;
-        console.log('✅ 知見セッションファイル初期化:', filename);
-        
-        return knowledgeFile;
+        console.warn('⚠️ KnowledgeFileManager.createSessionFile は非推奨です。SessionController.createSessionFile を使用してください');
+        if (!window.SessionController) {
+            throw new Error('SessionController が見つかりません');
+        }
+        return await window.SessionController.createSessionFile(sessionMeta);
     },
 
-    // タイムスタンプフォーマット (YYMMDD-HHMMSS)
+    // 後方互換性のための転送メソッド
     formatTimestamp(date) {
-        const yy = String(date.getFullYear()).slice(2);
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const dd = String(date.getDate()).padStart(2, '0');
-        const hh = String(date.getHours()).padStart(2, '0');
-        const min = String(date.getMinutes()).padStart(2, '0');
-        const ss = String(date.getSeconds()).padStart(2, '0');
-        
-        return `${yy}${mm}${dd}-${hh}${min}${ss}`;
+        console.warn('⚠️ KnowledgeFileManager.formatTimestamp は非推奨です。SessionController.formatTimestamp を使用してください');
+        if (!window.SessionController) {
+            // フォールバック実装
+            const yy = String(date.getFullYear()).slice(2);
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            const hh = String(date.getHours()).padStart(2, '0');
+            const min = String(date.getMinutes()).padStart(2, '0');
+            const ss = String(date.getSeconds()).padStart(2, '0');
+            return `${yy}${mm}${dd}-${hh}${min}${ss}`;
+        }
+        return window.SessionController.formatTimestamp(date);
     },
 
-    // タイトル要約生成（20文字以内）
+    // 後方互換性のための転送メソッド
     generateTitleSummary(theme) {
-        if (!theme) return 'セッション記録';
+        console.warn('⚠️ KnowledgeFileManager.generateTitleSummary は非推奨です。SessionController.generateTitleSummary を使用してください');
+        if (!window.SessionController) {
+            // フォールバック実装
+            if (!theme) return 'セッション記録';
+            let summary = theme.replace(/[「」]/g, '').trim();
+            if (summary.length > 20) {
+                summary = summary.substring(0, 17) + '...';
+            }
+            return summary;
+        }
+        return window.SessionController.generateTitleSummary(theme);
+    },
+
+    // 知見の追加（DataManagerに移譲）
+    addInsight(insight, context, quality) {
+        console.warn('⚠️ KnowledgeFileManager.addInsight は非推奨です。DataManager.addInsight を使用してください');
         
-        // 基本的な要約処理
-        let summary = theme.replace(/[「」]/g, '').trim();
-        if (summary.length > 20) {
-            summary = summary.substring(0, 17) + '...';
+        // DataManagerが利用可能かチェック
+        if (window.DataManager && window.DataManager.isInitialized()) {
+            try {
+                return window.DataManager.addInsight(insight, context, quality);
+            } catch (error) {
+                console.error('❌ DataManager.addInsight実行エラー:', error);
+                // フォールバック処理へ
+            }
         }
         
-        return summary;
-    },
-
-    // 知見の追加
-    addInsight(insight, context, quality) {
-        if (!window.KnowledgeState.currentSession) {
+        // フォールバック実装（DataManager未使用時）
+        const iface = this._ensureInterface();
+        
+        const currentSession = iface.state.getCurrentSession();
+        if (!currentSession) {
             console.warn('⚠️ アクティブなセッションがありません');
             return false;
         }
@@ -4443,15 +4730,36 @@ const KnowledgeFileManager = {
             conversation_context: context.related_conversation || []
         };
 
-        window.KnowledgeState.currentSession.insights.push(insightEntry);
+        // インターフェース経由で知見を追加
+        const success = iface.state.addInsightToSession(insightEntry);
+        if (!success) {
+            console.error('❌ 知見の追加に失敗しました');
+            return false;
+        }
+        
         console.log('✅ 知見を追加:', insight.substring(0, 50) + '...');
         
         return true;
     },
 
-    // ファイル生成とダウンロード（AI拡張セッション対応）
+    // ファイル生成（FileManagerに移譲）
     async generateKnowledgeFile(sessionData = null) {
-        const session = sessionData || window.KnowledgeState.currentSession;
+        console.warn('⚠️ KnowledgeFileManager.generateKnowledgeFile は非推奨です。FileManager.generateKnowledgeFile を使用してください');
+        
+        // FileManagerが利用可能かチェック
+        if (window.FileManager) {
+            try {
+                return await window.FileManager.generateKnowledgeFile(sessionData);
+            } catch (error) {
+                console.error('❌ FileManager.generateKnowledgeFile実行エラー:', error);
+                // フォールバック処理へ
+            }
+        }
+        
+        // フォールバック実装（FileManager未使用時）
+        const iface = this._ensureInterface();
+        
+        const session = sessionData || iface.state.getCurrentSession();
         
         if (!session) {
             console.warn('⚠️ アクティブなセッションがありません');
@@ -4465,23 +4773,32 @@ const KnowledgeFileManager = {
         const dnaPrefix = session.knowledge_graph ? 'KnowledgeDNA_' : '知見_';
         const filename = `${dnaPrefix}${session.meta.title}_${timestamp}.md`;
         
-        // ファイルダウンロード
-        const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        // インターフェース経由でファイルダウンロード
+        const success = iface.file.downloadFile(content, filename);
+        if (!success) {
+            console.error('❌ ファイルダウンロードに失敗しました');
+            return null;
+        }
         
         console.log('✅ 知見ファイル生成完了:', filename);
         return filename;
     },
 
-    // ファイル内容の構築（AI知見整理システム対応）
+    // ファイル内容の構築（FileManagerに移譲）
     buildFileContent(session) {
+        console.warn('⚠️ KnowledgeFileManager.buildFileContent は非推奨です。FileManager.buildFileContent を使用してください');
+        
+        // FileManagerが利用可能かチェック
+        if (window.FileManager) {
+            try {
+                return window.FileManager.buildFileContent(session);
+            } catch (error) {
+                console.error('❌ FileManager.buildFileContent実行エラー:', error);
+                // フォールバック処理へ
+            }
+        }
+        
+        // フォールバック実装（FileManager未使用時）
         const meta = session.meta;
         const insights = session.insights;
         
@@ -4705,8 +5022,21 @@ const KnowledgeFileManager = {
         return content;
     },
 
-    // 平均重要度計算
+    // 平均重要度計算（FileManagerに移譲）
     calculateAverageImportance(insights) {
+        console.warn('⚠️ KnowledgeFileManager.calculateAverageImportance は非推奨です。FileManager.calculateAverageImportance を使用してください');
+        
+        // FileManagerが利用可能かチェック
+        if (window.FileManager) {
+            try {
+                return window.FileManager.calculateAverageImportance(insights);
+            } catch (error) {
+                console.error('❌ FileManager.calculateAverageImportance実行エラー:', error);
+                // フォールバック処理へ
+            }
+        }
+        
+        // フォールバック実装（FileManager未使用時）
         if (insights.length === 0) return 0;
         
         const total = insights.reduce((sum, insight) => {
@@ -4716,88 +5046,57 @@ const KnowledgeFileManager = {
         return Math.round((total / insights.length) * 100);
     },
 
-    // AI知見整理システム（Knowledge DNA統合）
+    // AI知見整理システム（AIManagerに移譲）
     async enhanceKnowledgeWithAI(session, showProgress = true) {
-        if (!AppState.apiKey) {
-            console.warn('⚠️ API key not available for knowledge enhancement');
-            return session;
+        console.warn('⚠️ KnowledgeFileManager.enhanceKnowledgeWithAI は非推奨です。AIManager.enhanceKnowledgeWithAI を使用してください');
+        
+        // AIManagerが利用可能かチェック
+        if (window.AIManager && window.AIManager.isInitialized) {
+            try {
+                return await window.AIManager.enhanceKnowledgeWithAI(session, showProgress);
+            } catch (error) {
+                console.error('❌ AIManager.enhanceKnowledgeWithAI実行エラー:', error);
+                // フォールバック処理へ
+            }
         }
-
+        
+        // フォールバック実装（AIManager未使用時）
+        console.warn('⚠️ AIManagerが未初期化のため、基本実装を使用します');
+        
         try {
-            console.log('🤖 AI知見整理開始...');
+            // APIキーの確認
+            if (!window.AppState?.apiKey) {
+                console.warn('⚠️ API key not available for knowledge enhancement');
+                return session;
+            }
             
-            if (showProgress) {
+            console.log('🤖 AI知見整理開始（フォールバック）...');
+            
+            if (showProgress && window.showMessage) {
                 window.showMessage('info', '🧬 Knowledge DNAシステムによる知見整理中...');
             }
             
-            // Phase 1: 知見構造化・リライト（実装済み）
-            console.log('📝 Phase 1: 知見リライト・構造化開始...');
+            // 基本的な知見整理のみ実行
             const enhancedSession = { ...session };
-            enhancedSession.insights = [];
+            enhancedSession.insights = session.insights.map(insight => ({
+                ...insight,
+                enhanced_content: insight.content,
+                summary: insight.content.substring(0, 100) + (insight.content.length > 100 ? '...' : ''),
+                dna_enhanced: false,
+                categories: [],
+                keywords: []
+            }));
             
-            for (let i = 0; i < session.insights.length; i++) {
-                const insight = session.insights[i];
-                
-                try {
-                    if (showProgress) {
-                        window.showMessage('info', `🔄 知見 ${i + 1}/${session.insights.length} を整理中...`);
-                    }
-                    
-                    // 🔧 修正: 手動知見も自動知見と同様のリライト処理を適用
-                    const enhancement = await KnowledgeDNAManager.rewriteInsightForClarity(
-                        insight.content, 
-                        { theme: session.meta.theme, category: session.meta.category }
-                    );
-                    
-                    // 拡張された知見データを作成
-                    const enhancedInsight = {
-                        ...insight,
-                        enhanced_content: enhancement.enhanced,
-                        summary: enhancement.summary,
-                        categories: enhancement.categories,
-                        keywords: enhancement.keywords,
-                        background: enhancement.background,
-                        actionable_points: enhancement.actionable_points,
-                        related_concepts: enhancement.related_concepts,
-                        dna_enhanced: true
-                    };
-                    
-                    enhancedSession.insights.push(enhancedInsight);
-                    
-                } catch (error) {
-                    console.error(`❌ 知見 ${i + 1} の整理エラー:`, error);
-                    // エラー時は元の知見をそのまま追加
-                    enhancedSession.insights.push({
-                        ...insight,
-                        enhanced_content: insight.content,
-                        summary: '整理処理でエラーが発生',
-                        dna_enhanced: false
-                    });
-                }
-            }
-            
-            // Phase 2: 関係性分析（実装済み）
-            console.log('🕸️ Phase 2: 知見関係性分析開始...');
-            if (showProgress) {
-                window.showMessage('info', '🕸️ 知見間の関係性を分析中...');
-            }
-            
-            const relationships = await KnowledgeDNAManager.analyzeKnowledgeRelationships(
-                enhancedSession.insights
-            );
-            
-            enhancedSession.knowledge_graph = relationships;
-            
-            console.log('✅ AI知見整理完了');
-            if (showProgress) {
-                window.showMessage('success', '🧬 Knowledge DNAによる知見整理が完了しました！');
+            console.log('✅ AI知見整理完了（フォールバック）');
+            if (showProgress && window.showMessage) {
+                window.showMessage('success', '基本的な知見整理が完了しました');
             }
             
             return enhancedSession;
             
         } catch (error) {
-            console.error('❌ AI知見整理エラー:', error);
-            if (showProgress) {
+            console.error('❌ AI知見整理エラー（フォールバック）:', error);
+            if (showProgress && window.showMessage) {
                 window.showMessage('warning', 'AI整理でエラーが発生しましたが、基本の知見は保存されます');
             }
             return session;
@@ -4905,12 +5204,48 @@ const VoiceKnowledgeSystem = {
         try {
             console.log('🎯 音声ベース知見評価開始...');
             
-            // 1. はほりーのによる品質評価
-            const qualityEvaluation = await QualityAssessmentSystem.evaluateInsightQuality(insightText, conversationContext);
+            // 1. 前提条件の確認
+            const prerequisites = await this._checkEvaluationPrerequisites();
+            if (!prerequisites.canProceed) {
+                console.warn('⚠️ 知見評価の前提条件が満たされていません:', prerequisites.reason);
+                return { accepted: false, reason: 'prerequisites_not_met', details: prerequisites.reason };
+            }
             
+            // 2. はほりーのによる品質評価（AIManager統一）
+            let qualityEvaluation = null;
+            
+            // AIManagerによる統一評価処理
+            if (window.AIManager) {
+                try {
+                    console.log('🎯 AIManager統一評価処理開始...');
+                    
+                    // 初期化完了を待機（タイムアウト付き）
+                    await window.AIManager.waitForInitialization(10000);
+                    
+                    // 品質評価実行
+                    qualityEvaluation = await window.AIManager.evaluateInsightQuality(insightText, conversationContext);
+                    
+                    console.log('✅ AIManager統一評価完了');
+                } catch (error) {
+                    console.error('❌ AIManager評価エラー:', error);
+                    
+                    // エラーの詳細をログに記録
+                    if (error.message?.includes('初期化')) {
+                        console.warn('⚠️ AIManager初期化エラー - 手動評価に移行');
+                    } else if (error.message?.includes('API')) {
+                        console.warn('⚠️ API通信エラー - 手動評価に移行');
+                    } else {
+                        console.warn('⚠️ 予期しないエラー - 手動評価に移行');
+                    }
+                }
+            } else {
+                console.warn('⚠️ AIManagerが未定義 - 手動評価に移行');
+            }
+            
+            // AI評価失敗時は手動評価
             if (!qualityEvaluation) {
-                console.warn('⚠️ 品質評価が取得できませんでした');
-                return { accepted: false, reason: 'evaluation_failed' };
+                console.log('🔄 手動評価フォールバック実行');
+                return await this._handleManualEvaluationFallback(insightText, conversationContext);
             }
             
             // 統計更新
@@ -4920,7 +5255,7 @@ const VoiceKnowledgeSystem = {
             const totalScore = Math.round(qualityEvaluation.overall * 100);
             const threshold = AppState.knowledgeSettings.autoRecordThreshold;
             
-            // 2. 閾値による自動判定
+            // 3. 閾値による自動判定
             if (totalScore >= threshold) {
                 return await this.handleAutoRecord(qualityEvaluation, insightText, totalScore);
             } else {
@@ -4929,7 +5264,7 @@ const VoiceKnowledgeSystem = {
             
         } catch (error) {
             console.error('❌ 音声ベース知見評価エラー:', error);
-            return { accepted: false, reason: 'process_error' };
+            return { accepted: false, reason: 'process_error', details: error.message };
         }
     },
     
@@ -5078,6 +5413,333 @@ const VoiceKnowledgeSystem = {
         const total = AppState.sessionStats.totalKnowledge;
         const currentAvg = AppState.sessionStats.averageScore;
         AppState.sessionStats.averageScore = ((currentAvg * (total - 1)) + newScore) / total;
+    },
+    
+    // 🔧 知見評価前提条件チェック
+    async _checkEvaluationPrerequisites() {
+        const issues = [];
+        
+        // APIキーの確認
+        if (!window.AppState?.apiKey) {
+            issues.push('APIキーが設定されていません');
+        }
+        
+        // 入力テキストの確認
+        if (!window.AppState?.voiceRecognitionState?.pendingKnowledgeEvaluation?.insightText) {
+            // 実際の評価実行時に再チェック
+        }
+        
+        // AIManagerの存在確認
+        if (!window.AIManager) {
+            issues.push('AIManagerが読み込まれていません');
+        }
+        
+        // QualityAssessmentSystemの確認
+        if (!window.QualityAssessmentSystem) {
+            issues.push('QualityAssessmentSystemが読み込まれていません');
+        }
+        
+        // AI_PROMPTSの確認
+        if (!window.AI_PROMPTS) {
+            issues.push('AI_PROMPTSが読み込まれていません');
+        }
+        
+        return {
+            canProceed: issues.length === 0,
+            reason: issues.length > 0 ? issues.join(', ') : null,
+            issues: issues
+        };
+    },
+    
+    // 🔧 手動評価フォールバック処理（改善版）
+    async _handleManualEvaluationFallback(insightText, conversationContext) {
+        try {
+            console.log('🔄 手動評価フォールバック開始...');
+            
+            // はほりーのによる音声説明
+            const explanationMessage = `AI評価システムが一時的に利用できません。手動で評価させていただきます。`;
+            await this.speakAsHahori(explanationMessage);
+            
+            // 知見内容の確認
+            const knowledgePreview = insightText.length > 100 ? 
+                insightText.substring(0, 100) + '...' : insightText;
+            
+            const confirmationMessage = `「${knowledgePreview}」という知見が抽出されました。この知見を保存しますか？「はい」または「いいえ」でお答えください。`;
+            await this.speakAsHahori(confirmationMessage);
+            
+            // 手動確認モードに入る
+            ConversationGatekeeper.enterKnowledgeConfirmationMode('manualFallback');
+            
+            // 手動評価用の評価データを準備
+            const manualEvaluation = {
+                confidence: 0.75,
+                importance: 0.75,
+                actionability: 0.75,
+                overall: 0.75,
+                summary: knowledgePreview,
+                reason: 'AI評価システム利用不可のため手動評価',
+                recommendation: 'MANUAL_CONFIRM'
+            };
+            
+            // 保留中の知見評価を設定（音声応答を待つ）
+            AppState.voiceRecognitionState.pendingKnowledgeEvaluation = {
+                ...manualEvaluation,
+                insightText: insightText,
+                totalScore: 75, // 中間値として75点
+                isManualFallback: true
+            };
+            
+            // 音声認識の再開
+            restartSpeechRecognition();
+            
+            // この時点では結果を返さず、音声応答を待つ
+            return null;
+            
+        } catch (error) {
+            console.error('❌ 手動評価フォールバックエラー:', error);
+            
+            // エラー時の緊急処理
+            const errorMessage = `評価処理でエラーが発生しました。知見を保存せずに続行します。`;
+            if (window.showMessage) {
+                window.showMessage('error', errorMessage);
+            }
+            
+            return {
+                accepted: false,
+                reason: 'manual_fallback_error',
+                evaluation: null,
+                summary: 'フォールバック処理でエラー発生'
+            };
+        }
+    },
+    
+    // 🧪 Phase 4: システム健全性チェック機能
+    async performSystemHealthCheck() {
+        console.log('🔍 知見評価システム健全性チェック開始...');
+        
+        const healthReport = {
+            timestamp: new Date().toISOString(),
+            aiManager: false,
+            apiConnection: false,
+            voiceSystem: false,
+            overall: false,
+            errors: [],
+            recommendations: []
+        };
+        
+        try {
+            // 1. AIManager健全性チェック
+            if (window.AIManager) {
+                try {
+                    await window.AIManager.waitForInitialization(5000);
+                    if (window.AIManager.isInitialized) {
+                        healthReport.aiManager = true;
+                        console.log('✅ AIManager: 正常');
+                    } else {
+                        healthReport.errors.push('AIManager初期化未完了');
+                        healthReport.recommendations.push('ページを再読み込みしてください');
+                    }
+                } catch (error) {
+                    healthReport.errors.push(`AIManager初期化エラー: ${error.message}`);
+                    healthReport.recommendations.push('AIManager初期化を手動実行してください');
+                }
+            } else {
+                healthReport.errors.push('AIManagerが未定義');
+                healthReport.recommendations.push('AIManagerモジュールの読み込みを確認してください');
+            }
+            
+            // 2. API接続チェック（軽量）
+            if (window.AppState?.apiKey) {
+                healthReport.apiConnection = true;
+                console.log('✅ API設定: 正常');
+            } else {
+                healthReport.errors.push('APIキーが未設定');
+                healthReport.recommendations.push('APIキーを設定してください');
+            }
+            
+            // 3. 音声認識システムチェック
+            if (window.stateManager?.recognitionManager) {
+                const voiceState = window.stateManager.recognitionManager.state;
+                if (voiceState === 'idle' || voiceState === 'active') {
+                    healthReport.voiceSystem = true;
+                    console.log('✅ 音声認識: 正常');
+                } else {
+                    healthReport.errors.push(`音声認識状態異常: ${voiceState}`);
+                    healthReport.recommendations.push('音声認識を再開してください');
+                }
+            } else {
+                healthReport.errors.push('音声認識システムが未初期化');
+                healthReport.recommendations.push('音声システムを再初期化してください');
+            }
+            
+            // 4. 総合判定
+            healthReport.overall = healthReport.aiManager && healthReport.apiConnection && healthReport.voiceSystem;
+            
+            console.log('📊 健全性チェック結果:', {
+                overall: healthReport.overall ? '✅ 正常' : '❌ 問題あり',
+                components: {
+                    aiManager: healthReport.aiManager ? '✅' : '❌',
+                    apiConnection: healthReport.apiConnection ? '✅' : '❌',  
+                    voiceSystem: healthReport.voiceSystem ? '✅' : '❌'
+                },
+                errors: healthReport.errors.length,
+                recommendations: healthReport.recommendations.length
+            });
+            
+            return healthReport;
+            
+        } catch (error) {
+            console.error('❌ 健全性チェックエラー:', error);
+            healthReport.errors.push(`健全性チェック実行エラー: ${error.message}`);
+            healthReport.recommendations.push('システムを再起動してください');
+            return healthReport;
+        }
+    },
+    
+    // 🔧 Phase 4: 自動回復処理
+    async performAutoRecovery() {
+        console.log('🚑 知見評価システム自動回復開始...');
+        
+        const recoveryReport = {
+            timestamp: new Date().toISOString(),
+            attempted: [],
+            successful: [],
+            failed: [],
+            overall: false
+        };
+        
+        try {
+            // 1. AIManager回復試行
+            if (!window.AIManager?.isInitialized) {
+                recoveryReport.attempted.push('AIManager初期化');
+                try {
+                    if (typeof initializeAIManager === 'function') {
+                        await initializeAIManager();
+                        recoveryReport.successful.push('AIManager初期化成功');
+                        console.log('✅ AIManager回復成功');
+                    } else {
+                        recoveryReport.failed.push('initializeAIManager関数が見つからない');
+                    }
+                } catch (error) {
+                    recoveryReport.failed.push(`AIManager初期化失敗: ${error.message}`);
+                }
+            }
+            
+            // 2. 音声認識回復試行
+            if (!window.stateManager?.recognitionManager || 
+                window.stateManager.recognitionManager.state === 'error') {
+                recoveryReport.attempted.push('音声認識システム回復');
+                try {
+                    if (window.stateManager) {
+                        await window.stateManager.recognitionManager.stop();
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        await window.stateManager.startRecognition();
+                        recoveryReport.successful.push('音声認識システム回復成功');
+                        console.log('✅ 音声認識回復成功');
+                    } else {
+                        recoveryReport.failed.push('StateManagerが未初期化');
+                    }
+                } catch (error) {
+                    recoveryReport.failed.push(`音声認識回復失敗: ${error.message}`);
+                }
+            }
+            
+            // 3. 回復結果判定
+            recoveryReport.overall = recoveryReport.failed.length === 0 && recoveryReport.attempted.length > 0;
+            
+            console.log('🚑 自動回復結果:', {
+                overall: recoveryReport.overall ? '✅ 成功' : (recoveryReport.attempted.length === 0 ? '📝 不要' : '❌ 失敗'),
+                attempted: recoveryReport.attempted.length,
+                successful: recoveryReport.successful.length,
+                failed: recoveryReport.failed.length
+            });
+            
+            return recoveryReport;
+            
+        } catch (error) {
+            console.error('❌ 自動回復エラー:', error);
+            recoveryReport.failed.push(`自動回復実行エラー: ${error.message}`);
+            return recoveryReport;
+        }
+    },
+    
+    // 🧪 Phase 4: 知見評価テスト機能
+    async testInsightEvaluation(testInsight = null) {
+        console.log('🧪 知見評価システムテスト開始...');
+        
+        const testData = testInsight || {
+            text: 'これはテスト用の知見です。AIマネージャーの動作確認のために使用されます。',
+            context: { phase: 'test', user: 'system' }
+        };
+        
+        const testReport = {
+            timestamp: new Date().toISOString(),
+            testInput: testData,
+            healthCheck: null,
+            evaluationResult: null,
+            duration: 0,
+            success: false,
+            errors: []
+        };
+        
+        const startTime = Date.now();
+        
+        try {
+            // 1. 事前健全性チェック
+            testReport.healthCheck = await this.performSystemHealthCheck();
+            
+            if (!testReport.healthCheck.overall) {
+                console.log('⚠️ システム健全性に問題があります。自動回復を試行...');
+                const recoveryResult = await this.performAutoRecovery();
+                
+                if (!recoveryResult.overall && recoveryResult.attempted.length > 0) {
+                    throw new Error('システム回復に失敗しました');
+                }
+                
+                // 回復後再チェック
+                testReport.healthCheck = await this.performSystemHealthCheck();
+            }
+            
+            // 2. 実際の知見評価テスト（非破壊的）
+            if (testReport.healthCheck.overall) {
+                console.log('🔄 知見評価テスト実行中...');
+                
+                // テスト用に評価のみ実行（実際の保存はしない）
+                if (window.AIManager && window.AIManager.isInitialized) {
+                    const evaluation = await window.AIManager.evaluateInsightQuality(
+                        testData.text, 
+                        testData.context
+                    );
+                    
+                    testReport.evaluationResult = evaluation;
+                    testReport.success = evaluation !== null && evaluation.overall !== undefined;
+                } else {
+                    testReport.evaluationResult = 'AIManager利用不可';
+                    testReport.success = false;
+                }
+                
+                console.log('✅ 知見評価テスト完了');
+            } else {
+                throw new Error('システム健全性チェックに失敗');
+            }
+            
+        } catch (error) {
+            console.error('❌ 知見評価テストエラー:', error);
+            testReport.errors.push(error.message);
+            testReport.success = false;
+        } finally {
+            testReport.duration = Date.now() - startTime;
+        }
+        
+        console.log('🧪 テスト結果サマリー:', {
+            success: testReport.success ? '✅ 成功' : '❌ 失敗',
+            duration: `${testReport.duration}ms`,
+            healthStatus: testReport.healthCheck?.overall ? '✅ 正常' : '❌ 問題あり',
+            evaluationCompleted: testReport.evaluationResult ? '✅ 完了' : '❌ 失敗',
+            errors: testReport.errors.length
+        });
+        
+        return testReport;
     }
 };
 
@@ -5954,6 +6616,100 @@ window.initializeVoiceSystem = initializeVoiceSystem;
 window.initializeKnowledgeManagement = initializeKnowledgeManagement;
 window.initializeKnowledgeSession = initializeKnowledgeSession;
 
+// 🧪 Phase 4: テスト・検証機能をグローバル公開
+window.testInsightEvaluation = () => VoiceKnowledgeSystem.testInsightEvaluation();
+window.performSystemHealthCheck = () => VoiceKnowledgeSystem.performSystemHealthCheck();
+window.performAutoRecovery = () => VoiceKnowledgeSystem.performAutoRecovery();
+
+// 🛠️ デバッグ用コンソール機能
+window.debugInsightEvaluation = async function() {
+    console.log('🛠️ 知見評価システムデバッグ開始...');
+    
+    try {
+        // 1. 健全性チェック
+        console.log('1. システム健全性チェック');
+        const healthReport = await VoiceKnowledgeSystem.performSystemHealthCheck();
+        
+        // 2. 必要に応じて自動回復
+        if (!healthReport.overall) {
+            console.log('2. 自動回復試行');
+            const recoveryReport = await VoiceKnowledgeSystem.performAutoRecovery();
+            console.log('回復結果:', recoveryReport);
+        }
+        
+        // 3. テスト実行
+        console.log('3. 知見評価テスト実行');
+        const testReport = await VoiceKnowledgeSystem.testInsightEvaluation();
+        
+        // 4. 結果まとめ
+        console.log('📊 デバッグ結果まとめ:', {
+            健全性チェック: healthReport.overall ? '✅ 正常' : '❌ 問題あり',
+            テスト実行: testReport.success ? '✅ 成功' : '❌ 失敗',
+            実行時間: `${testReport.duration}ms`,
+            エラー数: testReport.errors.length
+        });
+        
+        if (testReport.success) {
+            console.log('🎉 知見評価システムは正常に動作しています！');
+        } else {
+            console.log('⚠️ 知見評価システムに問題があります。詳細を確認してください。');
+            console.log('エラー詳細:', testReport.errors);
+            if (healthReport.recommendations.length > 0) {
+                console.log('推奨対処法:', healthReport.recommendations);
+            }
+        }
+        
+        return {
+            健全性: healthReport,
+            テスト結果: testReport
+        };
+        
+    } catch (error) {
+        console.error('❌ デバッグ実行エラー:', error);
+        return { error: error.message };
+    }
+};
+
+// DataManager初期化
+async function initializeDataManager() {
+    console.log('📊 DataManager 初期化開始...');
+    
+    try {
+        if (window.DataManager) {
+            const success = await window.DataManager.initialize();
+            if (success) {
+                console.log('✅ DataManager 初期化完了');
+            } else {
+                console.error('❌ DataManager 初期化に失敗しました');
+            }
+        } else {
+            console.error('❌ DataManager が見つかりません');
+        }
+    } catch (error) {
+        console.error('❌ DataManager 初期化エラー:', error);
+    }
+}
+
+// FileManager初期化
+async function initializeFileManager() {
+    console.log('📄 FileManager 初期化開始...');
+    
+    try {
+        if (window.FileManager) {
+            const success = await window.FileManager.initialize();
+            if (success) {
+                console.log('✅ FileManager 初期化完了');
+            } else {
+                console.error('❌ FileManager 初期化に失敗しました');
+            }
+        } else {
+            console.error('❌ FileManager が見つかりません');
+        }
+    } catch (error) {
+        console.error('❌ FileManager 初期化エラー:', error);
+    }
+}
+
 // 音声システムの自動初期化
 document.addEventListener('DOMContentLoaded', function() {
     // 少し遅延させて他のシステムの初期化を待つ
@@ -5966,6 +6722,25 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('❌ 音声システム自動初期化失敗');
         }
     }, 50);
+    
+    // AIManagerの初期化
+    setTimeout(async () => {
+        console.log('🤖 AIManager自動初期化開始');
+        if (typeof initializeAIManager === 'function') {
+            try {
+                const initialized = await initializeAIManager();
+                if (initialized) {
+                    console.log('✅ AIManager自動初期化完了');
+                } else {
+                    console.error('❌ AIManager自動初期化失敗');
+                }
+            } catch (error) {
+                console.error('❌ AIManager自動初期化エラー:', error);
+            }
+        } else {
+            console.error('❌ initializeAIManager関数が見つかりません');
+        }
+    }, 100);
 });
 
 console.log('✅ 新音声システム・知見管理システムの関数をwindowオブジェクトに公開しました');

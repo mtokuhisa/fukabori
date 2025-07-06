@@ -296,9 +296,24 @@ console.log('✅ 知見管理システム（独立コンポーネント）読み
 // =================================================================================
 
 // 🧬 Knowledge DNA Manager - 知見の構造化・リライト・関係性分析システム
+// ⚠️ このクラスは非推奨です。AIManager.rewriteInsightForClarity を使用してください
 const KnowledgeDNAManager = {
-    // 知見リライト・整理機能
+    // 知見リライト・整理機能（AIManagerに移譲）
     async rewriteInsightForClarity(insightText, context) {
+        console.warn('⚠️ KnowledgeDNAManager.rewriteInsightForClarity は非推奨です。AIManager.rewriteInsightForClarity を使用してください');
+        
+        // AIManagerが利用可能かチェック
+        if (window.AIManager && window.AIManager.isInitialized) {
+            try {
+                return await window.AIManager.rewriteInsightForClarity(insightText, context);
+            } catch (error) {
+                console.error('❌ AIManager.rewriteInsightForClarity実行エラー:', error);
+                // フォールバック処理へ
+            }
+        }
+        
+        // フォールバック実装（AIManager未使用時）
+        console.warn('⚠️ AIManagerが未初期化のため、レガシー実装を使用します');
         if (!window.AppState?.apiKey || !insightText?.trim()) {
             return {
                 enhanced: insightText,
@@ -462,8 +477,22 @@ const KnowledgeDNAManager = {
         }
     },
 
-    // 知見間の関係性分析
+    // 知見間の関係性分析（AIManagerに移譲）
     async analyzeKnowledgeRelationships(insights) {
+        console.warn('⚠️ KnowledgeDNAManager.analyzeKnowledgeRelationships は非推奨です。AIManager.analyzeKnowledgeRelationships を使用してください');
+        
+        // AIManagerが利用可能かチェック
+        if (window.AIManager && window.AIManager.isInitialized) {
+            try {
+                return await window.AIManager.analyzeKnowledgeRelationships(insights);
+            } catch (error) {
+                console.error('❌ AIManager.analyzeKnowledgeRelationships実行エラー:', error);
+                // フォールバック処理へ
+            }
+        }
+        
+        // フォールバック実装（AIManager未使用時）
+        console.warn('⚠️ AIManagerが未初期化のため、レガシー実装を使用します');
         if (!window.AppState?.apiKey || !insights || insights.length < 2) {
             return {
                 clusters: [],
@@ -607,6 +636,7 @@ const KnowledgeDNAManager = {
 // =================================================================================
 
 // 🎯 品質評価システム（はほりーのによる知見品質評価）
+// ⚠️ このクラスは非推奨です。AIManager.evaluateInsightQuality を使用してください
 const QualityAssessmentSystem = {
     // 品質評価の閾値設定
     thresholds: {
@@ -616,8 +646,23 @@ const QualityAssessmentSystem = {
         minimum_overall: 0.6
     },
     
-    // はほりーのによる知見品質評価
+    // はほりーのによる知見品質評価（AIManagerに移譲）
     async evaluateInsightQuality(insightText, conversationContext) {
+        console.warn('⚠️ QualityAssessmentSystem.evaluateInsightQuality は非推奨です。AIManager.evaluateInsightQuality を使用してください');
+        
+        // AIManagerが利用可能かチェック
+        if (window.AIManager && window.AIManager.isInitialized) {
+            try {
+                return await window.AIManager.evaluateInsightQuality(insightText, conversationContext);
+            } catch (error) {
+                console.error('❌ AIManager.evaluateInsightQuality実行エラー:', error);
+                // フォールバック処理へ
+            }
+        }
+        
+        // フォールバック実装（AIManager未使用時）
+        console.warn('⚠️ AIManagerが未初期化のため、レガシー実装を使用します');
+        
         try {
             if (!window.AppState?.apiKey || !insightText?.trim()) {
                 return null;
@@ -766,8 +811,23 @@ ${scoreDisplay}
         });
     },
     
-    // 品質評価統合処理（メイン関数）
+    // 品質評価統合処理（メイン関数）（AIManagerに移譲）
     async processInsightWithQualityAssessment(insightText, conversationContext) {
+        console.warn('⚠️ QualityAssessmentSystem.processInsightWithQualityAssessment は非推奨です。AIManager.processInsightWithQualityAssessment を使用してください');
+        
+        // AIManagerが利用可能かチェック
+        if (window.AIManager && window.AIManager.isInitialized) {
+            try {
+                return await window.AIManager.processInsightWithQualityAssessment(insightText, conversationContext);
+            } catch (error) {
+                console.error('❌ AIManager.processInsightWithQualityAssessment実行エラー:', error);
+                // フォールバック処理へ
+            }
+        }
+        
+        // フォールバック実装（AIManager未使用時）
+        console.warn('⚠️ AIManagerが未初期化のため、レガシー実装を使用します');
+        
         try {
             console.log('🎯 知見品質評価プロセス開始...');
             
@@ -836,8 +896,21 @@ console.log('✅ 知見管理システム（AI整理・品質評価）読み込�
 // KNOWLEDGE DOWNLOAD FUNCTIONS - 知見ダウンロード関数
 // =================================================================================
 
-// 🧬 全知見ダウンロード機能
+// 🧬 全知見ダウンロード機能（FileManagerに移譲）
 async function downloadAllKnowledge() {
+    console.warn('⚠️ downloadAllKnowledge は非推奨です。FileManager.downloadAllKnowledge を使用してください');
+    
+    // FileManagerが利用可能かチェック
+    if (window.FileManager) {
+        try {
+            return await window.FileManager.downloadAllKnowledge();
+        } catch (error) {
+            console.error('❌ FileManager.downloadAllKnowledge実行エラー:', error);
+            // フォールバック処理へ
+        }
+    }
+    
+    // フォールバック実装（FileManager未使用時）
     console.log('🧬 全知見ダウンロード開始');
     
     try {
@@ -923,8 +996,21 @@ async function enhanceAllKnowledgeWithAI(database, allInsights) {
     }
 }
 
-// 全知見アーカイブファイル内容構築（「知見DL」と同等の詳細度）
+// 全知見アーカイブファイル内容構築（「知見DL」と同等の詳細度）（FileManagerに移譲）
 function buildAllKnowledgeFileContent(database, allInsights) {
+    console.warn('⚠️ buildAllKnowledgeFileContent は非推奨です。FileManager.buildAllKnowledgeFileContent を使用してください');
+    
+    // FileManagerが利用可能かチェック
+    if (window.FileManager) {
+        try {
+            return window.FileManager.buildAllKnowledgeFileContent(database, allInsights);
+        } catch (error) {
+            console.error('❌ FileManager.buildAllKnowledgeFileContent実行エラー:', error);
+            // フォールバック処理へ
+        }
+    }
+    
+    // フォールバック実装（FileManager未使用時）
     const timestamp = new Date().toLocaleString('ja-JP');
     let content = '';
 

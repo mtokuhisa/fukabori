@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深堀くん - KnowledgeFileManager テストツール</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .test-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .test-button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: none;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .test-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .test-button.success {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+        }
+
+        .test-button.error {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+        }
+
+        .progress-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .status-text {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+
+        .results-section {
+            margin-top: 30px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #ddd;
+        }
+
+        .result-card.pass {
+            border-left-color: #4CAF50;
+        }
+
+        .result-card.fail {
+            border-left-color: #f44336;
+        }
+
+        .result-card.running {
+            border-left-color: #2196F3;
+        }
+
+        .result-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-pass {
+            background: #e8f5e8;
+            color: #4CAF50;
+        }
+
+        .status-fail {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .status-running {
+            background: #e3f2fd;
+            color: #2196F3;
+        }
+
+        .result-details {
+            margin-top: 15px;
+        }
+
+        .result-time {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .error-details {
+            background: #ffebee;
+            border: 1px solid #ffcdd2;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #c62828;
+        }
+
+        .summary-section {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .log-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .log-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .log-controls .glass-button {
+            padding: 8px 16px;
+            font-size: 0.9em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .log-controls .glass-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #logContainer {
+            max-height: 400px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .log-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-time {
+            color: #666;
+            margin-right: 10px;
+        }
+
+        .log-level-info {
+            color: #2196F3;
+        }
+
+        .log-level-success {
+            color: #4CAF50;
+        }
+
+        .log-level-error {
+            color: #f44336;
+        }
+
+        .log-level-warn {
+            color: #ff9800;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .diagnostic-section {
+            background: #f0f8ff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            border: 2px solid #667eea;
+        }
+
+        .diagnostic-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .diagnostic-controls .glass-button {
+            padding: 8px 16px;
+            font-size: 0.9em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .diagnostic-controls .glass-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .diagnostic-content {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            font-family: monospace;
+            font-size: 0.9em;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .diagnostic-section h4 {
+            color: #667eea;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .diagnostic-section .error-highlight {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .diagnostic-section .warning-highlight {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .diagnostic-section .info-highlight {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .copy-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .copy-notification.show {
+            opacity: 1;
+        }
+
+        .config-section {
+            background: #f0f0f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .config-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .config-item label {
+            min-width: 150px;
+            font-weight: bold;
+        }
+
+        .config-item input, .config-item select {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ヘッダー -->
+        <div class="header">
+            <h1>🧪 KnowledgeFileManager テストツール</h1>
+            <p>深堀くんのリファクタリングテストを実行して、動作確認ができます</p>
+        </div>
+
+        <!-- 設定セクション -->
+        <div class="config-section">
+            <h3>⚙️ テスト設定</h3>
+            <div class="config-item">
+                <label>テスト実行速度:</label>
+                <select id="testSpeed">
+                    <option value="normal">通常速度</option>
+                    <option value="fast">高速実行</option>
+                    <option value="slow">詳細確認</option>
+                </select>
+            </div>
+            <div class="config-item">
+                <label>ログレベル:</label>
+                <select id="logLevel">
+                    <option value="all">全て表示</option>
+                    <option value="important">重要なもののみ</option>
+                    <option value="errors">エラーのみ</option>
+                </select>
+            </div>
+            <div class="config-item">
+                <label>自動スクロール:</label>
+                <input type="checkbox" id="autoScroll" checked>
+                <span>テスト結果を自動で下にスクロール</span>
+            </div>
+        </div>
+
+        <!-- テスト実行ボタン -->
+        <div class="test-controls">
+            <button class="test-button" id="runAllTestsBtn" onclick="runAllTestsUI()">
+                🚀 全テスト実行
+            </button>
+            <button class="test-button" id="runPhase1Btn" onclick="runPhase1TestsUI()">
+                🔧 Phase 1テスト
+            </button>
+            <button class="test-button" id="runIntegrationBtn" onclick="runIntegrationTestUI()">
+                🔗 統合テスト
+            </button>
+            <button class="test-button" id="runIndividualBtn" onclick="showIndividualTests()">
+                📋 個別テスト
+            </button>
+            <button class="test-button" id="clearResultsBtn" onclick="clearResults()">
+                🗑️ 結果クリア
+            </button>
+            <button class="test-button" id="exportResultsBtn" onclick="exportResults()">
+                📄 結果エクスポート
+            </button>
+            <button class="test-button" id="copyLogsBtn" onclick="copyAllLogs()">
+                📋 ログコピー
+            </button>
+            <button class="test-button" id="generateReportBtn" onclick="generateDiagnosticReport()">
+                🔍 診断レポート
+            </button>
+        </div>
+
+        <!-- 進行状況 -->
+        <div class="progress-section">
+            <h3>📊 テスト進行状況</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="status-text" id="statusText">テストを開始してください</div>
+        </div>
+
+        <!-- テスト結果 -->
+        <div class="results-section">
+            <h3>📋 テスト結果</h3>
+            <div class="results-grid" id="resultsGrid">
+                <!-- 結果カードが動的に追加される -->
+            </div>
+        </div>
+
+        <!-- サマリー -->
+        <div class="summary-section" id="summarySection" style="display: none;">
+            <h3>🎯 テスト結果サマリー</h3>
+            <div class="summary-stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalTests">0</div>
+                    <div>総テスト数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="passedTests">0</div>
+                    <div>成功</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="failedTests">0</div>
+                    <div>失敗</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalTime">0ms</div>
+                    <div>実行時間</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ログ -->
+        <div class="log-section">
+            <h3>📝 テストログ</h3>
+            <div class="log-controls">
+                <button class="glass-button" onclick="copyAllLogs()">📋 全ログコピー</button>
+                <button class="glass-button" onclick="copyErrorLogs()">❌ エラーログのみコピー</button>
+                <button class="glass-button" onclick="clearLogs()">🗑️ ログクリア</button>
+                <button class="glass-button" onclick="downloadLogs()">💾 ログダウンロード</button>
+            </div>
+            <div id="logContainer">
+                <div class="log-item">
+                    <span class="log-time">--:--:--</span>
+                    <span class="log-level-info">[INFO]</span>
+                    <span>テストツールが準備完了しました</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 診断レポート -->
+        <div class="diagnostic-section" id="diagnosticSection" style="display: none;">
+            <h3>🔍 診断レポート</h3>
+            <div class="diagnostic-controls">
+                <button class="glass-button" onclick="copyDiagnosticReport()">📋 レポートコピー</button>
+                <button class="glass-button" onclick="downloadDiagnosticReport()">💾 レポートダウンロード</button>
+                <button class="glass-button" onclick="closeDiagnosticReport()">✕ 閉じる</button>
+            </div>
+            <div class="diagnostic-content" id="diagnosticContent">
+                <!-- 診断レポートが動的に生成される -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 必要なスクリプトを読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    
+    <!-- テスト用最小構成: サーバーレス対応 -->
+    <script>
+        // テスト用簡易プロンプト定義
+        window.AI_PROMPTS = {
+            INSIGHT_CLARITY: (text, context) => `以下の知見を整理してください: ${text}`,
+            KNOWLEDGE_RELATIONSHIPS: (insights) => `知見間の関係性を分析してください`,
+            SESSION_SUMMARY: (theme, history, insights) => `セッションをまとめてください`
+        };
+        
+        // テスト用簡易ユーティリティ
+        window.showMessage = (type, message) => console.log(`[${type}] ${message}`);
+        
+        // テスト用AppState
+        window.AppState = {
+            apiKey: 'test-api-key-mock',
+            conversationHistory: [],
+            extractedKnowledge: [],
+            currentTheme: 'テストセッション',
+            sessionActive: false
+        };
+        
+        console.log('✅ テスト用最小環境セットアップ完了');
+    </script>
+    
+    <!-- テストツールに必要なファイルのみ読み込み（読み込み順序重要） -->
+    <script src="test-globals.js"></script>
+    <script src="../../app/data-manager.js"></script>
+<script src="../../app/file-manager.js"></script>
+<script src="knowledge-file-manager-interface.js"></script>
+    <script src="test-knowledge-file-manager.js"></script>
+    <script src="test-runner.js"></script>
+    
+    <!-- メインアプリのファイル（テストツールでは不要だが依存関係のため読み込み） -->
+    <!-- <script src="app/ui-advanced.js"></script> -->
+    <!-- <script src="app/file-processing.js"></script> -->
+    <!-- <script src="app/api-key-setup.js"></script> -->
+    <!-- <script src="app/session-manager.js"></script> -->
+    <!-- <script src="app/phase-manager.js"></script> -->
+    <!-- <script src="app/session-start-manager.js"></script> -->
+    <!-- <script src="app/voice-phase2-manager.js"></script> -->
+    <!-- <script src="app/script.js"></script> -->
+
+    <script>
+        // =================================================================================
+        // テストUI管理
+        // =================================================================================
+
+        let currentTestSession = {
+            startTime: null,
+            results: [],
+            isRunning: false
+        };
+
+        let allLogs = []; // 全ログを保存
+        let systemInfo = null; // システム情報を保存
+
+        // ログ出力をインターセプト
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, arguments);
+            const message = args.join(' ');
+            addLogEntry('info', message);
+            saveLogToMemory('info', message);
+        };
+
+        console.error = function(...args) {
+            originalConsoleError.apply(console, arguments);
+            const message = args.join(' ');
+            addLogEntry('error', message);
+            saveLogToMemory('error', message);
+        };
+
+        console.warn = function(...args) {
+            originalConsoleWarn.apply(console, arguments);
+            const message = args.join(' ');
+            addLogEntry('warn', message);
+            saveLogToMemory('warn', message);
+        };
+
+        // ログをメモリに保存
+        function saveLogToMemory(level, message) {
+            const timestamp = new Date().toISOString();
+            const logEntry = {
+                timestamp,
+                level,
+                message,
+                time: new Date().toLocaleTimeString()
+            };
+            allLogs.push(logEntry);
+        }
+
+        // ログエントリー追加
+        function addLogEntry(level, message) {
+            const logContainer = document.getElementById('logContainer');
+            const logItem = document.createElement('div');
+            logItem.className = 'log-item';
+            
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString();
+            
+            logItem.innerHTML = `
+                <span class="log-time">${timeStr}</span>
+                <span class="log-level-${level}">[${level.toUpperCase()}]</span>
+                <span>${message}</span>
+            `;
+            
+            logContainer.appendChild(logItem);
+            
+            // 自動スクロール
+            if (document.getElementById('autoScroll').checked) {
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+        }
+
+        // テスト結果カード追加
+        function addResultCard(testName, status, duration, error = null) {
+            const resultsGrid = document.getElementById('resultsGrid');
+            const resultCard = document.createElement('div');
+            resultCard.className = `result-card ${status}`;
+            
+            let statusClass = 'status-pass';
+            let statusText = '✅ 成功';
+            
+            if (status === 'fail') {
+                statusClass = 'status-fail';
+                statusText = '❌ 失敗';
+            } else if (status === 'running') {
+                statusClass = 'status-running';
+                statusText = '🔄 実行中';
+            }
+            
+            resultCard.innerHTML = `
+                <div class="result-title">
+                    ${testName}
+                    <span class="result-status ${statusClass}">${statusText}</span>
+                </div>
+                <div class="result-details">
+                    <div class="result-time">実行時間: ${duration}ms</div>
+                    ${error ? `<div class="error-details">${error}</div>` : ''}
+                </div>
+            `;
+            
+            resultsGrid.appendChild(resultCard);
+            
+            // 自動スクロール
+            if (document.getElementById('autoScroll').checked) {
+                resultCard.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // 進行状況更新
+        function updateProgress(current, total, statusText) {
+            const progressFill = document.getElementById('progressFill');
+            const statusElement = document.getElementById('statusText');
+            
+            const percentage = total > 0 ? (current / total) * 100 : 0;
+            progressFill.style.width = `${percentage}%`;
+            statusElement.textContent = statusText;
+        }
+
+        // サマリー更新
+        function updateSummary(results) {
+            const summarySection = document.getElementById('summarySection');
+            const totalTests = document.getElementById('totalTests');
+            const passedTests = document.getElementById('passedTests');
+            const failedTests = document.getElementById('failedTests');
+            const totalTime = document.getElementById('totalTime');
+            
+            const passed = results.filter(r => r.status === 'PASS').length;
+            const total = results.length;
+            const totalDuration = results.reduce((sum, r) => sum + r.duration, 0);
+            
+            totalTests.textContent = total;
+            passedTests.textContent = passed;
+            failedTests.textContent = total - passed;
+            totalTime.textContent = `${totalDuration}ms`;
+            
+            summarySection.style.display = 'block';
+        }
+
+        // ボタン状態管理
+        function setButtonsEnabled(enabled) {
+            const buttons = document.querySelectorAll('.test-button');
+            buttons.forEach(btn => {
+                btn.disabled = !enabled;
+            });
+        }
+
+        // 全テスト実行
+        async function runAllTestsUI() {
+            console.log('🚀 全テスト実行開始');
+            
+            setButtonsEnabled(false);
+            currentTestSession.startTime = Date.now();
+            currentTestSession.results = [];
+            currentTestSession.isRunning = true;
+            
+            updateProgress(0, 1, '全テスト実行中...');
+            
+            try {
+                // 依存関係の確認と初期化
+                console.log('🔧 依存関係チェック開始...');
+                
+                // SessionControllerの初期化確認
+                if (typeof window.SessionController !== 'undefined') {
+                    if (!window.SessionController.interface) {
+                        try {
+                            window.SessionController.init();
+                            console.log('✅ SessionController初期化完了');
+                        } catch (error) {
+                            console.warn('⚠️ SessionController初期化失敗:', error);
+                        }
+                    }
+                }
+                
+                // runCompleteTests関数の存在確認
+                if (typeof window.runCompleteTests !== 'function') {
+                    throw new Error('runCompleteTests関数が定義されていません。test-runner.jsが正しく読み込まれていない可能性があります。');
+                }
+                
+                console.log('✅ 依存関係チェック完了');
+                
+                await window.runCompleteTests();
+                
+                // KnowledgeFileManagerTestsの結果を取得
+                const testResults = window.KnowledgeFileManagerTests ? window.KnowledgeFileManagerTests.results : [];
+                
+                // UI結果を更新
+                testResults.forEach(result => {
+                    addResultCard(result.name, result.status === 'PASS' ? 'pass' : 'fail', result.duration, result.error);
+                });
+                
+                updateSummary(testResults);
+                updateProgress(1, 1, '全テスト完了');
+                
+                console.log('✅ 全テスト実行完了');
+                
+            } catch (error) {
+                console.error('❌ テスト実行エラー:', error.message);
+                addResultCard('全テスト実行', 'fail', Date.now() - currentTestSession.startTime, error.message);
+                updateProgress(1, 1, 'テスト実行エラー');
+            } finally {
+                setButtonsEnabled(true);
+                currentTestSession.isRunning = false;
+            }
+        }
+
+        // Phase 1テスト実行
+        async function runPhase1TestsUI() {
+            console.log('🔧 Phase 1テスト実行開始');
+            
+            setButtonsEnabled(false);
+            updateProgress(0, 1, 'Phase 1テスト実行中...');
+            
+            try {
+                await runPhase1Tests();
+                console.log('✅ Phase 1テスト完了');
+                updateProgress(1, 1, 'Phase 1テスト完了');
+            } catch (error) {
+                console.error('❌ Phase 1テストエラー:', error.message);
+                updateProgress(1, 1, 'Phase 1テストエラー');
+            } finally {
+                setButtonsEnabled(true);
+            }
+        }
+
+        // 統合テスト実行
+        async function runIntegrationTestUI() {
+            console.log('🔗 統合テスト実行開始');
+            
+            setButtonsEnabled(false);
+            updateProgress(0, 1, '統合テスト実行中...');
+            
+            try {
+                await runIntegrationTest();
+                console.log('✅ 統合テスト完了');
+                updateProgress(1, 1, '統合テスト完了');
+            } catch (error) {
+                console.error('❌ 統合テストエラー:', error.message);
+                updateProgress(1, 1, '統合テストエラー');
+            } finally {
+                setButtonsEnabled(true);
+            }
+        }
+
+        // 個別テスト表示
+        function showIndividualTests() {
+            alert('個別テスト機能は次回実装予定です');
+        }
+
+        // 結果クリア
+        function clearResults() {
+            document.getElementById('resultsGrid').innerHTML = '';
+            document.getElementById('summarySection').style.display = 'none';
+            document.getElementById('logContainer').innerHTML = `
+                <div class="log-item">
+                    <span class="log-time">${new Date().toLocaleTimeString()}</span>
+                    <span class="log-level-info">[INFO]</span>
+                    <span>結果をクリアしました</span>
+                </div>
+            `;
+            updateProgress(0, 1, 'テストを開始してください');
+        }
+
+        // 結果エクスポート
+        function exportResults() {
+            const results = currentTestSession.results;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `test-results-${timestamp}.json`;
+            
+            const exportData = {
+                timestamp: new Date().toISOString(),
+                summary: {
+                    total: results.length,
+                    passed: results.filter(r => r.status === 'PASS').length,
+                    failed: results.filter(r => r.status === 'FAIL').length
+                },
+                results: results
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            console.log('📄 テスト結果をエクスポートしました:', filename);
+        }
+
+        // ログ管理とレポート機能
+        // =================================================================================
+
+        // 全ログコピー
+        function copyAllLogs() {
+            const logText = allLogs.map(log => 
+                `[${log.timestamp}] ${log.level.toUpperCase()}: ${log.message}`
+            ).join('\n');
+            
+            copyToClipboard(logText, '全ログをコピーしました');
+        }
+
+        // エラーログのみコピー
+        function copyErrorLogs() {
+            const errorLogs = allLogs.filter(log => log.level === 'error');
+            const logText = errorLogs.map(log => 
+                `[${log.timestamp}] ${log.level.toUpperCase()}: ${log.message}`
+            ).join('\n');
+            
+            copyToClipboard(logText, 'エラーログをコピーしました');
+        }
+
+        // ログクリア
+        function clearLogs() {
+            allLogs = [];
+            document.getElementById('logContainer').innerHTML = '';
+            addLogEntry('info', 'ログがクリアされました');
+        }
+
+        // ログダウンロード
+        function downloadLogs() {
+            const logText = allLogs.map(log => 
+                `[${log.timestamp}] ${log.level.toUpperCase()}: ${log.message}`
+            ).join('\n');
+            
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `test-logs-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('ログファイルをダウンロードしました');
+        }
+
+        // 診断レポート生成
+        function generateDiagnosticReport() {
+            collectSystemInfo();
+            const report = createDiagnosticReport();
+            
+            const section = document.getElementById('diagnosticSection');
+            const content = document.getElementById('diagnosticContent');
+            
+            content.innerHTML = report;
+            section.style.display = 'block';
+            section.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 診断レポートコピー
+        function copyDiagnosticReport() {
+            const content = document.getElementById('diagnosticContent');
+            const reportText = content.textContent || content.innerText;
+            copyToClipboard(reportText, '診断レポートをコピーしました');
+        }
+
+        // 診断レポートダウンロード
+        function downloadDiagnosticReport() {
+            const content = document.getElementById('diagnosticContent');
+            const reportText = content.textContent || content.innerText;
+            
+            const blob = new Blob([reportText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `diagnostic-report-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('診断レポートをダウンロードしました');
+        }
+
+        // 診断レポートを閉じる
+        function closeDiagnosticReport() {
+            document.getElementById('diagnosticSection').style.display = 'none';
+        }
+
+        // システム情報収集
+        function collectSystemInfo() {
+            systemInfo = {
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                cookieEnabled: navigator.cookieEnabled,
+                onLine: navigator.onLine,
+                screenWidth: window.screen.width,
+                screenHeight: window.screen.height,
+                windowWidth: window.innerWidth,
+                windowHeight: window.innerHeight,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                memory: navigator.deviceMemory || 'unknown',
+                hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
+                connection: navigator.connection ? {
+                    effectiveType: navigator.connection.effectiveType,
+                    downlink: navigator.connection.downlink,
+                    rtt: navigator.connection.rtt,
+                    saveData: navigator.connection.saveData
+                } : 'unknown'
+            };
+        }
+
+        // 診断レポート作成
+        function createDiagnosticReport() {
+            const errorLogs = allLogs.filter(log => log.level === 'error');
+            const warningLogs = allLogs.filter(log => log.level === 'warn');
+            const testResults = currentTestSession.results;
+            
+            const report = `
+🔍 深堀くんv2.0 KnowledgeFileManager テスト診断レポート
+================================================================
+
+📅 生成日時: ${new Date().toISOString()}
+🌐 ブラウザ: ${navigator.userAgent}
+💻 プラットフォーム: ${navigator.platform}
+🌍 言語: ${navigator.language}
+📏 画面サイズ: ${window.screen.width}x${window.screen.height}
+📐 ウィンドウサイズ: ${window.innerWidth}x${window.innerHeight}
+🕐 タイムゾーン: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
+💾 メモリ: ${navigator.deviceMemory || 'unknown'}GB
+🔧 CPU コア数: ${navigator.hardwareConcurrency || 'unknown'}
+🌐 オンライン状態: ${navigator.onLine ? 'オンライン' : 'オフライン'}
+🔗 接続情報: ${navigator.connection ? 
+    `${navigator.connection.effectiveType} (${navigator.connection.downlink}Mbps, ${navigator.connection.rtt}ms RTT)` : 
+    'unknown'}
+
+📊 テスト結果サマリー
+================================================================
+📝 総テスト数: ${testResults.length}
+✅ 成功: ${testResults.filter(r => r.status === 'PASS').length}
+❌ 失敗: ${testResults.filter(r => r.status === 'FAIL').length}
+⏱️ 総実行時間: ${testResults.reduce((sum, r) => sum + r.duration, 0)}ms
+
+${testResults.length > 0 ? `
+📋 詳細テスト結果:
+${testResults.map(r => `  • ${r.name}: ${r.status} (${r.duration}ms)${r.error ? `\n    エラー: ${r.error}` : ''}`).join('\n')}
+` : ''}
+
+🚨 エラーログ (${errorLogs.length}件)
+================================================================
+${errorLogs.length > 0 ? errorLogs.map(log => 
+    `[${log.timestamp}] ${log.message}`
+).join('\n') : '✅ エラーは発生していません'}
+
+⚠️ 警告ログ (${warningLogs.length}件)
+================================================================
+${warningLogs.length > 0 ? warningLogs.map(log => 
+    `[${log.timestamp}] ${log.message}`
+).join('\n') : '✅ 警告は発生していません'}
+
+📋 全ログ履歴 (${allLogs.length}件)
+================================================================
+${allLogs.map(log => 
+    `[${log.timestamp}] ${log.level.toUpperCase()}: ${log.message}`
+).join('\n')}
+
+🔧 推奨される対処法
+================================================================
+${generateTroubleshootingTips()}
+
+💡 追加情報
+================================================================
+• このレポートは問題の調査と解決に役立ちます
+• エラーが発生した場合は、このレポートを開発者に共有してください
+• ログは時系列順に表示されています
+• システム情報は診断の参考として含まれています
+
+================================================================
+📄 レポート終了
+            `;
+            
+            return report;
+        }
+
+        // トラブルシューティングのヒント生成
+        function generateTroubleshootingTips() {
+            const errorLogs = allLogs.filter(log => log.level === 'error');
+            const testResults = currentTestSession.results;
+            const failedTests = testResults.filter(r => r.status === 'FAIL');
+            
+            let tips = [];
+            
+            if (errorLogs.length === 0 && failedTests.length === 0) {
+                tips.push('✅ システムは正常に動作しています');
+            } else {
+                if (errorLogs.some(log => log.message.includes('KnowledgeFileManager'))) {
+                    tips.push('🔧 KnowledgeFileManagerの初期化に問題がある可能性があります');
+                    tips.push('   • 深堀くん.htmlでKnowledgeFileManagerが正しく読み込まれているか確認してください');
+                    tips.push('   • ブラウザのデベロッパーツールでエラーを確認してください');
+                }
+                
+                if (errorLogs.some(log => log.message.includes('network') || log.message.includes('fetch'))) {
+                    tips.push('🌐 ネットワーク接続に問題がある可能性があります');
+                    tips.push('   • インターネット接続を確認してください');
+                    tips.push('   • ローカルサーバーが起動しているか確認してください');
+                }
+                
+                if (failedTests.some(test => test.name.includes('Mock'))) {
+                    tips.push('🎭 モック機能に問題がある可能性があります');
+                    tips.push('   • テストデータの生成に失敗している可能性があります');
+                }
+                
+                if (errorLogs.some(log => log.message.includes('Permission') || log.message.includes('CORS'))) {
+                    tips.push('🔐 権限またはCORSエラーが発生している可能性があります');
+                    tips.push('   • ローカルサーバー経由でアクセスしていることを確認してください');
+                    tips.push('   • python3 start-test-server.py でサーバーを起動してください');
+                }
+            }
+            
+            if (tips.length === 0) {
+                tips.push('❓ 具体的な問題が特定できませんでした');
+                tips.push('   • このレポートを開発者に共有してください');
+                tips.push('   • ブラウザのデベロッパーツールで追加情報を確認してください');
+            }
+            
+            return tips.join('\n');
+        }
+
+        // クリップボードにコピー
+        function copyToClipboard(text, message) {
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification(message);
+            }).catch(err => {
+                console.error('クリップボードへのコピーに失敗しました:', err);
+                showNotification('コピーに失敗しました', 'error');
+            });
+        }
+
+        // 通知表示
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = 'copy-notification';
+            notification.textContent = message;
+            
+            if (type === 'error') {
+                notification.style.background = '#f44336';
+            }
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 10);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 2000);
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 テストツールが初期化されました');
+            
+            // 初期ログ
+            const now = new Date();
+            document.querySelector('.log-time').textContent = now.toLocaleTimeString();
+        });
+    </script>
+</body>
+</html> 

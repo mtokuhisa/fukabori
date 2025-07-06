@@ -239,7 +239,13 @@ const SessionStartManager = {
                 category: category
             };
             
-            await window.KnowledgeFileManager.createSessionFile(sessionMeta);
+            // SessionControllerを使用してセッション作成
+            if (window.SessionController) {
+                await window.SessionController.createSessionFile(sessionMeta);
+            } else {
+                // フォールバック
+                await window.KnowledgeFileManager.createSessionFile(sessionMeta);
+            }
             
             console.log('✅ 知見セッション初期化完了');
             window.showMessage('success', `知見収集セッションを開始しました（${category}カテゴリー）`);
