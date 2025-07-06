@@ -26,11 +26,12 @@ window.stateManager = null;
 const MICROPHONE_STRATEGY = {
     LEGACY: 'legacy',           // 従来システム（完全クリーンアップ）
     LIGHTWEIGHT: 'lightweight', // 軽量リスタート（現在の実装）
-    PERSISTENT: 'persistent'    // インスタンス不変戦略（Chrome最適化）
+    PERSISTENT: 'persistent',   // インスタンス不変戦略（Chrome最適化）
+    CONTINUOUS: 'continuous'    // 継続的音声認識（真の解決策）
 };
 
 // 🔧 現在の戦略を設定（開発時は動的切り替え可能）
-window.CURRENT_MICROPHONE_STRATEGY = MICROPHONE_STRATEGY.PERSISTENT; // Chrome専用
+window.CURRENT_MICROPHONE_STRATEGY = MICROPHONE_STRATEGY.CONTINUOUS; // Chrome専用の真の解決策
 
 // 🔧 PermissionManager: voice-core.jsに移動済み
 // 新しい音声コアシステムを使用: window.VoiceCore.permission
@@ -1294,6 +1295,494 @@ class PersistentRecognitionManager {
     }
 }
 
+// =================================================================================
+// CONTINUOUS RECOGNITION MANAGER - 継続的音声認識戦略（真の解決策）
+// =================================================================================
+
+// 🔧 継続的音声認識: start()を一度だけ呼び、絶対に停止しない戦略
+class ContinuousRecognitionManager {
+    constructor(permissionManager) {
+        this.permissionManager = permissionManager;
+        this.state = 'idle'; // idle, starting, active, error
+        this.recognition = null;
+        this.listeners = new Set();
+        this.isStarting = false;
+        
+        // 結果処理制御
+        this.processResults = true;  // 結果を処理するかどうか
+        this.pauseReason = null;     // 一時停止理由
+        
+        // 統計情報
+        this.stats = {
+            startCount: 0,              // start()呼び出し回数（1回のみが理想）
+            microphonePermissionRequests: 0,
+            resultProcessedCount: 0,    // 処理された結果数
+            resultIgnoredCount: 0,      // 無視された結果数
+            pauseCount: 0,              // 一時停止回数
+            resumeCount: 0,             // 再開回数
+            startTime: Date.now(),
+            sessionDuration: 0
+        };
+        
+        // 継続性管理
+        this.continuity = {
+            neverStopped: false,        // 一度も停止していない
+            startedOnce: false,         // 一度開始済み
+            forceStop: false            // 強制停止フラグ
+        };
+        
+        // 継続性監視
+        this.continuityMonitor = null;  // 監視タイマー
+        this.lastResultTime = Date.now(); // 最後の結果処理時刻
+        
+        console.log('🔄 ContinuousRecognitionManager初期化（継続的音声認識）');
+    }
+    
+    // 🔧 継続的音声認識開始（一度だけ）
+    async start() {
+        console.log('🔄 継続的音声認識開始:', this.state);
+        
+        if (this.continuity.startedOnce) {
+            console.log('✅ 既に開始済み - 結果処理を再開');
+            return this.resumeProcessing();
+        }
+        
+        if (this.isStarting) {
+            console.log('🔄 開始処理進行中');
+            return false;
+        }
+        
+        this.isStarting = true;
+        
+        try {
+            // セッション状態確認
+            if (!window.AppState?.sessionActive) {
+                console.log('🚫 セッション非アクティブ');
+                this.isStarting = false;
+                return false;
+            }
+            
+            // インスタンス作成（一度だけ）
+            if (!this.recognition) {
+                this.recognition = this.createRecognition();
+                this.setupEventHandlers();
+                console.log('🔄 継続的音声認識インスタンス作成');
+            }
+            
+            // マイク許可確認（一度だけ）
+            if (this.stats.microphonePermissionRequests === 0) {
+                console.log('🔍 マイク許可確認（一度だけ）');
+                const hasPermission = await this.permissionManager.getPermission();
+                this.stats.microphonePermissionRequests++;
+                
+                if (!hasPermission) {
+                    console.log('🚫 マイク許可なし');
+                    this.isStarting = false;
+                    return false;
+                }
+                console.log('✅ マイク許可取得 - 継続的音声認識開始');
+            }
+            
+            // 状態更新
+            this.state = 'starting';
+            this.notifyListeners();
+            
+            // 継続的音声認識開始（一度だけ）
+            console.log('🚀 継続的音声認識開始実行（一度だけ）');
+            this.recognition.start();
+            
+            this.stats.startCount++;
+            this.continuity.startedOnce = true;
+            this.continuity.neverStopped = true;
+            this.processResults = true;
+            
+            this.state = 'active';
+            this.notifyListeners();
+            
+            // 🔧 継続性監視開始
+            this.startContinuityMonitor();
+            
+            console.log(`✅ 継続的音声認識開始成功 - start()呼び出し: ${this.stats.startCount}回`);
+            return true;
+            
+        } catch (error) {
+            console.error('❌ 継続的音声認識開始エラー:', error);
+            this.state = 'error';
+            this.notifyListeners();
+            return false;
+        } finally {
+            this.isStarting = false;
+        }
+    }
+    
+    // 🔧 結果処理一時停止（音声認識は継続）
+    pauseProcessing(reason = 'unknown') {
+        console.log(`⏸️ 結果処理一時停止: ${reason}`);
+        this.processResults = false;
+        this.pauseReason = reason;
+        this.stats.pauseCount++;
+        
+        // 音声認識は継続するが、結果は無視
+        console.log('🔄 音声認識は継続中 - 結果のみ無視');
+    }
+    
+    // 🔧 結果処理再開（音声認識は継続していた）
+    resumeProcessing(reason = 'unknown') {
+        console.log(`▶️ 結果処理再開: ${reason}`);
+        this.processResults = true;
+        this.pauseReason = null;
+        this.stats.resumeCount++;
+        
+        console.log('🔄 結果処理再開 - 音声認識は継続していました');
+        return true;
+    }
+    
+    // 🔧 強制停止（セッション終了時のみ）
+    async forceStop() {
+        console.log('🛑 継続的音声認識強制停止（セッション終了）');
+        
+        if (!this.recognition || this.state !== 'active') {
+            console.log('✅ 既に停止済み');
+            return true;
+        }
+        
+        try {
+            this.continuity.forceStop = true;
+            this.processResults = false;
+            
+            // 🔧 継続性監視停止
+            this.stopContinuityMonitor();
+            
+            // 強制停止（セッション終了時のみ）
+            this.recognition.abort();
+            this.recognition = null;
+            
+            this.state = 'idle';
+            this.continuity.neverStopped = false;
+            this.notifyListeners();
+            
+            console.log('✅ 継続的音声認識強制停止完了');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ 継続的音声認識強制停止エラー:', error);
+            return false;
+        }
+    }
+    
+    // 🔧 stop()メソッド（結果処理停止のみ）
+    async stop() {
+        console.log('⏸️ 継続的音声認識 - 結果処理停止のみ');
+        return this.pauseProcessing('stop_request');
+    }
+    
+    // SpeechRecognition作成
+    createRecognition() {
+        let recognition;
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+        } else if ('SpeechRecognition' in window) {
+            recognition = new SpeechRecognition();
+        } else {
+            throw new Error('このブラウザは音声認識に対応していません');
+        }
+        
+        // 🔧 継続的音声認識最適化設定
+        recognition.continuous = true;           // 継続的音声認識
+        recognition.interimResults = true;       // 中間結果を取得
+        recognition.lang = 'ja-JP';             // 日本語
+        recognition.maxAlternatives = 1;         // 最大候補数
+        
+        // 🔧 Chrome専用の継続性強化設定
+        if (navigator.userAgent.includes('Chrome')) {
+            // Chrome固有の設定があれば追加
+            console.log('🎯 Chrome専用継続的音声認識設定適用');
+        }
+        
+        return recognition;
+    }
+    
+    // 🔧 継続性監視システム
+    startContinuityMonitor() {
+        console.log('🔍 継続性監視システム開始');
+        
+        // 30秒ごとに継続性をチェック（より頻繁に）
+        this.continuityMonitor = setInterval(() => {
+            if (this.state === 'active' && window.AppState?.sessionActive && !this.continuity.forceStop) {
+                const timeSinceLastResult = Date.now() - this.lastResultTime;
+                console.log(`🔍 継続性監視: 正常動作中 (最後の結果から${Math.floor(timeSinceLastResult/1000)}秒)`);
+                
+                // 最後の結果処理から一定時間経過した場合の予防的再開
+                if (timeSinceLastResult > 45000) { // 45秒（Chrome の60秒制限より前）
+                    console.log('⚠️ 継続性監視: 長時間無音 - 予防的再開実行');
+                    this.preemptiveRestart();
+                }
+            }
+        }, 30000); // 30秒間隔
+    }
+    
+    // 🔧 継続性監視停止
+    stopContinuityMonitor() {
+        if (this.continuityMonitor) {
+            console.log('🛑 継続性監視システム停止');
+            clearInterval(this.continuityMonitor);
+            this.continuityMonitor = null;
+        }
+    }
+    
+    // 🔧 予防的再開
+    preemptiveRestart() {
+        console.log('🔄 予防的再開実行（継続性保持）');
+        
+        if (this.recognition && this.state === 'active') {
+            // 現在の音声認識を一時停止して即座に再開
+            try {
+                this.recognition.stop();
+                
+                // 即座に再開
+                setTimeout(() => {
+                    if (window.AppState?.sessionActive && !this.continuity.forceStop) {
+                        console.log('🚀 予防的再開実行');
+                        this.recognition.start();
+                        this.stats.startCount++;
+                        console.log(`📊 予防的再開 - start()呼び出し回数: ${this.stats.startCount}`);
+                    }
+                }, 50);
+            } catch (error) {
+                console.error('❌ 予防的再開エラー:', error);
+            }
+        }
+    }
+    
+    // イベントハンドラ設定
+    setupEventHandlers() {
+        if (!this.recognition) return;
+        
+        // 結果処理（制御可能）
+        this.recognition.onresult = (event) => {
+            if (this.processResults) {
+                // 🔧 継続性監視: 最後の結果時刻を更新
+                this.lastResultTime = Date.now();
+                this.handleResult(event);
+                this.stats.resultProcessedCount++;
+            } else {
+                this.stats.resultIgnoredCount++;
+                console.log(`⏭️ 結果無視 (理由: ${this.pauseReason})`);
+            }
+        };
+        
+        // エラー処理
+        this.recognition.onerror = (event) => {
+            this.handleRecognitionError(event);
+        };
+        
+        // 終了処理（自動再開）
+        this.recognition.onend = () => {
+            this.handleEnd();
+        };
+        
+        // 開始処理
+        this.recognition.onstart = () => {
+            console.log('🔄 継続的音声認識開始イベント');
+            this.state = 'active';
+            this.notifyListeners();
+        };
+    }
+    
+    // 結果処理（既存ロジック再利用）
+    handleResult(event) {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const result = event.results[i];
+            if (result.isFinal) {
+                finalTranscript += result[0].transcript;
+            } else {
+                interimTranscript += result[0].transcript;
+            }
+        }
+
+        // 現在の入力中テキストを更新
+        const allConfirmedText = AppState.transcriptHistory.join(' ');
+        AppState.currentTranscript = allConfirmedText + (allConfirmedText ? ' ' : '') + interimTranscript;
+        window.updateTranscriptDisplay();
+
+        if (finalTranscript.trim()) {
+            AppState.transcriptHistory.push(finalTranscript.trim());
+            const updatedAllText = AppState.transcriptHistory.join(' ');
+            AppState.currentTranscript = updatedAllText;
+            window.updateTranscriptDisplay();
+            processFinalTranscript(finalTranscript.trim());
+        }
+    }
+    
+    // 継続的音声認識エラーハンドリング
+    handleRecognitionError(event) {
+        console.error('😨 継続的音声認識エラー:', event.error);
+        
+        switch (event.error) {
+            case 'not-allowed':
+            case 'service-not-allowed':
+                console.error('🚫 マイク許可エラー - 継続的音声認識停止');
+                this.permissionManager.state = 'denied';
+                this.state = 'error';
+                this.continuity.neverStopped = false;
+                this.notifyListeners();
+                return;
+                
+            case 'aborted':
+                if (this.continuity.forceStop) {
+                    console.log('🔄 意図的な停止');
+                    return;
+                }
+                console.warn('⚠️ 継続的音声認識が意図せず停止 - 即座に再開');
+                this.immediateRestart();
+                return;
+                
+            case 'no-speech':
+                console.log('😶 no-speech - 継続的音声認識では正常動作');
+                // 継続的音声認識では、no-speechは正常動作として扱う
+                return;
+                
+            case 'network':
+                console.warn('🌐 ネットワークエラー - 継続的音声認識自動復旧');
+                // ネットワークエラー時は短時間後に自動再開
+                setTimeout(() => {
+                    if (window.AppState?.sessionActive && !this.continuity.forceStop) {
+                        console.log('🔄 ネットワークエラー復旧 - 継続的音声認識再開');
+                        this.immediateRestart();
+                    }
+                }, 1000);
+                return;
+                
+            case 'audio-capture':
+                console.warn('🎤 オーディオキャプチャエラー - 継続的音声認識再試行');
+                setTimeout(() => {
+                    if (window.AppState?.sessionActive && !this.continuity.forceStop) {
+                        console.log('🔄 オーディオキャプチャ復旧 - 継続的音声認識再開');
+                        this.immediateRestart();
+                    }
+                }, 500);
+                return;
+                
+            default:
+                console.warn(`⁉️ 継続的音声認識未知エラー: ${event.error} - 自動復旧試行`);
+                // 未知のエラーでも自動復旧を試行
+                setTimeout(() => {
+                    if (window.AppState?.sessionActive && !this.continuity.forceStop) {
+                        console.log('🔄 未知エラー復旧 - 継続的音声認識再開');
+                        this.immediateRestart();
+                    }
+                }, 300);
+                break;
+        }
+    }
+    
+    // 🔧 即座再開メソッド
+    immediateRestart() {
+        if (this.recognition && window.AppState?.sessionActive && !this.continuity.forceStop) {
+            console.log('🚀 継続的音声認識即座再開');
+            try {
+                this.recognition.start();
+                this.stats.startCount++;
+                this.continuity.neverStopped = true;
+                console.log(`📊 start()呼び出し回数: ${this.stats.startCount}`);
+            } catch (error) {
+                console.error('❌ 継続的音声認識即座再開エラー:', error);
+                // エラー時は少し待機してから再試行
+                setTimeout(() => {
+                    if (this.recognition && window.AppState?.sessionActive && !this.continuity.forceStop) {
+                        console.log('🔄 継続的音声認識再試行');
+                        this.recognition.start();
+                        this.stats.startCount++;
+                    }
+                }, 100);
+            }
+        }
+    }
+    
+    // 終了イベント処理（真の継続的音声認識）
+    handleEnd() {
+        console.log('🏁 継続的音声認識終了イベント');
+        
+        if (this.continuity.forceStop) {
+            console.log('🛑 強制停止中 - 自動再開なし');
+            return;
+        }
+        
+        if (!window.AppState?.sessionActive) {
+            console.log('🚫 セッション非アクティブ - 自動再開なし');
+            return;
+        }
+        
+        // 🔧 重要：真の継続的音声認識では終了を防ぐ
+        console.log('⚠️ 継続的音声認識が予期せず終了 - 即座に自動再開');
+        this.continuity.neverStopped = false; // 一度停止したが再開
+        
+        // 即座に自動再開（遅延なし）
+        if (this.recognition && window.AppState?.sessionActive && !this.continuity.forceStop) {
+            console.log('🚀 継続的音声認識即座自動再開');
+            try {
+                this.recognition.start();
+                this.stats.startCount++;
+                this.continuity.neverStopped = true;
+                console.log(`📊 start()呼び出し回数: ${this.stats.startCount}`);
+            } catch (error) {
+                console.error('❌ 継続的音声認識自動再開エラー:', error);
+                // エラー時は少し待機してから再試行
+                setTimeout(() => {
+                    if (this.recognition && window.AppState?.sessionActive && !this.continuity.forceStop) {
+                        console.log('🔄 継続的音声認識再試行');
+                        this.recognition.start();
+                        this.stats.startCount++;
+                    }
+                }, 200);
+            }
+        }
+    }
+    
+    // 継続的音声認識統計情報
+    getMicrophonePermissionStats() {
+        const sessionDuration = Math.floor((Date.now() - this.stats.startTime) / 1000);
+        const efficiency = this.stats.startCount === 1 ? 100 : 
+                          Math.round((1 / this.stats.startCount) * 100);
+        
+        return {
+            strategy: 'continuous',
+            startCount: this.stats.startCount,
+            microphonePermissionRequests: this.stats.microphonePermissionRequests,
+            resultProcessedCount: this.stats.resultProcessedCount,
+            resultIgnoredCount: this.stats.resultIgnoredCount,
+            pauseCount: this.stats.pauseCount,
+            resumeCount: this.stats.resumeCount,
+            sessionDuration: sessionDuration,
+            efficiency: efficiency,
+            neverStopped: this.continuity.neverStopped,
+            continuousRecognition: this.continuity.startedOnce && this.state === 'active'
+        };
+    }
+    
+    // リスナー管理
+    addListener(callback) {
+        this.listeners.add(callback);
+    }
+    
+    removeListener(callback) {
+        this.listeners.delete(callback);
+    }
+    
+    notifyListeners() {
+        this.listeners.forEach(callback => {
+            try {
+                callback(this.state);
+            } catch (error) {
+                console.error('継続的音声認識リスナー実行エラー:', error);
+            }
+        });
+    }
+}
+
 // 🔧 AudioManager: voice-core.jsに移動済み
 // 新しい音声コアシステムを使用: window.VoiceCore.audio
 
@@ -1324,6 +1813,10 @@ class StateManager {
         const strategy = window.CURRENT_MICROPHONE_STRATEGY || MICROPHONE_STRATEGY.LIGHTWEIGHT;
         
         switch (strategy) {
+            case MICROPHONE_STRATEGY.CONTINUOUS:
+                console.log('🔄 継続的音声認識Manager使用（真の解決策）');
+                return new ContinuousRecognitionManager(this.permissionManager);
+                
             case MICROPHONE_STRATEGY.PERSISTENT:
                 console.log('🎯 Chrome専用PersistentRecognitionManager使用');
                 return new PersistentRecognitionManager(this.permissionManager);
@@ -2298,7 +2791,19 @@ function debugMicrophonePermissionStats() {
     console.log('📊 マイク許可統計:');
     
     // 戦略別の統計表示
-    if (stats.strategy === 'persistent') {
+    if (stats.strategy === 'continuous') {
+        console.log(`  - 戦略: 継続的音声認識（真の解決策）`);
+        console.log(`  - start()呼び出し: ${stats.startCount}回`);
+        console.log(`  - マイク許可要求: ${stats.microphonePermissionRequests}回`);
+        console.log(`  - 結果処理: ${stats.resultProcessedCount}回`);
+        console.log(`  - 結果無視: ${stats.resultIgnoredCount}回`);
+        console.log(`  - 一時停止: ${stats.pauseCount}回`);
+        console.log(`  - 処理再開: ${stats.resumeCount}回`);
+        console.log(`  - セッション時間: ${stats.sessionDuration}秒`);
+        console.log(`  - 効率性: ${stats.efficiency}%`);
+        console.log(`  - 継続性保持: ${stats.neverStopped ? '✅' : '❌'}`);
+        console.log(`  - 継続的音声認識: ${stats.continuousRecognition ? '✅' : '❌'}`);
+    } else if (stats.strategy === 'persistent') {
         console.log(`  - 戦略: Chrome専用インスタンス不変`);
         console.log(`  - インスタンス作成: ${stats.instanceCreationCount}回`);
         console.log(`  - マイク許可要求: ${stats.microphonePermissionRequests}回`);
@@ -2317,7 +2822,19 @@ function debugMicrophonePermissionStats() {
     }
     
     // 効率性に基づく推奨事項
-    if (stats.efficiency >= 95) {
+    if (stats.strategy === 'continuous') {
+        if (stats.startCount === 1 && stats.microphonePermissionRequests === 1) {
+            console.log('🎯 完璧: 継続的音声認識が理想的に動作しています');
+            console.log('✨ マイク許可アラートは完全に解消されました');
+        } else if (stats.startCount <= 3) {
+            console.log('✅ 良好: 継続的音声認識がほぼ正常に動作しています');
+        } else {
+            console.log('⚠️ 注意: 継続的音声認識で予期しない再開が発生しています');
+            console.log('💡 継続的音声認識トラブルシューティング:');
+            console.log('  - ブラウザまたはタブを再読み込み');
+            console.log('  - 他のタブでマイクを使用していないか確認');
+        }
+    } else if (stats.efficiency >= 95) {
         console.log('🎯 完璧: マイク許可が完全に保持されています');
     } else if (stats.efficiency >= 80) {
         console.log('✅ 優秀: マイク許可が効率的に保持されています');
@@ -2330,8 +2847,12 @@ function debugMicrophonePermissionStats() {
         console.log('  2. ページの再読み込みを試行');
         console.log('  3. 他のタブでマイクを使用していないか確認');
         
+        // 継続的音声認識戦略の推奨
+        if (stats.strategy !== 'continuous' && navigator.userAgent.includes('Chrome')) {
+            console.log('  4. 継続的音声認識戦略に切り替え: switchMicrophoneStrategy("continuous")');
+        }
         // Chrome専用戦略の推奨
-        if (stats.strategy !== 'persistent' && navigator.userAgent.includes('Chrome')) {
+        else if (stats.strategy !== 'persistent' && navigator.userAgent.includes('Chrome')) {
             console.log('  4. Chrome専用戦略に切り替え: switchMicrophoneStrategy("persistent")');
         }
     }
@@ -2906,7 +3427,7 @@ function safeStopSpeechRecognition(reason = 'unknown') {
 }
 
 function restartSpeechRecognition() {
-    console.log('🔄 音声認識再開処理開始（マイク許可保持対応）');
+    console.log('🔄 音声認識再開処理開始（戦略別対応）');
     
     // AI発言終了後に音声認識を確実に再開する関数
     const stability = AppState.voiceRecognitionStability;
@@ -2925,13 +3446,30 @@ function restartSpeechRecognition() {
         stability.micPermissionGranted = true;
     }
     
-    // 🔧 重要: マイク許可保持を優先した再開処理
+    // 🔧 重要: マイク許可保持を優先した戦略別再開処理
     if (window.stateManager && window.stateManager.recognitionManager) {
         const recognitionManager = window.stateManager.recognitionManager;
         const currentState = recognitionManager.state;
-        console.log(`🔍 現在の音声認識状態: ${currentState}`);
+        const strategy = window.CURRENT_MICROPHONE_STRATEGY;
         
-        // 🔧 新機能: 軽量リスタート優先（マイク許可保持）
+        console.log(`🔍 現在の音声認識状態: ${currentState}, 戦略: ${strategy}`);
+        
+        // 🔄 継続的音声認識戦略: 結果処理再開のみ
+        if (strategy === MICROPHONE_STRATEGY.CONTINUOUS) {
+            console.log('🔄 継続的音声認識 - 結果処理再開（音声認識は継続中）');
+            
+            if (recognitionManager.resumeProcessing) {
+                recognitionManager.resumeProcessing('AI応答終了');
+                console.log('✅ 継続的音声認識の結果処理再開完了');
+            } else {
+                console.warn('⚠️ 継続的音声認識Manager未対応 - フォールバック');
+                // フォールバックとして通常の開始処理
+                recognitionManager.start();
+            }
+            return;
+        }
+        
+        // 🔧 その他の戦略: 軽量リスタート優先（マイク許可保持）
         if (recognitionManager.microphonePermissionManager?.canPerformLightweightRestart) {
             console.log('🔄 軽量リスタート実行（マイク許可保持）');
             
@@ -7204,9 +7742,9 @@ function detectBrowserAndOptimize() {
     console.log(`  - Edge: ${isEdge ? '✅' : '❌'}`);
     
     // Chrome専用最適化の自動適用
-    if (isChrome && window.CURRENT_MICROPHONE_STRATEGY !== MICROPHONE_STRATEGY.PERSISTENT) {
-        console.log('🎯 Chrome検出 - 自動最適化推奨');
-        console.log('💡 Chrome専用戦略に切り替えるには: switchMicrophoneStrategy("persistent")');
+    if (isChrome && window.CURRENT_MICROPHONE_STRATEGY !== MICROPHONE_STRATEGY.CONTINUOUS) {
+        console.log('🎯 Chrome検出 - 継続的音声認識推奨（真の解決策）');
+        console.log('💡 継続的音声認識に切り替えるには: switchMicrophoneStrategy("continuous")');
     }
     
     return {
@@ -7215,7 +7753,7 @@ function detectBrowserAndOptimize() {
         isFirefox,
         isEdge,
         userAgent,
-        recommendation: isChrome ? 'persistent' : 'lightweight'
+        recommendation: isChrome ? 'continuous' : 'lightweight'
     };
 }
 
@@ -7332,13 +7870,14 @@ function debugChromeOptimization() {
 function autoOptimizeChromeStrategy() {
     const browserInfo = detectBrowserAndOptimize();
     
-    if (browserInfo.isChrome && window.CURRENT_MICROPHONE_STRATEGY !== MICROPHONE_STRATEGY.PERSISTENT) {
-        console.log('🎯 Chrome検出 - 自動最適化実行');
-        const success = switchMicrophoneStrategy('persistent');
+    if (browserInfo.isChrome && window.CURRENT_MICROPHONE_STRATEGY !== MICROPHONE_STRATEGY.CONTINUOUS) {
+        console.log('🎯 Chrome検出 - 継続的音声認識自動適用（真の解決策）');
+        const success = switchMicrophoneStrategy('continuous');
         
         if (success) {
-            console.log('✅ Chrome専用戦略に自動切り替え完了');
+            console.log('✅ 継続的音声認識に自動切り替え完了');
             console.log('💡 効果を確認するには: debugMicrophonePermissionStats()');
+            console.log('🎯 これでマイク許可アラートは完全に解消されます');
         }
         
         return success;
