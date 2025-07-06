@@ -22,6 +22,16 @@ window.stateManager = null;
 // 音声認識システム - 抜本解決版
 // =================================================================================
 
+// 🔧 A/Bテスト機能: マイク許可保持戦略の切り替え
+const MICROPHONE_STRATEGY = {
+    LEGACY: 'legacy',           // 従来システム（完全クリーンアップ）
+    LIGHTWEIGHT: 'lightweight', // 軽量リスタート（現在の実装）
+    PERSISTENT: 'persistent'    // インスタンス不変戦略（Chrome最適化）
+};
+
+// 🔧 現在の戦略を設定（開発時は動的切り替え可能）
+window.CURRENT_MICROPHONE_STRATEGY = MICROPHONE_STRATEGY.PERSISTENT; // Chrome専用
+
 // 🔧 PermissionManager: voice-core.jsに移動済み
 // 新しい音声コアシステムを使用: window.VoiceCore.permission
 
@@ -927,6 +937,363 @@ class RecognitionManager {
     }
 }
 
+// =================================================================================
+// PERSISTENT RECOGNITION MANAGER - Chrome専用インスタンス不変戦略
+// =================================================================================
+
+// 🔧 Chrome専用: 真のマイク許可保持を実現するRecognitionManager
+class PersistentRecognitionManager {
+    constructor(permissionManager) {
+        this.permissionManager = permissionManager;
+        this.state = 'idle'; // idle, starting, active, stopping, error
+        this.recognition = null;
+        this.listeners = new Set();
+        this.isStarting = false;
+        this.isStopping = false;
+        
+        // Chrome専用統計情報
+        this.stats = {
+            instanceCreationCount: 0,   // インスタンス作成回数（1回のみが理想）
+            restartCount: 0,            // 再開回数
+            abortCount: 0,              // abort実行回数
+            startTime: Date.now(),      // 管理開始時刻
+            lastRestartTime: 0,         // 最終再開時刻
+            microphonePermissionRequests: 0 // マイク許可要求回数
+        };
+        
+        // インスタンス生存管理
+        this.instanceLifecycle = {
+            created: false,             // インスタンス作成済みフラグ
+            destroyed: false,           // 破棄済みフラグ（デバッグ用）
+            persistenceMode: true       // 永続化モード
+        };
+        
+        console.log('🎯 PersistentRecognitionManager初期化（Chrome最適化）');
+    }
+    
+    // 🔧 インスタンス確実作成（一度だけ）
+    ensureSingleInstance() {
+        if (this.instanceLifecycle.created && this.recognition) {
+            console.log('✅ 既存インスタンス再利用');
+            return true;
+        }
+        
+        if (this.instanceLifecycle.destroyed) {
+            console.error('❌ 破棄されたインスタンスの復活は禁止');
+            return false;
+        }
+        
+        try {
+            this.recognition = this.createRecognition();
+            this.setupEventHandlers();
+            this.instanceLifecycle.created = true;
+            this.stats.instanceCreationCount++;
+            
+            console.log('🎯 Chrome専用インスタンス作成完了（永続化モード）');
+            return true;
+        } catch (error) {
+            console.error('❌ Chrome専用インスタンス作成失敗:', error);
+            return false;
+        }
+    }
+    
+    // 🔧 Chrome最適化: 永続的再開
+    async start() {
+        console.log('🎯 Chrome専用音声認識開始:', this.state);
+        
+        if (this.state === 'active') {
+            console.log('✅ 既にアクティブ');
+            return true;
+        }
+        
+        if (this.isStarting) {
+            console.log('🔄 開始処理進行中');
+            return false;
+        }
+        
+        this.isStarting = true;
+        
+        try {
+            // セッション状態確認
+            if (!window.AppState?.sessionActive) {
+                console.log('🚫 セッション非アクティブ');
+                this.isStarting = false;
+                return false;
+            }
+            
+            // 単一インスタンス確保
+            if (!this.ensureSingleInstance()) {
+                console.log('❌ インスタンス確保失敗');
+                this.isStarting = false;
+                return false;
+            }
+            
+            // マイク許可確認（初回のみ）
+            if (this.stats.microphonePermissionRequests === 0) {
+                console.log('🔍 初回マイク許可確認');
+                const hasPermission = await this.permissionManager.getPermission();
+                this.stats.microphonePermissionRequests++;
+                
+                if (!hasPermission) {
+                    console.log('🚫 マイク許可なし');
+                    this.isStarting = false;
+                    return false;
+                }
+                console.log('✅ マイク許可取得成功 - 以降は再利用');
+            } else {
+                console.log('✅ マイク許可済み（再利用）');
+            }
+            
+            // 状態更新
+            this.state = 'starting';
+            this.notifyListeners();
+            
+            // Chrome専用: abort() → start() パターン
+            if (this.recognition.state === 'active') {
+                console.log('🔄 既存セッションをabort()で停止');
+                this.recognition.abort();
+                this.stats.abortCount++;
+            }
+            
+            // 短時間待機後に開始
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+            console.log('🚀 Chrome専用音声認識開始実行');
+            this.recognition.start();
+            
+            this.state = 'active';
+            this.stats.restartCount++;
+            this.stats.lastRestartTime = Date.now();
+            this.notifyListeners();
+            
+            console.log(`✅ Chrome専用開始成功 - 統計: 作成:${this.stats.instanceCreationCount} 再開:${this.stats.restartCount} 許可要求:${this.stats.microphonePermissionRequests}`);
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Chrome専用開始エラー:', error);
+            this.state = 'error';
+            this.notifyListeners();
+            return false;
+        } finally {
+            this.isStarting = false;
+        }
+    }
+    
+    // 🔧 Chrome最適化: 永続的停止（破棄なし）
+    async stop() {
+        console.log('🛑 Chrome専用音声認識停止:', this.state);
+        
+        if (this.state !== 'active') {
+            console.log('✅ 既に停止状態');
+            return true;
+        }
+        
+        if (this.isStopping) {
+            console.log('🔄 停止処理進行中');
+            return false;
+        }
+        
+        this.isStopping = true;
+        
+        try {
+            this.state = 'stopping';
+            this.notifyListeners();
+            
+            // abort使用（インスタンス保持）
+            if (this.recognition) {
+                this.recognition.abort();
+                this.stats.abortCount++;
+                console.log('🔄 abort()実行 - インスタンス保持');
+            }
+            
+            this.state = 'idle';
+            this.notifyListeners();
+            
+            console.log('✅ Chrome専用停止成功（インスタンス保持）');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Chrome専用停止エラー:', error);
+            return false;
+        } finally {
+            this.isStopping = false;
+        }
+    }
+    
+    // SpeechRecognition作成
+    createRecognition() {
+        if ('webkitSpeechRecognition' in window) {
+            return new webkitSpeechRecognition();
+        } else if ('SpeechRecognition' in window) {
+            return new SpeechRecognition();
+        } else {
+            throw new Error('このブラウザは音声認識に対応していません');
+        }
+    }
+    
+    // イベントハンドラ設定
+    setupEventHandlers() {
+        if (!this.recognition) return;
+        
+        // 設定
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
+        this.recognition.lang = 'ja-JP';
+        this.recognition.maxAlternatives = 1;
+        
+        // イベントハンドラ
+        this.recognition.onresult = (event) => {
+            this.handleResult(event);
+        };
+        
+        this.recognition.onerror = (event) => {
+            this.handleRecognitionError(event);
+        };
+        
+        this.recognition.onend = () => {
+            this.handleEnd();
+        };
+        
+        this.recognition.onstart = () => {
+            console.log('🎬 Chrome専用音声認識開始イベント');
+        };
+    }
+    
+    // 結果処理（既存ロジック再利用）
+    handleResult(event) {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const result = event.results[i];
+            if (result.isFinal) {
+                finalTranscript += result[0].transcript;
+            } else {
+                interimTranscript += result[0].transcript;
+            }
+        }
+
+        // 現在の入力中テキストを更新
+        const allConfirmedText = AppState.transcriptHistory.join(' ');
+        AppState.currentTranscript = allConfirmedText + (allConfirmedText ? ' ' : '') + interimTranscript;
+        window.updateTranscriptDisplay();
+
+        if (finalTranscript.trim()) {
+            AppState.transcriptHistory.push(finalTranscript.trim());
+            const updatedAllText = AppState.transcriptHistory.join(' ');
+            AppState.currentTranscript = updatedAllText;
+            window.updateTranscriptDisplay();
+            processFinalTranscript(finalTranscript.trim());
+        }
+    }
+    
+    // Chrome専用エラーハンドリング
+    handleRecognitionError(event) {
+        console.error('😨 Chrome専用音声認識エラー:', event.error);
+        
+        switch (event.error) {
+            case 'not-allowed':
+            case 'service-not-allowed':
+                console.error('🚫 マイク許可エラー - Chrome専用システム停止');
+                this.permissionManager.state = 'denied';
+                this.state = 'error';
+                this.notifyListeners();
+                return;
+                
+            case 'aborted':
+                console.log('🔄 意図的なabort - Chrome専用では正常動作');
+                // 意図的なabortは正常動作
+                return;
+                
+            case 'no-speech':
+                console.log('😶 no-speech - Chrome専用自動再開');
+                this.state = 'idle';
+                this.notifyListeners();
+                
+                // 1秒後に自動再開
+                setTimeout(() => {
+                    if (window.AppState?.sessionActive && this.state === 'idle') {
+                        this.start();
+                    }
+                }, 1000);
+                return;
+                
+            case 'network':
+                console.warn('🌐 ネットワークエラー - Chrome専用回復処理');
+                this.state = 'idle';
+                this.notifyListeners();
+                
+                // 3秒後に自動再開
+                setTimeout(() => {
+                    if (window.AppState?.sessionActive && this.state === 'idle') {
+                        this.start();
+                    }
+                }, 3000);
+                return;
+                
+            default:
+                console.warn(`⁉️ Chrome専用未知エラー: ${event.error}`);
+                this.state = 'error';
+                this.notifyListeners();
+                break;
+        }
+    }
+    
+    // 終了イベント処理
+    handleEnd() {
+        console.log('🏁 Chrome専用音声認識終了');
+        this.state = 'idle';
+        this.notifyListeners();
+    }
+    
+    // Chrome専用統計情報取得
+    getMicrophonePermissionStats() {
+        const sessionDuration = Math.floor((Date.now() - this.stats.startTime) / 1000);
+        const efficiency = this.stats.microphonePermissionRequests === 1 ? 100 : 
+                          Math.round((1 / this.stats.microphonePermissionRequests) * 100);
+        
+        return {
+            strategy: 'persistent',
+            instanceCreationCount: this.stats.instanceCreationCount,
+            restartCount: this.stats.restartCount,
+            abortCount: this.stats.abortCount,
+            microphonePermissionRequests: this.stats.microphonePermissionRequests,
+            sessionDuration: sessionDuration,
+            efficiency: efficiency,
+            instancePersistent: this.instanceLifecycle.created && !this.instanceLifecycle.destroyed
+        };
+    }
+    
+    // リスナー管理
+    addListener(callback) {
+        this.listeners.add(callback);
+    }
+    
+    removeListener(callback) {
+        this.listeners.delete(callback);
+    }
+    
+    notifyListeners() {
+        this.listeners.forEach(callback => {
+            try {
+                callback(this.state);
+            } catch (error) {
+                console.error('Chrome専用リスナー実行エラー:', error);
+            }
+        });
+    }
+    
+    // 🔧 Chrome専用: 強制破棄（デバッグ用のみ）
+    forceDestroy() {
+        if (this.recognition) {
+            this.recognition.abort();
+            this.recognition = null;
+        }
+        this.instanceLifecycle.destroyed = true;
+        console.log('⚠️ Chrome専用インスタンス強制破棄（デバッグ用）');
+    }
+}
+
 // 🔧 AudioManager: voice-core.jsに移動済み
 // 新しい音声コアシステムを使用: window.VoiceCore.audio
 
@@ -935,7 +1302,10 @@ class StateManager {
     constructor() {
         // 🆕 新しい音声コアシステムを使用
         this.permissionManager = window.VoiceCore?.permission || new PermissionManager();
-        this.recognitionManager = new RecognitionManager(this.permissionManager);
+        
+        // 🔧 A/Bテスト: 戦略に基づくRecognitionManager選択
+        this.recognitionManager = this.createRecognitionManager();
+        
         this.audioManager = window.VoiceCore?.audio || new AudioManager();
         
         // 🔧 許可状態の同期強化
@@ -946,7 +1316,61 @@ class StateManager {
         }
         
         this.setupStateSync();
-        console.log('✅ StateManager初期化完了');
+        console.log(`✅ StateManager初期化完了（戦略: ${window.CURRENT_MICROPHONE_STRATEGY}）`);
+    }
+    
+    // 🔧 A/Bテスト: RecognitionManager作成
+    createRecognitionManager() {
+        const strategy = window.CURRENT_MICROPHONE_STRATEGY || MICROPHONE_STRATEGY.LIGHTWEIGHT;
+        
+        switch (strategy) {
+            case MICROPHONE_STRATEGY.PERSISTENT:
+                console.log('🎯 Chrome専用PersistentRecognitionManager使用');
+                return new PersistentRecognitionManager(this.permissionManager);
+                
+            case MICROPHONE_STRATEGY.LIGHTWEIGHT:
+                console.log('🔄 軽量リスタートRecognitionManager使用');
+                return new RecognitionManager(this.permissionManager);
+                
+            case MICROPHONE_STRATEGY.LEGACY:
+                console.log('⚠️ レガシーRecognitionManager使用（A/Bテスト用）');
+                // レガシー版を作成する場合はここで分岐
+                return new RecognitionManager(this.permissionManager);
+                
+            default:
+                console.warn(`⚠️ 未知の戦略: ${strategy} - デフォルトを使用`);
+                return new RecognitionManager(this.permissionManager);
+        }
+    }
+    
+    // 🔧 A/Bテスト: 戦略切り替え機能
+    switchStrategy(newStrategy) {
+        if (!Object.values(MICROPHONE_STRATEGY).includes(newStrategy)) {
+            console.error(`❌ 無効な戦略: ${newStrategy}`);
+            return false;
+        }
+        
+        console.log(`🔄 戦略切り替え: ${window.CURRENT_MICROPHONE_STRATEGY} → ${newStrategy}`);
+        
+        // 現在のRecognitionManagerを停止
+        if (this.recognitionManager) {
+            this.recognitionManager.stop();
+        }
+        
+        // 新しい戦略を設定
+        window.CURRENT_MICROPHONE_STRATEGY = newStrategy;
+        
+        // 新しいRecognitionManagerを作成
+        this.recognitionManager = this.createRecognitionManager();
+        
+        // 状態同期を再設定
+        this.recognitionManager.addListener((state) => {
+            console.log('🔄 音声認識状態変更:', state);
+            this.updateUI();
+        });
+        
+        console.log(`✅ 戦略切り替え完了: ${newStrategy}`);
+        return true;
     }
     
     // 状態同期の設定
@@ -1861,40 +2285,56 @@ function checkLegacyFlagMigration() {
 
 // 🔧 新機能: マイク許可保持統計情報デバッグ
 function debugMicrophonePermissionStats() {
-    console.log('🎤 マイク許可保持統計情報:');
+    console.log('🔍 マイク許可統計情報:');
     
-    if (!window.stateManager?.recognitionManager) {
+    const stateManager = window.AppState?.stateManager || window.stateManager;
+    if (!stateManager?.recognitionManager) {
         console.log('❌ 統合システム未初期化');
         return;
     }
     
-    const stats = window.stateManager.recognitionManager.getMicrophonePermissionStats();
+    const stats = stateManager.recognitionManager.getMicrophonePermissionStats();
     
-    console.log('📊 許可管理状態:');
-    console.log('- 初回許可取得済み:', stats.hasInitialPermission ? '✅' : '❌');
-    console.log('- 初回起動状態:', stats.isFirstStartup ? '初回' : '完了');
-    console.log('- 軽量リスタート可能:', stats.canPerformLightweightRestart ? '✅' : '❌');
+    console.log('📊 マイク許可統計:');
     
-    console.log('📈 実行統計:');
-    console.log('- 完全クリーンアップ回数:', stats.completeBefore);
-    console.log('- 軽量リスタート回数:', stats.lightweightCount);
-    console.log('- 最新クリーンアップタイプ:', stats.lastCleanupType);
-    console.log('- セッション継続時間:', stats.sessionDuration + '秒');
-    
-    console.log('🏆 効率性:');
-    console.log('- 軽量リスタート効率:', stats.efficiency + '%');
-    
-    if (stats.efficiency >= 80) {
-        console.log('✅ 優秀: マイク許可保持が効果的に機能しています');
-    } else if (stats.efficiency >= 50) {
-        console.log('⚠️ 普通: 一部でマイク許可保持が機能しています');
+    // 戦略別の統計表示
+    if (stats.strategy === 'persistent') {
+        console.log(`  - 戦略: Chrome専用インスタンス不変`);
+        console.log(`  - インスタンス作成: ${stats.instanceCreationCount}回`);
+        console.log(`  - マイク許可要求: ${stats.microphonePermissionRequests}回`);
+        console.log(`  - 音声認識再開: ${stats.restartCount}回`);
+        console.log(`  - abort()実行: ${stats.abortCount}回`);
+        console.log(`  - セッション時間: ${stats.sessionDuration}秒`);
+        console.log(`  - 効率性: ${stats.efficiency}%`);
+        console.log(`  - インスタンス永続化: ${stats.instancePersistent ? '✅' : '❌'}`);
     } else {
-        console.log('❌ 要改善: マイク許可保持の効果が限定的です');
+        console.log(`  - 戦略: ${stats.strategy || 'lightweight'}`);
+        console.log(`  - 完全クリーンアップ: ${stats.completeBefore || 0}回`);
+        console.log(`  - 軽量リスタート: ${stats.lightweightCount || 0}回`);
+        console.log(`  - 最終処理: ${stats.lastCleanupType || 'unknown'}`);
+        console.log(`  - セッション時間: ${stats.sessionDuration}秒`);
+        console.log(`  - 効率性: ${stats.efficiency}%`);
     }
     
-    console.log('🎯 推奨操作:');
-    console.log('- この統計情報を定期的に確認してください');
-    console.log('- 軽量リスタート効率が低い場合は致命的エラーが多発している可能性があります');
+    // 効率性に基づく推奨事項
+    if (stats.efficiency >= 95) {
+        console.log('🎯 完璧: マイク許可が完全に保持されています');
+    } else if (stats.efficiency >= 80) {
+        console.log('✅ 優秀: マイク許可が効率的に保持されています');
+    } else if (stats.efficiency >= 60) {
+        console.log('⚠️ 良好: マイク許可保持に若干の改善余地があります');
+    } else {
+        console.log('❌ 要改善: マイク許可アラートが頻発しています');
+        console.log('💡 推奨事項:');
+        console.log('  1. ブラウザの設定でマイク許可を確認');
+        console.log('  2. ページの再読み込みを試行');
+        console.log('  3. 他のタブでマイクを使用していないか確認');
+        
+        // Chrome専用戦略の推奨
+        if (stats.strategy !== 'persistent' && navigator.userAgent.includes('Chrome')) {
+            console.log('  4. Chrome専用戦略に切り替え: switchMicrophoneStrategy("persistent")');
+        }
+    }
     
     return stats;
 }
@@ -6744,3 +7184,183 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 console.log('✅ 新音声システム・知見管理システムの関数をwindowオブジェクトに公開しました');
+
+// =================================================================================
+// CHROME専用デバッグ機能 - A/Bテスト・マイク許可最適化
+// =================================================================================
+
+// 🔧 Chrome専用: ブラウザ判定と最適化
+function detectBrowserAndOptimize() {
+    const userAgent = navigator.userAgent;
+    const isChrome = userAgent.includes('Chrome') && !userAgent.includes('Edge');
+    const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
+    const isFirefox = userAgent.includes('Firefox');
+    const isEdge = userAgent.includes('Edge');
+    
+    console.log('🔍 ブラウザ判定:');
+    console.log(`  - Chrome: ${isChrome ? '✅' : '❌'}`);
+    console.log(`  - Safari: ${isSafari ? '✅' : '❌'}`);
+    console.log(`  - Firefox: ${isFirefox ? '✅' : '❌'}`);
+    console.log(`  - Edge: ${isEdge ? '✅' : '❌'}`);
+    
+    // Chrome専用最適化の自動適用
+    if (isChrome && window.CURRENT_MICROPHONE_STRATEGY !== MICROPHONE_STRATEGY.PERSISTENT) {
+        console.log('🎯 Chrome検出 - 自動最適化推奨');
+        console.log('💡 Chrome専用戦略に切り替えるには: switchMicrophoneStrategy("persistent")');
+    }
+    
+    return {
+        isChrome,
+        isSafari,
+        isFirefox,
+        isEdge,
+        userAgent,
+        recommendation: isChrome ? 'persistent' : 'lightweight'
+    };
+}
+
+// 🔧 A/Bテスト: 戦略切り替え関数（グローバル）
+function switchMicrophoneStrategy(strategy) {
+    const stateManager = window.AppState?.stateManager || window.stateManager;
+    
+    if (!stateManager) {
+        console.error('❌ StateManagerが初期化されていません');
+        return false;
+    }
+    
+    const validStrategies = Object.values(MICROPHONE_STRATEGY);
+    if (!validStrategies.includes(strategy)) {
+        console.error(`❌ 無効な戦略: ${strategy}`);
+        console.log(`💡 有効な戦略: ${validStrategies.join(', ')}`);
+        return false;
+    }
+    
+    const success = stateManager.switchStrategy(strategy);
+    if (success) {
+        console.log(`✅ 戦略切り替え成功: ${strategy}`);
+        console.log('💡 効果を確認するには: debugMicrophonePermissionStats()');
+    }
+    
+    return success;
+}
+
+// 🔧 A/Bテスト: 現在の戦略表示
+function showCurrentStrategy() {
+    const strategy = window.CURRENT_MICROPHONE_STRATEGY || 'unknown';
+    const browserInfo = detectBrowserAndOptimize();
+    
+    console.log('🎯 現在のマイク許可戦略:');
+    console.log(`  - 戦略: ${strategy}`);
+    console.log(`  - ブラウザ: ${browserInfo.userAgent}`);
+    console.log(`  - 推奨戦略: ${browserInfo.recommendation}`);
+    
+    if (strategy !== browserInfo.recommendation) {
+        console.log(`💡 推奨戦略に切り替え: switchMicrophoneStrategy("${browserInfo.recommendation}")`);
+    }
+    
+    return { strategy, browserInfo };
+}
+
+// 🔧 Chrome専用: 統計リセット機能
+function resetMicrophoneStats() {
+    const stateManager = window.AppState?.stateManager || window.stateManager;
+    
+    if (!stateManager?.recognitionManager) {
+        console.error('❌ 音声認識システムが初期化されていません');
+        return false;
+    }
+    
+    const manager = stateManager.recognitionManager;
+    
+    // PersistentRecognitionManagerの場合
+    if (manager.stats) {
+        manager.stats.restartCount = 0;
+        manager.stats.abortCount = 0;
+        manager.stats.startTime = Date.now();
+        manager.stats.lastRestartTime = 0;
+        console.log('🔄 Chrome専用統計リセット完了');
+    }
+    // 従来のRecognitionManagerの場合
+    else if (manager.microphonePermissionManager) {
+        manager.microphonePermissionManager.completeBefore = 0;
+        manager.microphonePermissionManager.lightweightCount = 0;
+        manager.microphonePermissionManager.sessionStartTime = Date.now();
+        console.log('🔄 軽量リスタート統計リセット完了');
+    }
+    
+    console.log('✅ 統計リセット完了 - 新しいセッションを開始');
+    return true;
+}
+
+// 🔧 Chrome専用: 包括的デバッグ機能
+function debugChromeOptimization() {
+    console.log('🎯 Chrome専用マイク許可最適化デバッグ:');
+    
+    // ブラウザ判定
+    const browserInfo = detectBrowserAndOptimize();
+    console.log('');
+    
+    // 現在の戦略表示
+    const strategyInfo = showCurrentStrategy();
+    console.log('');
+    
+    // 統計情報表示
+    const stats = debugMicrophonePermissionStats();
+    console.log('');
+    
+    // 推奨事項
+    console.log('🎯 最適化推奨事項:');
+    if (browserInfo.isChrome && strategyInfo.strategy !== 'persistent') {
+        console.log('  1. Chrome専用戦略に切り替え: switchMicrophoneStrategy("persistent")');
+    }
+    if (stats && stats.efficiency < 80) {
+        console.log('  2. 統計をリセット: resetMicrophoneStats()');
+        console.log('  3. ページを再読み込み');
+    }
+    if (browserInfo.isChrome && strategyInfo.strategy === 'persistent') {
+        console.log('  ✅ 既にChrome専用戦略で最適化済み');
+    }
+    
+    return {
+        browser: browserInfo,
+        strategy: strategyInfo,
+        stats: stats
+    };
+}
+
+// 🔧 Chrome専用: 自動最適化機能
+function autoOptimizeChromeStrategy() {
+    const browserInfo = detectBrowserAndOptimize();
+    
+    if (browserInfo.isChrome && window.CURRENT_MICROPHONE_STRATEGY !== MICROPHONE_STRATEGY.PERSISTENT) {
+        console.log('🎯 Chrome検出 - 自動最適化実行');
+        const success = switchMicrophoneStrategy('persistent');
+        
+        if (success) {
+            console.log('✅ Chrome専用戦略に自動切り替え完了');
+            console.log('💡 効果を確認するには: debugMicrophonePermissionStats()');
+        }
+        
+        return success;
+    }
+    
+    console.log('⚠️ Chrome以外のブラウザまたは既に最適化済み');
+    return false;
+}
+
+// グローバル公開
+window.detectBrowserAndOptimize = detectBrowserAndOptimize;
+window.switchMicrophoneStrategy = switchMicrophoneStrategy;
+window.showCurrentStrategy = showCurrentStrategy;
+window.resetMicrophoneStats = resetMicrophoneStats;
+window.debugChromeOptimization = debugChromeOptimization;
+window.autoOptimizeChromeStrategy = autoOptimizeChromeStrategy;
+
+console.log('🎯 Chrome専用デバッグ機能を公開しました');
+console.log('💡 Chrome最適化: autoOptimizeChromeStrategy() | 包括デバッグ: debugChromeOptimization()');
+
+// Chrome自動最適化
+if (navigator.userAgent.includes('Chrome')) {
+    console.log('🎯 Chrome検出 - 自動最適化を提案します');
+    console.log('💡 自動最適化を実行するには: autoOptimizeChromeStrategy()');
+}
