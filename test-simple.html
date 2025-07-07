@@ -55,15 +55,48 @@
             font-family: monospace;
             font-size: 14px;
         }
+        .debug-section {
+            background: #e7f3ff;
+            border: 1px solid #b8daff;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🧪 深堀くんv2.0 - シンプルテストシステム</h1>
-        <p>このページが正常に表示されている場合、HTMLファイルは正しく動作しています。</p>
+        <p>継続的音声認識の品質テストを実行します。</p>
+        
+        <div class="instructions">
+            <h4>📋 重要な使用方法</h4>
+            <p><strong>このファイルは深堀くんv2.0と同じタブで開く必要があります。</strong></p>
+            <ol>
+                <li>深堀くんv2.0でセッションを開始</li>
+                <li><strong>同じタブで</strong>このHTMLファイルに移動</li>
+                <li>または、深堀くんv2.0の開発者コンソールに以下のコードを貼り付け：</li>
+            </ol>
+            <textarea readonly style="width: 100%; height: 60px; font-family: monospace; font-size: 12px;">// 継続的音声認識テスト実行
+const stats = stateManager.recognitionManager.getMicrophonePermissionStats();
+console.log('📊 テスト結果:', stats);</textarea>
+        </div>
         
         <div class="status" id="statusDisplay">
             🔍 システム状態を確認中...
+        </div>
+        
+        <h3>🔍 詳細デバッグ情報</h3>
+        <div class="debug-section">
+            <button class="btn" onclick="performDetailedDiagnosis()">🔍 詳細診断実行</button>
+            <div id="debugOutput" style="margin-top: 15px; font-family: monospace; font-size: 12px;"></div>
         </div>
         
         <h3>テスト実行ボタン</h3>
@@ -71,20 +104,24 @@
             <button class="btn" id="checkStatusBtn" onclick="checkSystemStatus()">
                 🔍 システム状態確認
             </button>
+            <button class="btn" id="directTestBtn" onclick="directTest()">
+                🎯 直接テスト実行
+            </button>
             <button class="btn" id="startTestBtn" onclick="startTest()" disabled>
                 🧪 継続的音声認識テスト開始
             </button>
             <button class="btn" id="quickTestBtn" onclick="quickTest()" disabled>
-                ⚡ クイックテスト（30秒）
+                ⚡ クイックテスト（10秒）
             </button>
         </div>
         
         <h3>📋 テスト結果コピー</h3>
-        <textarea id="resultText" rows="6" style="width: 100%; font-family: monospace;">
+        <textarea id="resultText" rows="10" style="width: 100%; font-family: monospace;">
 テスト結果がここに表示されます...
         </textarea>
         <br>
         <button class="btn" onclick="copyResults()">📋 結果をコピー</button>
+        <button class="btn" onclick="generateManualInstructions()">📖 手動テスト指示生成</button>
         
         <h3>📝 ログ</h3>
         <div class="log" id="logContainer">
@@ -102,27 +139,125 @@
             logContainer.scrollTop = logContainer.scrollHeight;
         }
 
-        // システム状態確認
+        // 詳細診断実行
+        function performDetailedDiagnosis() {
+            const debugOutput = document.getElementById('debugOutput');
+            let diagnosis = '';
+            
+            try {
+                diagnosis += '=== 環境診断 ===\n';
+                diagnosis += `URL: ${window.location.href}\n`;
+                diagnosis += `User Agent: ${navigator.userAgent}\n`;
+                diagnosis += `Parent Window: ${window.parent === window ? 'Same (単独実行)' : 'Different (iframe/popup)'}\n`;
+                
+                diagnosis += '\n=== ウィンドウアクセス診断 ===\n';
+                try {
+                    const parentWindow = window.parent;
+                    diagnosis += `Parent Window Access: OK\n`;
+                    
+                    // AppStateアクセス試行
+                    try {
+                        const appState = parentWindow.AppState;
+                        diagnosis += `AppState Access: ${appState ? 'OK' : 'NULL'}\n`;
+                        if (appState) {
+                            diagnosis += `Session Active: ${appState.sessionActive || 'false'}\n`;
+                        }
+                    } catch (e) {
+                        diagnosis += `AppState Access Error: ${e.message}\n`;
+                    }
+                    
+                    // StateManagerアクセス試行
+                    try {
+                        const stateManager = parentWindow.stateManager;
+                        diagnosis += `StateManager Access: ${stateManager ? 'OK' : 'NULL'}\n`;
+                        if (stateManager && stateManager.recognitionManager) {
+                            diagnosis += `RecognitionManager: OK\n`;
+                            const stats = stateManager.recognitionManager.getMicrophonePermissionStats();
+                            diagnosis += `Stats Access: OK\n`;
+                            diagnosis += `Start Count: ${stats.startCount}\n`;
+                            diagnosis += `Efficiency: ${stats.efficiency}%\n`;
+                            diagnosis += `Strategy: ${stats.strategy}\n`;
+                        }
+                    } catch (e) {
+                        diagnosis += `StateManager Access Error: ${e.message}\n`;
+                    }
+                    
+                } catch (e) {
+                    diagnosis += `Parent Window Access Error: ${e.message}\n`;
+                }
+                
+                // ローカルアクセス試行
+                diagnosis += '\n=== ローカルアクセス診断 ===\n';
+                try {
+                    const appState = window.AppState;
+                    diagnosis += `Local AppState: ${appState ? 'OK' : 'NULL'}\n`;
+                    if (appState) {
+                        diagnosis += `Local Session Active: ${appState.sessionActive || 'false'}\n`;
+                    }
+                } catch (e) {
+                    diagnosis += `Local AppState Error: ${e.message}\n`;
+                }
+                
+                try {
+                    const stateManager = window.stateManager;
+                    diagnosis += `Local StateManager: ${stateManager ? 'OK' : 'NULL'}\n`;
+                    if (stateManager && stateManager.recognitionManager) {
+                        diagnosis += `Local RecognitionManager: OK\n`;
+                        const stats = stateManager.recognitionManager.getMicrophonePermissionStats();
+                        diagnosis += `Local Stats: ${JSON.stringify(stats, null, 2)}\n`;
+                    }
+                } catch (e) {
+                    diagnosis += `Local StateManager Error: ${e.message}\n`;
+                }
+                
+            } catch (error) {
+                diagnosis += `診断エラー: ${error.message}\n`;
+            }
+            
+            debugOutput.innerHTML = `<pre>${diagnosis}</pre>`;
+            addLog('詳細診断を実行しました');
+        }
+
+        // システム状態確認（改良版）
         function checkSystemStatus() {
             addLog('システム状態確認を実行中...');
             
-            try {
-                // 親ウィンドウの確認を試行
-                const parentWindow = window.parent;
-                
-                if (parentWindow === window) {
-                    addLog('⚠️ 単独ウィンドウで実行されています');
-                    addLog('💡 深堀くんv2.0のメインページでセッションを開始してください');
-                    updateStatus('warning', '深堀くんv2.0のメインページでセッションを開始してください');
-                    return;
+            let foundValidAccess = false;
+            let sessionActive = false;
+            let recognitionManager = null;
+            
+            // 複数の方法で状態確認を試行
+            const accessMethods = [
+                { name: 'Parent Window', getter: () => window.parent },
+                { name: 'Local Window', getter: () => window },
+                { name: 'Top Window', getter: () => window.top }
+            ];
+            
+            for (const method of accessMethods) {
+                try {
+                    const targetWindow = method.getter();
+                    
+                    // AppState確認
+                    if (targetWindow.AppState) {
+                        sessionActive = targetWindow.AppState.sessionActive;
+                        addLog(`${method.name} - AppState発見: sessionActive=${sessionActive}`);
+                        foundValidAccess = true;
+                    }
+                    
+                    // StateManager確認
+                    if (targetWindow.stateManager && targetWindow.stateManager.recognitionManager) {
+                        recognitionManager = targetWindow.stateManager.recognitionManager;
+                        addLog(`${method.name} - RecognitionManager発見`);
+                        foundValidAccess = true;
+                        break; // 有効なアクセスが見つかったので終了
+                    }
+                    
+                } catch (error) {
+                    addLog(`${method.name} アクセスエラー: ${error.message}`);
                 }
-                
-                addLog('親ウィンドウにアクセス中...');
-                
-                // AppStateの確認
-                const sessionActive = parentWindow.AppState?.sessionActive;
-                const recognitionManager = parentWindow.stateManager?.recognitionManager;
-                
+            }
+            
+            if (foundValidAccess) {
                 addLog(`セッション状態: ${sessionActive ? '✅ 開始済み' : '❌ 未開始'}`);
                 addLog(`音声認識システム: ${recognitionManager ? '✅ 動作中' : '❌ 未初期化'}`);
                 
@@ -134,107 +269,83 @@
                     try {
                         const stats = recognitionManager.getMicrophonePermissionStats();
                         addLog(`現在の統計: start()=${stats.startCount}, 効率性=${stats.efficiency}%`);
+                        addLog(`戦略: ${stats.strategy}, 継続性: ${stats.continuousRecognition ? '動作中' : '停止中'}`);
                     } catch (e) {
                         addLog('統計情報取得エラー: ' + e.message);
                     }
                 } else {
                     updateStatus('error', '❌ セッションが開始されていません');
                     disableTestButtons();
-                    
                     if (!sessionActive) {
                         addLog('💡 手順: ログイン→ファイル選択→テーマ設定→セッション開始');
                     }
                 }
-                
-            } catch (error) {
-                addLog('❌ エラー: ' + error.message);
-                updateStatus('error', 'システム状態確認エラー: ' + error.message);
+            } else {
+                addLog('❌ 有効なシステムアクセスが見つかりませんでした');
+                updateStatus('error', '❌ システムアクセス不可 - 手動テストを利用してください');
                 disableTestButtons();
             }
         }
 
-        // 状態表示更新
-        function updateStatus(type, message) {
-            const statusDisplay = document.getElementById('statusDisplay');
-            statusDisplay.className = `status ${type}`;
-            statusDisplay.textContent = message;
-        }
-
-        // テストボタン有効化
-        function enableTestButtons() {
-            document.getElementById('startTestBtn').disabled = false;
-            document.getElementById('quickTestBtn').disabled = false;
-            addLog('✅ テストボタンを有効化しました');
-        }
-
-        // テストボタン無効化
-        function disableTestButtons() {
-            document.getElementById('startTestBtn').disabled = true;
-            document.getElementById('quickTestBtn').disabled = true;
-            addLog('❌ テストボタンを無効化しました');
-        }
-
-        // 継続的音声認識テスト開始
-        function startTest() {
-            addLog('🧪 継続的音声認識テスト開始...');
+        // 直接テスト実行
+        function directTest() {
+            addLog('🎯 直接テスト実行を試行中...');
             
             try {
-                const parentWindow = window.parent;
-                const success = parentWindow.continuousRecognitionTester.startAutoTest(30000); // 30秒テスト
+                // 複数の方法でテスト実行を試行
+                const accessMethods = [
+                    { name: 'Parent Window', getter: () => window.parent },
+                    { name: 'Local Window', getter: () => window },
+                    { name: 'Top Window', getter: () => window.top }
+                ];
                 
-                if (success) {
-                    addLog('✅ テスト開始成功 - 30秒間実行されます');
-                    updateStatus('success', '🧪 テスト実行中... 30秒後に結果を表示します');
-                    
-                    // 30秒後に結果表示
-                    setTimeout(() => {
-                        displayResults();
-                    }, 32000);
-                } else {
-                    addLog('❌ テスト開始失敗');
-                    updateStatus('error', 'テスト開始に失敗しました');
+                let testStarted = false;
+                
+                for (const method of accessMethods) {
+                    try {
+                        const targetWindow = method.getter();
+                        
+                        if (targetWindow.continuousRecognitionTester && 
+                            targetWindow.continuousRecognitionTester.startAutoTest) {
+                            
+                            const success = targetWindow.continuousRecognitionTester.startAutoTest(10000);
+                            
+                            if (success) {
+                                addLog(`✅ ${method.name}経由でテスト開始成功`);
+                                updateStatus('success', '🎯 直接テスト実行中... 10秒後に結果を表示します');
+                                testStarted = true;
+                                
+                                // 10秒後に結果表示
+                                setTimeout(() => {
+                                    displayResultsDirect(targetWindow);
+                                }, 12000);
+                                
+                                break;
+                            }
+                        }
+                    } catch (error) {
+                        addLog(`${method.name}経由テスト失敗: ${error.message}`);
+                    }
+                }
+                
+                if (!testStarted) {
+                    addLog('❌ 直接テスト実行に失敗しました');
+                    updateStatus('error', '❌ 直接テスト実行失敗 - 手動テスト指示を参照してください');
+                    generateManualInstructions();
                 }
                 
             } catch (error) {
-                addLog('❌ テスト開始エラー: ' + error.message);
-                updateStatus('error', 'テスト開始エラー: ' + error.message);
+                addLog('❌ 直接テストエラー: ' + error.message);
+                updateStatus('error', '直接テストエラー: ' + error.message);
             }
         }
 
-        // クイックテスト
-        function quickTest() {
-            addLog('⚡ クイックテスト開始...');
-            
-            try {
-                const parentWindow = window.parent;
-                const success = parentWindow.continuousRecognitionTester.startAutoTest(10000); // 10秒テスト
-                
-                if (success) {
-                    addLog('✅ クイックテスト開始成功 - 10秒間実行されます');
-                    updateStatus('success', '⚡ クイックテスト実行中... 10秒後に結果を表示します');
-                    
-                    // 10秒後に結果表示
-                    setTimeout(() => {
-                        displayResults();
-                    }, 12000);
-                } else {
-                    addLog('❌ クイックテスト開始失敗');
-                    updateStatus('error', 'クイックテスト開始に失敗しました');
-                }
-                
-            } catch (error) {
-                addLog('❌ クイックテストエラー: ' + error.message);
-                updateStatus('error', 'クイックテストエラー: ' + error.message);
-            }
-        }
-
-        // 結果表示
-        function displayResults() {
+        // 結果表示（直接アクセス版）
+        function displayResultsDirect(targetWindow) {
             addLog('📊 テスト結果を取得中...');
             
             try {
-                const parentWindow = window.parent;
-                const recognitionManager = parentWindow.stateManager?.recognitionManager;
+                const recognitionManager = targetWindow.stateManager?.recognitionManager;
                 
                 if (!recognitionManager) {
                     addLog('❌ 音声認識システムが利用できません');
@@ -274,6 +385,93 @@
             }
         }
 
+        // 手動テスト指示生成
+        function generateManualInstructions() {
+            addLog('📖 手動テスト指示を生成中...');
+            
+            const instructions = `深堀くんv2.0 継続的音声認識テスト - 手動実行指示
+=====================================
+
+🎯 コンソール実行方法:
+1. 深堀くんv2.0でセッション開始
+2. F12キーで開発者コンソールを開く
+3. 以下のコードを貼り付けて実行:
+
+// === テスト実行コード ===
+console.log('🧪 継続的音声認識テスト開始');
+const testResult = stateManager.recognitionManager.getMicrophonePermissionStats();
+console.log('📊 テスト結果:', testResult);
+
+// 詳細表示
+console.log('=== 詳細統計情報 ===');
+console.log('start()呼び出し回数:', testResult.startCount);
+console.log('マイク許可要求回数:', testResult.microphonePermissionRequests);
+console.log('効率性:', testResult.efficiency + '%');
+console.log('継続的音声認識:', testResult.continuousRecognition ? '動作中' : '停止中');
+console.log('使用戦略:', testResult.strategy);
+
+// 品質評価
+const efficiency = testResult.efficiency;
+let grade = 'D (問題あり)';
+if (efficiency >= 95) grade = 'A+ (優秀)';
+else if (efficiency >= 85) grade = 'A (良好)';
+else if (efficiency >= 70) grade = 'B (普通)';
+else if (efficiency >= 50) grade = 'C (要改善)';
+
+console.log('🎯 品質グレード:', grade);
+console.log('✅ テスト完了 - 上記の結果をコピーして報告してください');
+
+// === 実行時刻 ===
+console.log('実行時刻:', new Date().toLocaleString('ja-JP'));
+
+=====================================
+📋 報告用テキスト生成:
+上記コマンド実行後、コンソールに表示された結果をすべてコピーしてください。
+
+🔧 トラブルシューティング:
+- 「stateManager is not defined」エラー → セッションが開始されていません
+- 「Cannot read property」エラー → 音声認識システムが初期化されていません
+
+📞 サポート:
+問題が解決しない場合は、この指示と発生したエラーメッセージを報告してください。
+`;
+
+            document.getElementById('resultText').value = instructions;
+            updateStatus('warning', '📖 手動テスト指示を生成しました');
+            addLog('✅ 手動テスト指示を生成しました');
+        }
+
+        // 状態表示更新
+        function updateStatus(type, message) {
+            const statusDisplay = document.getElementById('statusDisplay');
+            statusDisplay.className = `status ${type}`;
+            statusDisplay.textContent = message;
+        }
+
+        // テストボタン有効化
+        function enableTestButtons() {
+            document.getElementById('startTestBtn').disabled = false;
+            document.getElementById('quickTestBtn').disabled = false;
+            addLog('✅ テストボタンを有効化しました');
+        }
+
+        // テストボタン無効化
+        function disableTestButtons() {
+            document.getElementById('startTestBtn').disabled = true;
+            document.getElementById('quickTestBtn').disabled = true;
+            addLog('❌ テストボタンを無効化しました');
+        }
+
+        // 継続的音声認識テスト開始
+        function startTest() {
+            directTest(); // 直接テスト実行と同じ処理
+        }
+
+        // クイックテスト
+        function quickTest() {
+            directTest(); // 直接テスト実行と同じ処理
+        }
+
         // 結果テキスト生成
         function generateResultText(stats, grade, passed) {
             const now = new Date();
@@ -297,6 +495,11 @@
 - テスト結果: ${passed ? '合格' : '不合格'}
 
 ${passed ? '✅ 継続的音声認識は正常に動作しています。' : '⚠️ 改善が必要な問題が検出されました。'}
+
+📝 推奨事項:
+${stats.startCount === 1 ? '✅ 理想的なstart()呼び出し回数です。' : ''}
+${stats.efficiency === 100 ? '🎯 完璧な効率性を達成しました！' : ''}
+${stats.startCount > 3 ? '⚠️ start()呼び出しが多すぎます - 戦略見直しが必要です。' : ''}
 
 =====================================
 深堀くんv2.0 シンプルテストシステム`;
@@ -327,8 +530,11 @@ ${passed ? '✅ 継続的音声認識は正常に動作しています。' : '�
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
             addLog('シンプルテストシステムが初期化されました');
-            addLog('「🔍 システム状態確認」ボタンをクリックしてください');
-            updateStatus('warning', '「🔍 システム状態確認」ボタンをクリックしてシステム状態を確認してください');
+            addLog('まず「🔍 詳細診断実行」ボタンをクリックしてください');
+            updateStatus('warning', '「🔍 詳細診断実行」ボタンでシステム診断を開始してください');
+            
+            // 自動診断実行
+            setTimeout(performDetailedDiagnosis, 1000);
         });
     </script>
 </body>
