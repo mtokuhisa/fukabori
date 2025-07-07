@@ -749,9 +749,257 @@ const KnowledgeManagementInterface = {
     getUserManager: () => UserManager,
     getKnowledgeDatabase: () => FukaboriKnowledgeDatabase,
     getCSVManager: () => CSVManager,
+    getQualityAssessmentSystem: () => QualityAssessmentSystem,
     downloadAllKnowledge: downloadAllKnowledge,
     enhanceAllKnowledgeWithAI: enhanceAllKnowledgeWithAI,
     buildAllKnowledgeFileContent: buildAllKnowledgeFileContent
+};
+
+// =================================================================================
+// QUALITY ASSESSMENT SYSTEM - 品質評価システム  
+// =================================================================================
+
+// 🎯 品質評価システム（はほりーのによる知見品質評価）
+// ⚠️ このクラスは非推奨です。AIManager.evaluateInsightQuality を使用してください
+const QualityAssessmentSystem = {
+    // 品質評価の閾値設定
+    thresholds: {
+        confidence: 0.7,
+        importance: 0.6,
+        actionability: 0.5,
+        minimum_overall: 0.6
+    },
+    
+    // はほりーのによる知見品質評価（AIManagerに移譲）
+    async evaluateInsightQuality(insightText, conversationContext) {
+        console.warn('⚠️ QualityAssessmentSystem.evaluateInsightQuality は非推奨です。AIManager.evaluateInsightQuality を使用してください');
+        
+        // AIManagerが利用可能かチェック
+        if (window.AIManager && window.AIManager.isInitialized) {
+            try {
+                return await window.AIManager.evaluateInsightQuality(insightText, conversationContext);
+            } catch (error) {
+                console.error('❌ AIManager.evaluateInsightQuality実行エラー:', error);
+                // フォールバック処理へ
+            }
+        }
+        
+        // フォールバック実装（AIManager未使用時）
+        console.warn('⚠️ AIManagerが未初期化のため、レガシー実装を使用します');
+        
+        try {
+            if (!window.AppState?.apiKey || !insightText?.trim()) {
+                return null;
+            }
+            
+            console.log('🔍 はほりーの: 知見品質評価開始...');
+            
+            const evaluationPrompt = this.buildQualityEvaluationPrompt(insightText, conversationContext);
+            
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${window.AppState.apiKey}`
+                },
+                body: JSON.stringify({
+                    model: 'gpt-4o-mini',
+                    messages: [{ role: 'user', content: evaluationPrompt }],
+                    max_tokens: 800,
+                    temperature: 0.3
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const evaluation = this.parseQualityEvaluation(data.choices[0].message.content);
+                
+                console.log('✅ はほりーの品質評価完了:', evaluation);
+                return evaluation;
+            }
+            
+        } catch (error) {
+            console.error('❌ 品質評価エラー:', error);
+            return null;
+        }
+    },
+    
+    // 品質評価プロンプト生成
+    buildQualityEvaluationPrompt(insightText, conversationContext) {
+        return `あなたは知見品質評価の専門AI「はほりーの」です。
+以下の発言内容を分析し、ビジネスや業務における知見としての価値を評価してください。
+
+【評価対象の発言】
+${insightText}
+
+【会話の文脈】
+${conversationContext || '（会話の文脈情報なし）'}
+
+【評価項目】
+以下の各項目を0.0〜1.0で数値評価し、総合判定を行ってください：
+
+1. 信頼性（Confidence）: 発言内容の具体性・根拠の明確さ
+2. 重要性（Importance）: ビジネス・業務への影響度・価値
+3. 実行可能性（Actionability）: 他の人が活用・応用できる具体性
+
+【出力形式】
+以下の形式で正確に出力してください：
+
+CONFIDENCE: [0.0-1.0の数値]
+IMPORTANCE: [0.0-1.0の数値] 
+ACTIONABILITY: [0.0-1.0の数値]
+OVERALL: [0.0-1.0の数値]
+RECOMMENDATION: [ACCEPT/REJECT]
+SUMMARY: [知見の要約（30文字以内）]
+REASON: [評価理由（100文字以内）]
+
+客観的かつ厳格に評価し、低品質な内容は遠慮なくREJECTしてください。`;
+    },
+    
+    // 品質評価結果の解析
+    parseQualityEvaluation(evaluationText) {
+        const lines = evaluationText.split('\n');
+        const evaluation = {
+            confidence: 0.5,
+            importance: 0.5,
+            actionability: 0.5,
+            overall: 0.5,
+            recommendation: 'REJECT',
+            summary: '',
+            reason: ''
+        };
+        
+        lines.forEach(line => {
+            if (line.startsWith('CONFIDENCE:')) {
+                evaluation.confidence = parseFloat(line.split(':')[1]?.trim()) || 0.5;
+            } else if (line.startsWith('IMPORTANCE:')) {
+                evaluation.importance = parseFloat(line.split(':')[1]?.trim()) || 0.5;
+            } else if (line.startsWith('ACTIONABILITY:')) {
+                evaluation.actionability = parseFloat(line.split(':')[1]?.trim()) || 0.5;
+            } else if (line.startsWith('OVERALL:')) {
+                evaluation.overall = parseFloat(line.split(':')[1]?.trim()) || 0.5;
+            } else if (line.startsWith('RECOMMENDATION:')) {
+                evaluation.recommendation = line.split(':')[1]?.trim().toUpperCase() || 'REJECT';
+            } else if (line.startsWith('SUMMARY:')) {
+                evaluation.summary = line.split(':')[1]?.trim() || '';
+            } else if (line.startsWith('REASON:')) {
+                evaluation.reason = line.split(':')[1]?.trim() || '';
+            }
+        });
+        
+        return evaluation;
+    },
+    
+    // ユーザー確認ダイアログ表示
+    async promptUserConfirmation(insightText, qualityEvaluation) {
+        try {
+            const confirmationMessage = this.buildConfirmationMessage(insightText, qualityEvaluation);
+            
+            // モーダルベースの確認ダイアログ（より良いUX）
+            const userDecision = await this.showQualityConfirmationModal(confirmationMessage, qualityEvaluation);
+            
+            console.log(`✅ ユーザー判定: ${userDecision ? '承認' : '却下'}`);
+            return userDecision;
+            
+        } catch (error) {
+            console.error('❌ ユーザー確認エラー:', error);
+            return false;
+        }
+    },
+    
+    // 確認メッセージ生成
+    buildConfirmationMessage(insightText, evaluation) {
+        const scoreDisplay = `信頼性: ${(evaluation.confidence * 100).toFixed(0)}% | 重要性: ${(evaluation.importance * 100).toFixed(0)}% | 実行性: ${(evaluation.actionability * 100).toFixed(0)}%`;
+        
+        return `【知見品質評価結果】
+
+📝 発言内容:
+"${insightText.substring(0, 100)}${insightText.length > 100 ? '...' : ''}"
+
+🤖 はほりーの評価:
+${scoreDisplay}
+総合評価: ${(evaluation.overall * 100).toFixed(0)}% (${evaluation.recommendation})
+
+💡 要約: ${evaluation.summary}
+📊 理由: ${evaluation.reason}
+
+この発言を知見データとして保存しますか？`;
+    },
+    
+    // 品質確認モーダル表示
+    async showQualityConfirmationModal(message, evaluation) {
+        return new Promise((resolve) => {
+            // シンプルなconfirmダイアログ（後でモーダルUIに改良可能）
+            const userChoice = confirm(message);
+            resolve(userChoice);
+        });
+    },
+    
+    // 品質評価統合処理（メイン関数）（AIManagerに移譲）
+    async processInsightWithQualityAssessment(insightText, conversationContext) {
+        console.warn('⚠️ QualityAssessmentSystem.processInsightWithQualityAssessment は非推奨です。AIManager.processInsightWithQualityAssessment を使用してください');
+        
+        // AIManagerが利用可能かチェック
+        if (window.AIManager && window.AIManager.isInitialized) {
+            try {
+                return await window.AIManager.processInsightWithQualityAssessment(insightText, conversationContext);
+            } catch (error) {
+                console.error('❌ AIManager.processInsightWithQualityAssessment実行エラー:', error);
+                // フォールバック処理へ
+            }
+        }
+        
+        // フォールバック実装（AIManager未使用時）
+        console.warn('⚠️ AIManagerが未初期化のため、レガシー実装を使用します');
+        
+        try {
+            console.log('🎯 知見品質評価プロセス開始...');
+            
+            // 1. はほりーのによる品質評価
+            const qualityEvaluation = await this.evaluateInsightQuality(insightText, conversationContext);
+            
+            if (!qualityEvaluation) {
+                console.warn('⚠️ 品質評価が取得できませんでした');
+                return { accepted: false, reason: 'evaluation_failed' };
+            }
+            
+            // 2. 自動判定（高品質は自動承認、低品質は自動却下）
+            if (qualityEvaluation.overall >= 0.8 && qualityEvaluation.recommendation === 'ACCEPT') {
+                console.log('✅ 高品質知見: 自動承認');
+                return {
+                    accepted: true,
+                    reason: 'auto_accept',
+                    evaluation: qualityEvaluation,
+                    summary: qualityEvaluation.summary
+                };
+            }
+            
+            if (qualityEvaluation.overall < 0.3 || qualityEvaluation.recommendation === 'REJECT') {
+                console.log('❌ 低品質知見: 自動却下');
+                return {
+                    accepted: false,
+                    reason: 'auto_reject',
+                    evaluation: qualityEvaluation,
+                    summary: qualityEvaluation.summary
+                };
+            }
+            
+            // 3. 中間品質は手動確認
+            console.log('🤔 中間品質: ユーザー確認が必要');
+            const userApproved = await this.promptUserConfirmation(insightText, qualityEvaluation);
+            
+            return {
+                accepted: userApproved,
+                reason: userApproved ? 'manual_accept' : 'manual_reject',
+                evaluation: qualityEvaluation,
+                summary: qualityEvaluation.summary
+            };
+            
+        } catch (error) {
+            console.error('❌ 品質評価統合処理エラー:', error);
+            return { accepted: false, reason: 'process_error' };
+        }
+    }
 };
 
 // =================================================================================
@@ -764,6 +1012,7 @@ window.UserManager = UserManager;
 window.FukaboriKnowledgeDatabase = FukaboriKnowledgeDatabase;
 window.CSVManager = CSVManager;
 window.KnowledgeFileManager = KnowledgeFileManager;
+window.QualityAssessmentSystem = QualityAssessmentSystem;
 window.KnowledgeManagementInterface = KnowledgeManagementInterface;
 
 // 関数のグローバル公開

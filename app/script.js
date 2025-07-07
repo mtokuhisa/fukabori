@@ -3393,7 +3393,9 @@ function forceStopAllActivity() {
     const stoppedAudioCount = AudioControlManager.forceStopAllAudio('force_stop_activity');
     
     AppState.currentSpeaker = SPEAKERS.NULL;
-    AppState.microphoneActive = false;
+    
+    // 🔧 修正: マイク状態を適切に設定（非推奨警告を解決）
+    AppState.voiceRecognitionStability.isRecognitionActive = false;
     
     window.updateMicrophoneButton();
     window.showMessage('info', `全ての活動を強制停止しました（音声${stoppedAudioCount}件停止）`);
