@@ -403,7 +403,7 @@ class ContinuousRecognitionManager {
     handleRecognitionError(event) {
         console.error('😨 継続的音声認識エラー:', event.error);
         
-        // 新機能のエラーハンドラーを使用
+        // 🔧 v0.7.2新機能: 拡張エラーハンドラーを使用（必須）
         if (this.errorHandler) {
             const shouldContinue = this.errorHandler.handleError(event);
             
@@ -418,114 +418,19 @@ class ContinuousRecognitionManager {
             return;
         }
         
-        // フォールバック：既存のエラーハンドリング
-        console.warn('⚠️ 新機能エラーハンドラー未使用 - フォールバック処理');
+        // 🚨 新機能エラーハンドラー未使用 - システム初期化失敗
+        console.error('🚨 VoiceErrorHandler初期化失敗 - v0.7.2機能が利用できません');
         
-        switch (event.error) {
-            case 'not-allowed':
-            case 'service-not-allowed':
-                console.error('🚫 マイク許可エラー - 継続的音声認識停止');
-                
-                // 継続性監視を停止
-                this.stopContinuityMonitor();
-                
-                // SpeechRecognitionオブジェクトを完全停止
-                if (this.recognition) {
-                    try {
-                        this.recognition.abort();
-                    } catch (e) {
-                        console.log('abort()エラー（無視）:', e.message);
-                    }
-                }
-                
-                this.permissionManager.state = 'denied';
-                this.state = 'error';
-                this.continuity.neverStopped = false;
-                this.continuity.startedOnce = false;  // 再開可能にする
-                this.recognition = null;  // オブジェクトを無効化
-                this.notifyListeners();
-                this.notifyUIUpdate('error', event.error);
-                return;
-                
-            case 'aborted':
-                if (this.continuity.forceStop) {
-                    console.log('🔄 意図的な停止');
-                    return;
-                }
-                console.warn('⚠️ 継続的音声認識が意図せず停止 - 音声認識停止をユーザーに通知');
-                console.log('🔧 マイク許可アラート防止: 自動再開は行わない（手動再開は可能）');
-                
-                // 継続性監視を停止
-                this.stopContinuityMonitor();
-                
-                // abortedエラーの場合は既に停止済みなのでabort()は不要
-                console.log('🔧 abortedエラー: オブジェクトは既に停止済み');
-                
-                // 状態をエラーに変更してユーザーに通知
-                this.state = 'error';
-                this.continuity.neverStopped = false;
-                this.continuity.startedOnce = false;  // 再開可能にする
-                this.recognition = null;  // オブジェクトを無効化
-                this.notifyListeners();
-                this.notifyUIUpdate('error', event.error);
-                return;
-                
-            case 'no-speech':
-                console.log('😶 no-speech - 継続的音声認識では正常動作');
-                // 継続的音声認識では、no-speechは正常動作として扱う
-                return;
-                
-            case 'network':
-                console.warn('🌐 ネットワークエラー - 音声認識停止をユーザーに通知');
-                console.log('🔧 マイク許可アラート防止: 自動再開は行わない（手動再開は可能）');
-                
-                // 継続性監視を停止
-                this.stopContinuityMonitor();
-                
-                // networkエラーの場合は既にネットワークで停止済みなのでabort()は不要
-                console.log('🔧 networkエラー: オブジェクトは既にネットワークで停止済み');
-                
-                // 状態をエラーに変更してユーザーに通知
-                this.state = 'error';
-                this.continuity.neverStopped = false;
-                this.continuity.startedOnce = false;  // 再開可能にする
-                this.recognition = null;  // オブジェクトを無効化
-                this.notifyListeners();
-                this.notifyUIUpdate('error', event.error);
-                return;
-                
-            case 'audio-capture':
-                console.warn('🎤 オーディオキャプチャエラー - 音声認識停止をユーザーに通知');
-                console.log('🔧 マイク許可アラート防止: 自動再開は行わない（手動再開は可能）');
-                
-                // 継続性監視を停止
-                this.stopContinuityMonitor();
-                
-                // 状態をエラーに変更してユーザーに通知
-                this.state = 'error';
-                this.continuity.neverStopped = false;
-                this.continuity.startedOnce = false;  // 再開可能にする
-                this.recognition = null;  // オブジェクトを無効化
-                this.notifyListeners();
-                this.notifyUIUpdate('error', event.error);
-                return;
-                
-            default:
-                console.warn(`⁉️ 継続的音声認識未知エラー: ${event.error} - 音声認識停止をユーザーに通知`);
-                console.log('🔧 マイク許可アラート防止: 自動再開は行わない（手動再開は可能）');
-                
-                // 継続性監視を停止
-                this.stopContinuityMonitor();
-                
-                // 状態をエラーに変更してユーザーに通知
-                this.state = 'error';
-                this.continuity.neverStopped = false;
-                this.continuity.startedOnce = false;  // 再開可能にする
-                this.recognition = null;  // オブジェクトを無効化
-                this.notifyListeners();
-                this.notifyUIUpdate('error', event.error);
-                return;
-        }
+        // システム初期化失敗として扱う（「！」表示には戻らない）
+        this.state = 'error';
+        this.continuity.neverStopped = false;
+        this.continuity.startedOnce = false;
+        this.recognition = null;
+        this.notifyListeners();
+        this.notifyUIUpdate('error', 'system-init-failure');
+        
+        console.error('💥 音声認識システム初期化失敗のため停止します');
+        return;
     }
     
  // 即座再開メソッド（条件付き再開）
@@ -5821,39 +5726,46 @@ function initializeVoiceSystem() {
     }
 }
 
-// 🔧 v0.7.2新機能: 拡張音声システム初期化
+// 🔧 v0.7.2新機能: 拡張音声システム初期化（必須）
 function initializeEnhancedVoiceSystem() {
     console.log('🚀 拡張音声システム初期化開始 (v0.7.2)');
     
     try {
-        // エラーハンドラーの初期化
+        // エラーハンドラーの初期化（必須）
         if (typeof VoiceErrorHandler === 'undefined') {
-            console.error('❌ VoiceErrorHandlerクラスが未定義です');
-            return false;
+            console.error('🚨 VoiceErrorHandlerクラスが未定義 - v0.7.2機能が利用できません');
+            throw new Error('VoiceErrorHandler未定義');
         }
         
-        // UI管理システムの初期化
+        // UI管理システムの初期化（必須）
         if (typeof VoiceUIManager === 'undefined') {
-            console.error('❌ VoiceUIManagerクラスが未定義です');
-            return false;
+            console.error('🚨 VoiceUIManagerクラスが未定義 - v0.7.2機能が利用できません');
+            throw new Error('VoiceUIManager未定義');
         }
         
         // 拡張音声システムコンポーネントの初期化
         window.voiceErrorHandler = null;
         window.voiceUIManager = new VoiceUIManager();
         
-        // UI管理システムの初期化
+        // UI管理システムの初期化（必須）
         const uiInitialized = window.voiceUIManager.initialize();
         if (!uiInitialized) {
-            console.warn('⚠️ UI管理システムの初期化に失敗（機能制限）');
+            console.error('🚨 UI管理システムの初期化に失敗 - v0.7.2機能が利用できません');
+            throw new Error('VoiceUIManager初期化失敗');
         }
         
         console.log('✅ 拡張音声システム初期化完了 (v0.7.2)');
         return true;
         
     } catch (error) {
-        console.error('❌ 拡張音声システム初期化エラー:', error);
-        return false;
+        console.error('💥 拡張音声システム初期化失敗:', error);
+        
+        // 新機能が利用できない場合はシステムエラーとして扱う
+        if (window.voiceUIManager && window.voiceUIManager.isInitialized) {
+            window.voiceUIManager.updateStatus('error', 'system-init-failure');
+        }
+        
+        throw error; // エラーを再スローして呼び出し元にも失敗を通知
     }
 }
 

@@ -24,7 +24,8 @@ class VoiceUIManager {
             'aborted': '音声認識が予期せず停止しました',
             'network': 'ネットワーク接続を確認してください',
             'audio-capture': 'マイクへのアクセスに問題があります',
-            'not-allowed': 'マイクの使用許可が必要です'
+            'not-allowed': 'マイクの使用許可が必要です',
+            'system-init-failure': 'v0.7.2音声システム初期化に失敗しました'
         };
         
         // ビジュアル状態インジケーター
@@ -35,7 +36,8 @@ class VoiceUIManager {
             'stopping': { color: '#FF9800', icon: '⏸️', text: '音声認識一時停止中 - クリックで再開' },
             'error': { color: '#f44336', icon: '⚠️', text: '音声認識エラー - クリックで再開' },
             'network-error': { color: '#FF5722', icon: '🌐', text: 'ネットワーク接続を確認してください' },
-            'mic-denied': { color: '#9C27B0', icon: '🚫', text: 'マイクの使用許可が必要です' }
+            'mic-denied': { color: '#9C27B0', icon: '🚫', text: 'マイクの使用許可が必要です' },
+            'system-init-failure': { color: '#D32F2F', icon: '💥', text: 'v0.7.2音声システム初期化に失敗しました' }
         };
     }
 
@@ -150,6 +152,8 @@ class VoiceUIManager {
                     return this.visualStates['network-error'];
                 case 'not-allowed':
                     return this.visualStates['mic-denied'];
+                case 'system-init-failure':
+                    return this.visualStates['system-init-failure'];
                 default:
                     return {
                         ...this.visualStates['error'],
