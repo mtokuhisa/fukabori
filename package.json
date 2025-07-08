@@ -1,7 +1,7 @@
 {
   "name": "fukabori-app",
-  "version": "0.7.0",
-  "description": "深堀くんv2.0 - 継続的音声認識システム搭載",
+  "version": "0.7.1",
+  "description": "深堀くんv2.0 - 継続的音声認識システム（安定性向上版）",
   "main": "app/script.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
