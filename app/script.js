@@ -58,7 +58,32 @@ class ContinuousRecognitionManager {
         this.continuityMonitor = null;  // 監視タイマー
         this.lastResultTime = Date.now(); // 最後の結果処理時刻
         
+        // 🔧 v0.7.2新機能: 拡張エラーハンドラーの初期化
+        this.errorHandler = null;
+        this.initializeErrorHandler();
+        
         console.log('🔄 ContinuousRecognitionManager初期化（継続的音声認識）');
+    }
+    
+    // 🔧 v0.7.2新機能: エラーハンドラーの初期化
+    initializeErrorHandler() {
+        try {
+            if (typeof VoiceErrorHandler !== 'undefined') {
+                this.errorHandler = new VoiceErrorHandler(this);
+                console.log('✅ VoiceErrorHandler初期化完了');
+            } else {
+                console.warn('⚠️ VoiceErrorHandlerクラスが未定義（フォールバック）');
+            }
+        } catch (error) {
+            console.error('❌ VoiceErrorHandler初期化エラー:', error);
+        }
+    }
+    
+    // 🔧 v0.7.2新機能: UI状態更新の通知
+    notifyUIUpdate(state, errorType = null) {
+        if (window.voiceUIManager) {
+            window.voiceUIManager.updateStatus(state, errorType);
+        }
     }
     
  // 継続的音声認識開始（一度だけ）
@@ -374,9 +399,27 @@ class ContinuousRecognitionManager {
         }
     }
     
-    // 継続的音声認識エラーハンドリング
+    // 🔧 v0.7.2新機能: 拡張エラーハンドリング
     handleRecognitionError(event) {
         console.error('😨 継続的音声認識エラー:', event.error);
+        
+        // 新機能のエラーハンドラーを使用
+        if (this.errorHandler) {
+            const shouldContinue = this.errorHandler.handleError(event);
+            
+            if (shouldContinue) {
+                // no-speechなど、正常動作として扱う
+                this.notifyUIUpdate('active');
+                return;
+            }
+            
+            // エラー状態をUIに通知
+            this.notifyUIUpdate('error', event.error);
+            return;
+        }
+        
+        // フォールバック：既存のエラーハンドリング
+        console.warn('⚠️ 新機能エラーハンドラー未使用 - フォールバック処理');
         
         switch (event.error) {
             case 'not-allowed':
@@ -401,6 +444,7 @@ class ContinuousRecognitionManager {
                 this.continuity.startedOnce = false;  // 再開可能にする
                 this.recognition = null;  // オブジェクトを無効化
                 this.notifyListeners();
+                this.notifyUIUpdate('error', event.error);
                 return;
                 
             case 'aborted':
@@ -423,6 +467,7 @@ class ContinuousRecognitionManager {
                 this.continuity.startedOnce = false;  // 再開可能にする
                 this.recognition = null;  // オブジェクトを無効化
                 this.notifyListeners();
+                this.notifyUIUpdate('error', event.error);
                 return;
                 
             case 'no-speech':
@@ -446,6 +491,7 @@ class ContinuousRecognitionManager {
                 this.continuity.startedOnce = false;  // 再開可能にする
                 this.recognition = null;  // オブジェクトを無効化
                 this.notifyListeners();
+                this.notifyUIUpdate('error', event.error);
                 return;
                 
             case 'audio-capture':
@@ -461,6 +507,7 @@ class ContinuousRecognitionManager {
                 this.continuity.startedOnce = false;  // 再開可能にする
                 this.recognition = null;  // オブジェクトを無効化
                 this.notifyListeners();
+                this.notifyUIUpdate('error', event.error);
                 return;
                 
             default:
@@ -476,6 +523,7 @@ class ContinuousRecognitionManager {
                 this.continuity.startedOnce = false;  // 再開可能にする
                 this.recognition = null;  // オブジェクトを無効化
                 this.notifyListeners();
+                this.notifyUIUpdate('error', event.error);
                 return;
         }
     }
@@ -499,9 +547,15 @@ class ContinuousRecognitionManager {
         }
     }
     
-    // 終了イベント処理（改善版継続的音声認識）
+    // 🔧 v0.7.2新機能: 拡張終了イベント処理
     handleEnd() {
         console.log('🏁 継続的音声認識終了イベント');
+        
+        // 新機能のエラーハンドラーを使用してno-speech後の不正終了を防ぐ
+        if (this.errorHandler && this.errorHandler.shouldIgnoreEndEvent()) {
+            console.log('✅ no-speech後の不正終了を防止 - 終了イベントを無視');
+            return;
+        }
         
         if (this.continuity.forceStop) {
             console.log('🛑 強制停止中 - 自動再開なし');
@@ -523,6 +577,7 @@ class ContinuousRecognitionManager {
         this.continuity.startedOnce = false;  // 再開可能にする
         this.recognition = null;  // オブジェクトを無効化
         this.notifyListeners();
+        this.notifyUIUpdate('error', 'aborted'); // UI状態更新
         
         // マイク許可アラート防止のため、自動再開は行わない
         console.log('🔧 音声認識停止をユーザーに通知（手動再開は可能）');
@@ -5766,6 +5821,42 @@ function initializeVoiceSystem() {
     }
 }
 
+// 🔧 v0.7.2新機能: 拡張音声システム初期化
+function initializeEnhancedVoiceSystem() {
+    console.log('🚀 拡張音声システム初期化開始 (v0.7.2)');
+    
+    try {
+        // エラーハンドラーの初期化
+        if (typeof VoiceErrorHandler === 'undefined') {
+            console.error('❌ VoiceErrorHandlerクラスが未定義です');
+            return false;
+        }
+        
+        // UI管理システムの初期化
+        if (typeof VoiceUIManager === 'undefined') {
+            console.error('❌ VoiceUIManagerクラスが未定義です');
+            return false;
+        }
+        
+        // 拡張音声システムコンポーネントの初期化
+        window.voiceErrorHandler = null;
+        window.voiceUIManager = new VoiceUIManager();
+        
+        // UI管理システムの初期化
+        const uiInitialized = window.voiceUIManager.initialize();
+        if (!uiInitialized) {
+            console.warn('⚠️ UI管理システムの初期化に失敗（機能制限）');
+        }
+        
+        console.log('✅ 拡張音声システム初期化完了 (v0.7.2)');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ 拡張音声システム初期化エラー:', error);
+        return false;
+    }
+}
+
 // 既存の初期化関数を置き換え
 function initializeMicrophoneRecording(forceRecheck = false) {
     console.log('🎤 マイク初期化要求（新システム）');
@@ -5914,6 +6005,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const initialized = initializeVoiceSystem();
         if (initialized) {
             console.log('✅ 音声システム自動初期化完了');
+            
+            // 🔧 v0.7.2新機能: 拡張音声システム初期化
+            const enhancedInitialized = initializeEnhancedVoiceSystem();
+            if (enhancedInitialized) {
+                console.log('✅ 拡張音声システム初期化完了 (v0.7.2)');
+            } else {
+                console.warn('⚠️ 拡張音声システム初期化失敗（基本機能は動作）');
+            }
         } else {
             console.error('❌ 音声システム自動初期化失敗');
         }
