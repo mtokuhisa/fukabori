@@ -75,6 +75,19 @@ class ContinuousRecognitionManager {
             return false;
         }
         
+        // 🔧 安定性向上：連続エラー後の遅延再開
+        if (this.stats.startCount > 2) {
+            const delay = Math.min(500 * (this.stats.startCount - 2), 3000); // 最大3秒
+            console.log(`⏳ 安定性向上のため${delay}ms遅延後に再開`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+        
+        // 🔧 安定性向上：連続エラー回数制限
+        if (this.stats.startCount > 10) {
+            console.warn('⚠️ 連続エラー回数制限に達しました - システムリセット実行');
+            await this.performSystemReset();
+        }
+        
         this.isStarting = true;
         
         try {
@@ -227,21 +240,29 @@ class ContinuousRecognitionManager {
     
  // 継続性監視システム
     startContinuityMonitor() {
-        console.log('🔍 継続性監視システム開始');
+        console.log('🔍 継続性監視システム開始（稼働状態監視）');
         
-        // 30秒ごとに継続性をチェック（より頻繁に）
+        // 10秒ごとにSpeechRecognitionオブジェクトの実態監視
         this.continuityMonitor = setInterval(() => {
             if (this.state === 'active' && window.AppState?.sessionActive && !this.continuity.forceStop) {
+                const isRecognitionActive = this.recognition !== null;
                 const timeSinceLastResult = Date.now() - this.lastResultTime;
-                console.log(`🔍 継続性監視: 正常動作中 (最後の結果から${Math.floor(timeSinceLastResult/1000)}秒)`);
                 
-                // 最後の結果処理から一定時間経過した場合の予防的再開
-                if (timeSinceLastResult > 45000) { // 45秒（Chrome の60秒制限より前）
-                    console.log('⚠️ 継続性監視: 長時間無音 - 予防的再開実行');
-                    this.preemptiveRestart();
+                console.log(`🔍 稼働状態監視: recognition=${!!this.recognition}, lang=${this.recognition?.lang}, 最後の結果から${Math.floor(timeSinceLastResult/1000)}秒`);
+                
+                // SpeechRecognitionオブジェクトの実態確認
+                if (!isRecognitionActive) {
+                    console.log('⚠️ 稼働状態監視: SpeechRecognitionオブジェクトが無効 - 状態をエラーに変更');
+                    this.state = 'error';
+                    this.continuity.neverStopped = false;
+                    this.continuity.startedOnce = false;  // 再開可能にする
+                    this.notifyListeners();
+                } else {
+                    // 無音時間は監視しない（0-180秒の考慮時間は正常）
+                    console.log('✅ 稼働状態監視: 正常動作中');
                 }
             }
-        }, 30000); // 30秒間隔
+        }, 10000); // 10秒間隔
     }
     
  // 継続性監視停止
@@ -253,17 +274,22 @@ class ContinuousRecognitionManager {
         }
     }
     
- // 予防的再開
+ // 予防的再開（条件付き再開）
     preemptiveRestart() {
         console.log('🔄 予防的再開実行要求（継続性保持）');
         
         if (this.recognition && this.state === 'active') {
- // 重要：stop()もstart()も呼ばない - マイク許可アラートの原因
-            console.log('🔧 真の継続的音声認識: 予防的再開を防止（マイク許可アラート解決）');
-            console.log('💡 継続的音声認識は継続中 - 無理に再開しない');
+            // SpeechRecognitionオブジェクトの実態確認
+            const isRecognitionActive = this.recognition && this.recognition.lang;
             
-            // stop()とstart()を呼ばないため、統計情報も更新しない
-            // this.stats.startCount++; // ← 削除
+            if (!isRecognitionActive) {
+                console.log('⚠️ SpeechRecognitionオブジェクトが無効 - 状態をエラーに変更');
+                this.state = 'error';
+                this.continuity.neverStopped = false;
+                this.notifyListeners();
+            } else {
+                console.log('✅ SpeechRecognitionオブジェクトは正常 - 予防的再開は不要');
+            }
         }
     }
     
@@ -297,6 +323,18 @@ class ContinuousRecognitionManager {
         // 開始処理
         this.recognition.onstart = () => {
             console.log('🔄 継続的音声認識開始イベント');
+            
+            // エラー状態やnullオブジェクトの場合は状態変更をスキップ
+            if (this.recognition === null) {
+                console.log('⚠️ onstart: オブジェクトが無効化済み - 状態変更をスキップ');
+                return;
+            }
+            
+            if (this.state === 'error') {
+                console.log('⚠️ onstart: エラー状態 - 状態変更をスキップ');
+                return;
+            }
+            
             this.state = 'active';
             this.notifyListeners();
         };
@@ -304,6 +342,12 @@ class ContinuousRecognitionManager {
     
     // 結果処理（既存ロジック再利用）
     handleResult(event) {
+        // オブジェクトが無効化されている場合は結果を無視
+        if (!this.recognition) {
+            console.log('❌ 音声認識オブジェクトが無効化済み - 結果を無視');
+            return;
+        }
+        
         let interimTranscript = '';
         let finalTranscript = '';
 
@@ -338,9 +382,24 @@ class ContinuousRecognitionManager {
             case 'not-allowed':
             case 'service-not-allowed':
                 console.error('🚫 マイク許可エラー - 継続的音声認識停止');
+                
+                // 継続性監視を停止
+                this.stopContinuityMonitor();
+                
+                // SpeechRecognitionオブジェクトを完全停止
+                if (this.recognition) {
+                    try {
+                        this.recognition.abort();
+                    } catch (e) {
+                        console.log('abort()エラー（無視）:', e.message);
+                    }
+                }
+                
                 this.permissionManager.state = 'denied';
                 this.state = 'error';
                 this.continuity.neverStopped = false;
+                this.continuity.startedOnce = false;  // 再開可能にする
+                this.recognition = null;  // オブジェクトを無効化
                 this.notifyListeners();
                 return;
                 
@@ -349,8 +408,21 @@ class ContinuousRecognitionManager {
                     console.log('🔄 意図的な停止');
                     return;
                 }
-                console.warn('⚠️ 継続的音声認識が意図せず停止 - 再開は行わない（マイク許可アラート防止）');
-                console.log('🔧 真の継続的音声認識: abortedエラー時も再開しない');
+                console.warn('⚠️ 継続的音声認識が意図せず停止 - 音声認識停止をユーザーに通知');
+                console.log('🔧 マイク許可アラート防止: 自動再開は行わない（手動再開は可能）');
+                
+                // 継続性監視を停止
+                this.stopContinuityMonitor();
+                
+                // abortedエラーの場合は既に停止済みなのでabort()は不要
+                console.log('🔧 abortedエラー: オブジェクトは既に停止済み');
+                
+                // 状態をエラーに変更してユーザーに通知
+                this.state = 'error';
+                this.continuity.neverStopped = false;
+                this.continuity.startedOnce = false;  // 再開可能にする
+                this.recognition = null;  // オブジェクトを無効化
+                this.notifyListeners();
                 return;
                 
             case 'no-speech':
@@ -359,38 +431,75 @@ class ContinuousRecognitionManager {
                 return;
                 
             case 'network':
-                console.warn('🌐 ネットワークエラー - 再開は行わない（マイク許可アラート防止）');
-                console.log('🔧 真の継続的音声認識: ネットワークエラー時も再開しない');
+                console.warn('🌐 ネットワークエラー - 音声認識停止をユーザーに通知');
+                console.log('🔧 マイク許可アラート防止: 自動再開は行わない（手動再開は可能）');
+                
+                // 継続性監視を停止
+                this.stopContinuityMonitor();
+                
+                // networkエラーの場合は既にネットワークで停止済みなのでabort()は不要
+                console.log('🔧 networkエラー: オブジェクトは既にネットワークで停止済み');
+                
+                // 状態をエラーに変更してユーザーに通知
+                this.state = 'error';
+                this.continuity.neverStopped = false;
+                this.continuity.startedOnce = false;  // 再開可能にする
+                this.recognition = null;  // オブジェクトを無効化
+                this.notifyListeners();
                 return;
                 
             case 'audio-capture':
-                console.warn('🎤 オーディオキャプチャエラー - 再開は行わない（マイク許可アラート防止）');
-                console.log('🔧 真の継続的音声認識: オーディオキャプチャエラー時も再開しない');
+                console.warn('🎤 オーディオキャプチャエラー - 音声認識停止をユーザーに通知');
+                console.log('🔧 マイク許可アラート防止: 自動再開は行わない（手動再開は可能）');
+                
+                // 継続性監視を停止
+                this.stopContinuityMonitor();
+                
+                // 状態をエラーに変更してユーザーに通知
+                this.state = 'error';
+                this.continuity.neverStopped = false;
+                this.continuity.startedOnce = false;  // 再開可能にする
+                this.recognition = null;  // オブジェクトを無効化
+                this.notifyListeners();
                 return;
                 
             default:
-                console.warn(`⁉️ 継続的音声認識未知エラー: ${event.error} - 再開は行わない（マイク許可アラート防止）`);
-                console.log('🔧 真の継続的音声認識: 未知エラー時も再開しない');
-                break;
+                console.warn(`⁉️ 継続的音声認識未知エラー: ${event.error} - 音声認識停止をユーザーに通知`);
+                console.log('🔧 マイク許可アラート防止: 自動再開は行わない（手動再開は可能）');
+                
+                // 継続性監視を停止
+                this.stopContinuityMonitor();
+                
+                // 状態をエラーに変更してユーザーに通知
+                this.state = 'error';
+                this.continuity.neverStopped = false;
+                this.continuity.startedOnce = false;  // 再開可能にする
+                this.recognition = null;  // オブジェクトを無効化
+                this.notifyListeners();
+                return;
         }
     }
     
- // 即座再開メソッド
+ // 即座再開メソッド（条件付き再開）
     immediateRestart() {
         if (this.recognition && window.AppState?.sessionActive && !this.continuity.forceStop) {
             console.log('🚀 継続的音声認識即座再開要求');
             
- // 重要：start()を呼ばない - マイク許可アラートの原因
-            console.log('🔧 真の継続的音声認識: start()再呼び出しを防止（マイク許可アラート解決）');
-            console.log('💡 継続的音声認識は既に終了 - 次回発話時に新しいセッションを開始');
+            // SpeechRecognitionオブジェクトの実態確認
+            const isRecognitionActive = this.recognition && this.recognition.lang;
             
-            // start()を呼ばないため、統計情報も更新しない
-            // this.stats.startCount++; // ← 削除
-            // this.continuity.neverStopped = true; // ← 削除
+            if (!isRecognitionActive) {
+                console.log('⚠️ SpeechRecognitionオブジェクトが無効 - 状態をエラーに変更');
+                this.state = 'error';
+                this.continuity.neverStopped = false;
+                this.notifyListeners();
+            } else {
+                console.log('✅ SpeechRecognitionオブジェクトは正常 - 即座再開は不要');
+            }
         }
     }
     
-    // 終了イベント処理（真の継続的音声認識）
+    // 終了イベント処理（改善版継続的音声認識）
     handleEnd() {
         console.log('🏁 継続的音声認識終了イベント');
         
@@ -404,12 +513,19 @@ class ContinuousRecognitionManager {
             return;
         }
         
- // 重要：真の継続的音声認識では一度も再開しない
-        console.log('⚠️ 継続的音声認識が終了 - しかし再開は行わない（マイク許可アラート防止）');
-        this.continuity.neverStopped = false; // 一度停止した
+        // 継続性監視を停止
+        this.stopContinuityMonitor();
         
-        // 🚨 重要：start()を呼ばない - これがマイク許可アラートの原因
-        console.log('🔧 真の継続的音声認識: start()再呼び出しを防止（マイク許可アラート解決）');
+        // 状態をエラーに変更してユーザーに通知
+        console.log('⚠️ 継続的音声認識が終了 - 状態をエラーに変更');
+        this.state = 'error';
+        this.continuity.neverStopped = false; // 一度停止した
+        this.continuity.startedOnce = false;  // 再開可能にする
+        this.recognition = null;  // オブジェクトを無効化
+        this.notifyListeners();
+        
+        // マイク許可アラート防止のため、自動再開は行わない
+        console.log('🔧 音声認識停止をユーザーに通知（手動再開は可能）');
         
         // 代替案：音声認識が終了した場合は、継続性を諦める
         // ユーザーが次回発話時に新しいセッションを開始する
@@ -468,6 +584,96 @@ class ContinuousRecognitionManager {
         
         // 現在のセッションはそのまま維持し、統計情報のみリセット
         console.log('✅ 統計情報リセット完了 - 新しいテストを開始できます');
+        return true;
+    }
+
+    // 🔧 システムリセット機能
+    async performSystemReset() {
+        console.log('🔄 音声認識システムリセット開始');
+        
+        try {
+            // 現在の音声認識オブジェクトの完全破棄
+            if (this.recognition) {
+                try {
+                    this.recognition.abort();
+                } catch (e) {
+                    console.log('リセット時のabort()エラー（無視）:', e.message);
+                }
+                this.recognition = null;
+            }
+            
+            // 継続性監視の停止
+            this.stopContinuityMonitor();
+            
+            // 統計情報のリセット
+            this.stats = {
+                startCount: 0,
+                microphonePermissionRequests: 0,
+                resultProcessedCount: 0,
+                resultIgnoredCount: 0,
+                pauseCount: 0,
+                resumeCount: 0,
+                startTime: Date.now(),
+                sessionDuration: 0
+            };
+            
+            // 継続性状態のリセット
+            this.continuity = {
+                neverStopped: false,
+                startedOnce: false,
+                forceStop: false
+            };
+            
+            // 状態をアイドルに変更
+            this.state = 'idle';
+            this.isStarting = false;
+            this.processResults = true;
+            
+            console.log('✅ 音声認識システムリセット完了');
+            
+            // 3秒待機後に自動再開を試行
+            console.log('⏳ 3秒待機後に自動再開を試行');
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // 自動再開
+            if (window.AppState?.sessionActive) {
+                console.log('🔄 システムリセット後の自動再開');
+                await this.start();
+            }
+            
+        } catch (error) {
+            console.error('❌ システムリセットエラー:', error);
+            this.state = 'error';
+            this.notifyListeners();
+        }
+    }
+    
+    // 🧪 テスト用：強制エラートリガー
+    triggerTestError(errorType = 'network') {
+        console.log(`🧪 テスト用エラートリガー: ${errorType}エラーを発生させます`);
+        
+        if (!this.recognition) {
+            console.log('❌ 音声認識が動作していません');
+            return false;
+        }
+        
+        if (this.state !== 'active') {
+            console.log('❌ 音声認識が非アクティブです');
+            return false;
+        }
+        
+        // 擬似的なエラーイベントを作成
+        const mockErrorEvent = {
+            error: errorType,
+            message: `テスト用の${errorType}エラー`
+        };
+        
+        console.log(`🔥 ${errorType}エラーを手動発生させます`);
+        
+        // エラーハンドラーを直接呼び出し
+        this.handleRecognitionError(mockErrorEvent);
+        
+        console.log('✅ テスト用エラーが発生しました - 再開テストを実行してください');
         return true;
     }
     
@@ -670,7 +876,7 @@ class StateManager {
         } else if (recognitionState === 'stopping') {
             statusText = '音声認識を停止中...';
         } else if (recognitionState === 'error') {
-            statusText = '音声認識エラー';
+            statusText = 'エラー停止中・クリックで再開';
         } else if (audioInfo.length > 0) {
             statusText = `音声再生中 (${audioInfo.length}件)`;
         } else {
@@ -1541,6 +1747,74 @@ function debugMicrophonePermissionStats() {
     }
     
     return stats;
+}
+
+// 🧪 テスト用：グローバルアクセス可能な強制エラートリガー
+function triggerTestNetworkError() {
+    console.log('🧪 テスト用ネットワークエラートリガー');
+    
+    if (!stateManager) {
+        console.log('❌ StateManagerが未初期化');
+        return false;
+    }
+    
+    return stateManager.recognitionManager.triggerTestError('network');
+}
+
+function triggerTestAbortError() {
+    console.log('🧪 テスト用中断エラートリガー');
+    
+    if (!stateManager) {
+        console.log('❌ StateManagerが未初期化');
+        return false;
+    }
+    
+    return stateManager.recognitionManager.triggerTestError('aborted');
+}
+
+function triggerTestAudioError() {
+    console.log('🧪 テスト用オーディオエラートリガー');
+    
+    if (!stateManager) {
+        console.log('❌ StateManagerが未初期化');
+        return false;
+    }
+    
+    return stateManager.recognitionManager.triggerTestError('audio-capture');
+}
+
+// 🧪 テスト用：簡単なエラー回復テスト
+function runErrorRecoveryTest() {
+    console.log('🧪 エラー回復テストを実行します');
+    
+    if (!stateManager) {
+        console.log('❌ StateManagerが未初期化');
+        return false;
+    }
+    
+    const recognitionManager = stateManager.recognitionManager;
+    
+    if (recognitionManager.state !== 'active') {
+        console.log('❌ 音声認識が稼働していません。先に音声認識を開始してください');
+        return false;
+    }
+    
+    console.log('1️⃣ 現在の状態を確認');
+    console.log('状態:', recognitionManager.state);
+    
+    console.log('2️⃣ ネットワークエラーを発生させます');
+    const success = recognitionManager.triggerTestError('network');
+    
+    if (success) {
+        console.log('3️⃣ エラーが発生しました。以下をテストしてください:');
+        console.log('   → マイクボタンが⚠️（赤色）になることを確認');
+        console.log('   → 「エラー停止中・クリックで再開」が表示されることを確認');
+        console.log('   → マイクボタンをクリックして再開をテスト');
+        console.log('   → 新しいSpeechRecognitionオブジェクトが作成されることを確認');
+        console.log('   → 「🔄 継続的音声認識インスタンス作成」がコンソールに表示されることを確認');
+    }
+    
+    return success;
 }
 
 // VOICE RECOGNITION PATTERNS - 音声認識パターン
@@ -3348,8 +3622,13 @@ function toggleMicrophone() {
     const state = stateManager.getState();
     
     if (state.recognition === 'active') {
+        console.log('🔄 音声認識を停止します');
         stateManager.stopRecognition();
+    } else if (state.recognition === 'error') {
+        console.log('🔄 エラー状態から音声認識を再開します');
+        stateManager.startRecognition();
     } else {
+        console.log('🔄 音声認識を開始します');
         stateManager.startRecognition();
     }
 }
