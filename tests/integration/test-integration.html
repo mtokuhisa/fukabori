@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深堀くん - 統合テストツール</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .test-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .overview-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .overview-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .overview-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .overview-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .overview-desc {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .test-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .test-button {
+            background: linear-gradient(45deg, #a8edea, #fed6e3);
+            color: #333;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .test-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #a8edea, #fed6e3);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .status-text {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+
+        .test-matrix {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .matrix-table th,
+        .matrix-table td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+
+        .matrix-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .matrix-cell {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 2px;
+        }
+
+        .matrix-cell.pending {
+            background: #e9ecef;
+        }
+
+        .matrix-cell.running {
+            background: #007bff;
+            animation: pulse 1s infinite;
+        }
+
+        .matrix-cell.pass {
+            background: #28a745;
+        }
+
+        .matrix-cell.fail {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .results-section {
+            margin-top: 30px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #ddd;
+        }
+
+        .result-card.pass {
+            border-left-color: #28a745;
+        }
+
+        .result-card.fail {
+            border-left-color: #dc3545;
+        }
+
+        .result-card.running {
+            border-left-color: #007bff;
+        }
+
+        .result-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-pass {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-running {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .log-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .log-content {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9em;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .summary-section {
+            background: linear-gradient(45deg, #a8edea, #fed6e3);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .summary-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+
+        .summary-stat {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .export-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .export-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .export-button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ヘッダー -->
+        <div class="header">
+            <h1>🔗 統合テストツール</h1>
+            <p>深堀くんの全モジュール間の連携を包括的にテストします</p>
+        </div>
+
+        <!-- テスト概要 -->
+        <div class="test-overview">
+            <div class="overview-card">
+                <div class="overview-icon">🚨</div>
+                <div class="overview-title">エラーハンドリング</div>
+                <div class="overview-desc">各種エラーの処理</div>
+            </div>
+            <div class="overview-card">
+                <div class="overview-icon">📄</div>
+                <div class="overview-title">ファイル処理</div>
+                <div class="overview-desc">PDF/Excel/Word等</div>
+            </div>
+            <div class="overview-card">
+                <div class="overview-icon">🎤</div>
+                <div class="overview-title">音声システム</div>
+                <div class="overview-desc">認識・合成・制御</div>
+            </div>
+            <div class="overview-card">
+                <div class="overview-icon">🔗</div>
+                <div class="overview-title">モジュール連携</div>
+                <div class="overview-desc">全体統合テスト</div>
+            </div>
+        </div>
+
+        <!-- テスト実行ボタン -->
+        <div class="test-controls">
+            <button class="test-button" onclick="reinitializeModules()">🔄 モジュール再検出</button>
+            <button class="test-button" onclick="runFullIntegrationTest()">🚀 完全統合テスト実行</button>
+            <button class="test-button" onclick="runModuleConnectivityTest()">🔗 モジュール連携テスト</button>
+            <button class="test-button" onclick="runEndToEndTest()">🎯 エンドツーエンドテスト</button>
+            <button class="test-button" onclick="runPerformanceIntegrationTest()">⚡ パフォーマンス統合テスト</button>
+            <button class="test-button" onclick="runRegressionTest()">🔄 回帰テスト</button>
+            <button class="test-button" onclick="runStressTest()">💪 ストレステスト</button>
+            <button class="test-button" onclick="copyErrorDetails()">📋 エラー詳細コピー</button>
+            <button class="test-button" onclick="clearResults()">🗑️ 結果クリア</button>
+        </div>
+
+        <!-- プログレス表示 -->
+        <div class="progress-section">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="status-text" id="statusText">テスト待機中...</div>
+        </div>
+
+        <!-- テスト実行マトリックス -->
+        <div class="test-matrix">
+            <h3>🎯 テスト実行マトリックス</h3>
+            <table class="matrix-table" id="testMatrix">
+                <thead>
+                    <tr>
+                        <th>テスト種別</th>
+                        <th>エラーハンドリング</th>
+                        <th>ファイル処理</th>
+                        <th>音声システム</th>
+                        <th>統合テスト</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>基本機能</td>
+                        <td><span class="matrix-cell pending" id="error-basic"></span></td>
+                        <td><span class="matrix-cell pending" id="file-basic"></span></td>
+                        <td><span class="matrix-cell pending" id="voice-basic"></span></td>
+                        <td><span class="matrix-cell pending" id="integration-basic"></span></td>
+                    </tr>
+                    <tr>
+                        <td>エラー処理</td>
+                        <td><span class="matrix-cell pending" id="error-error"></span></td>
+                        <td><span class="matrix-cell pending" id="file-error"></span></td>
+                        <td><span class="matrix-cell pending" id="voice-error"></span></td>
+                        <td><span class="matrix-cell pending" id="integration-error"></span></td>
+                    </tr>
+                    <tr>
+                        <td>パフォーマンス</td>
+                        <td><span class="matrix-cell pending" id="error-performance"></span></td>
+                        <td><span class="matrix-cell pending" id="file-performance"></span></td>
+                        <td><span class="matrix-cell pending" id="voice-performance"></span></td>
+                        <td><span class="matrix-cell pending" id="integration-performance"></span></td>
+                    </tr>
+                    <tr>
+                        <td>統合連携</td>
+                        <td><span class="matrix-cell pending" id="error-integration"></span></td>
+                        <td><span class="matrix-cell pending" id="file-integration"></span></td>
+                        <td><span class="matrix-cell pending" id="voice-integration"></span></td>
+                        <td><span class="matrix-cell pending" id="integration-integration"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- テスト結果表示 -->
+        <div class="results-section">
+            <h3>📊 テスト結果</h3>
+            <div class="results-grid" id="resultsGrid">
+                <!-- テスト結果がここに表示される -->
+            </div>
+        </div>
+
+        <!-- テスト結果サマリー -->
+        <div class="summary-section" id="summarySection" style="display: none;">
+            <div class="summary-title">📋 テスト結果サマリー</div>
+            <div class="summary-stats">
+                <div class="summary-stat">
+                    <div class="stat-number" id="totalTests">0</div>
+                    <div class="stat-label">総テスト数</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="stat-number" id="passedTests">0</div>
+                    <div class="stat-label">成功</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="stat-number" id="failedTests">0</div>
+                    <div class="stat-label">失敗</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="stat-number" id="successRate">0%</div>
+                    <div class="stat-label">成功率</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="stat-number" id="totalTime">0ms</div>
+                    <div class="stat-label">総実行時間</div>
+                </div>
+            </div>
+            <div class="export-controls">
+                <button class="export-button" onclick="exportResults('json')">📄 JSON出力</button>
+                <button class="export-button" onclick="exportResults('csv')">📊 CSV出力</button>
+                <button class="export-button" onclick="exportResults('html')">🌐 HTML出力</button>
+                <button class="export-button" onclick="copyResults()">📋 結果コピー</button>
+            </div>
+        </div>
+
+        <!-- ログ表示 -->
+        <div class="log-section">
+            <h3>📋 実行ログ</h3>
+            <div class="log-content" id="logContent">
+                統合テストを開始してください...
+            </div>
+        </div>
+    </div>
+
+    <!-- テストスクリプト -->
+    <script src="test-integration.js"></script>
+    <script src="../error-handling/test-error-handling.js"></script>
+    <script src="../file-processing/test-file-processing.js"></script>
+    <script src="../voice-system/test-voice-system.js"></script>
+    <script src="../../app/utils.js"></script>
+    
+    <script>
+        // UI管理
+        let testResults = [];
+        let testMatrix = {};
+        let currentTestSuite = null;
+        let testSummary = {
+            totalTests: 0,
+            passedTests: 0,
+            failedTests: 0,
+            totalTime: 0
+        };
+
+        // ページ読み込み時のモジュール確認
+        window.addEventListener('load', function() {
+            console.log('🔍 ページ読み込み完了 - モジュール確認開始');
+            
+            // 各モジュールの存在確認
+            const modules = [
+                { name: 'ErrorHandlingTests', obj: window.ErrorHandlingTests },
+                { name: 'FileProcessingTests', obj: window.FileProcessingTests },
+                { name: 'VoiceSystemTests', obj: window.VoiceSystemTests },
+                { name: 'IntegrationTests', obj: window.IntegrationTests }
+            ];
+            
+            modules.forEach(module => {
+                if (module.obj) {
+                    console.log(`✅ ${module.name} モジュール検出成功`);
+                    addLog(`✅ ${module.name} モジュール検出成功`);
+                } else {
+                    console.log(`❌ ${module.name} モジュール検出失敗`);
+                    addLog(`❌ ${module.name} モジュール検出失敗`);
+                }
+            });
+            
+            // IntegrationTestsの初期化状況確認
+            if (window.IntegrationTests) {
+                console.log('🔍 IntegrationTests内部モジュール確認:');
+                console.log('- ErrorHandling:', window.IntegrationTests.testModules.errorHandling);
+                console.log('- FileProcessing:', window.IntegrationTests.testModules.fileProcessing);
+                console.log('- VoiceSystem:', window.IntegrationTests.testModules.voiceSystem);
+                
+                addLog('🔍 IntegrationTests内部モジュール確認完了');
+            }
+        });
+
+        // ログ出力
+        function addLog(message) {
+            const logContent = document.getElementById('logContent');
+            const timestamp = new Date().toLocaleTimeString();
+            logContent.innerHTML += `[${timestamp}] ${message}\n`;
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+
+        // プログレス更新
+        function updateProgress(current, total, message) {
+            const progressFill = document.getElementById('progressFill');
+            const statusText = document.getElementById('statusText');
+            
+            const percentage = Math.round((current / total) * 100);
+            progressFill.style.width = `${percentage}%`;
+            statusText.textContent = message;
+        }
+
+        // マトリックス更新
+        function updateMatrix(category, testType, status) {
+            const cellId = `${category}-${testType}`;
+            const cell = document.getElementById(cellId);
+            if (cell) {
+                cell.className = `matrix-cell ${status}`;
+            }
+        }
+
+        // エラー項目コピー機能
+        function copyErrorDetails() {
+            const failedTests = testResults.filter(r => r.status === 'fail');
+            if (failedTests.length === 0) {
+                addLog('📋 失敗したテストがありません');
+                return;
+            }
+            
+            let errorReport = '以下エラー発生項目です：\n\n';
+            failedTests.forEach((test, index) => {
+                errorReport += `${test.name}\n`;
+                errorReport += `❌ 失敗\n`;
+                errorReport += `実行時間: ${test.duration}ms\n`;
+                errorReport += `${test.error}\n`;
+                if (index < failedTests.length - 1) {
+                    errorReport += '\n';
+                }
+            });
+            
+            navigator.clipboard.writeText(errorReport).then(() => {
+                addLog('📋 エラー詳細をクリップボードにコピーしました');
+            }).catch(err => {
+                addLog('❌ クリップボードへのコピーに失敗しました');
+            });
+        }
+
+        // テスト結果表示
+        function displayTestResult(testName, status, duration, error = null) {
+            const result = { name: testName, status, duration, error };
+            testResults.push(result);
+            
+            testSummary.totalTests++;
+            if (status === 'pass') {
+                testSummary.passedTests++;
+            } else {
+                testSummary.failedTests++;
+            }
+            testSummary.totalTime += duration;
+            
+            const resultsDiv = document.getElementById('resultsGrid');
+            const resultElement = document.createElement('div');
+            resultElement.className = `result-card ${status}`;
+            
+            const statusIcon = status === 'pass' ? '✅' : '❌';
+            const statusText = status === 'pass' ? '成功' : '失敗';
+            
+            resultElement.innerHTML = `
+                <div class="result-title">
+                    ${testName}
+                    <span class="result-status ${status === 'pass' ? 'status-pass' : 'status-fail'}">${statusIcon} ${statusText}</span>
+                </div>
+                <div class="result-details">
+                    <div class="result-time">実行時間: ${duration}ms</div>
+                    ${error ? `<div class="error-details">${error}</div>` : ''}
+                </div>
+            `;
+            
+            resultsDiv.appendChild(resultElement);
+            
+            // 統計更新
+            updateSummary();
+        }
+
+        // サマリー更新
+        function updateSummary() {
+            const successRate = testSummary.totalTests > 0 ? 
+                Math.round((testSummary.passedTests / testSummary.totalTests) * 100) : 0;
+            
+            document.getElementById('totalTests').textContent = testSummary.totalTests;
+            document.getElementById('passedTests').textContent = testSummary.passedTests;
+            document.getElementById('failedTests').textContent = testSummary.failedTests;
+            document.getElementById('successRate').textContent = successRate + '%';
+            document.getElementById('totalTime').textContent = testSummary.totalTime + 'ms';
+            
+            if (testSummary.totalTests > 0) {
+                document.getElementById('summarySection').style.display = 'block';
+            }
+        }
+
+        // 結果クリア
+        function clearResults() {
+            document.getElementById('resultsGrid').innerHTML = '';
+            document.getElementById('logContent').innerHTML = '統合テストを開始してください...\n';
+            document.getElementById('summarySection').style.display = 'none';
+            updateProgress(0, 1, 'テスト待機中...');
+            
+            // マトリックスリセット
+            const cells = document.querySelectorAll('.matrix-cell');
+            cells.forEach(cell => {
+                cell.className = 'matrix-cell pending';
+            });
+            
+            testResults = [];
+            testMatrix = {};
+            testSummary = {
+                totalTests: 0,
+                passedTests: 0,
+                failedTests: 0,
+                totalTime: 0
+            };
+        }
+
+        // 結果エクスポート
+        function exportResults(format) {
+            const data = {
+                summary: testSummary,
+                results: testResults,
+                timestamp: new Date().toISOString()
+            };
+            
+            let content = '';
+            let filename = '';
+            let mimeType = '';
+            
+            switch (format) {
+                case 'json':
+                    content = JSON.stringify(data, null, 2);
+                    filename = 'integration-test-results.json';
+                    mimeType = 'application/json';
+                    break;
+                case 'csv':
+                    content = convertToCSV(testResults);
+                    filename = 'integration-test-results.csv';
+                    mimeType = 'text/csv';
+                    break;
+                case 'html':
+                    content = generateHTMLReport(data);
+                    filename = 'integration-test-report.html';
+                    mimeType = 'text/html';
+                    break;
+            }
+            
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            addLog(`📄 ${format.toUpperCase()}形式で結果をエクスポートしました`);
+        }
+
+        function convertToCSV(results) {
+            const headers = ['テスト名', 'ステータス', '実行時間(ms)', 'エラー'];
+            const rows = results.map(result => [
+                result.name,
+                result.status,
+                result.duration,
+                result.error || ''
+            ]);
+            
+            return [headers, ...rows].map(row => 
+                row.map(cell => `"${cell}"`).join(',')
+            ).join('\n');
+        }
+
+        function generateHTMLReport(data) {
+            return `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>深堀くん統合テスト結果</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .summary { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .pass { background: #d4edda; }
+        .fail { background: #f8d7da; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <h1>深堀くん統合テスト結果</h1>
+    <div class="summary">
+        <h2>サマリー</h2>
+        <p>総テスト数: ${data.summary.totalTests}</p>
+        <p>成功: ${data.summary.passedTests}</p>
+        <p>失敗: ${data.summary.failedTests}</p>
+        <p>成功率: ${Math.round((data.summary.passedTests / data.summary.totalTests) * 100)}%</p>
+        <p>総実行時間: ${data.summary.totalTime}ms</p>
+        <p>実行日時: ${new Date(data.timestamp).toLocaleString('ja-JP')}</p>
+    </div>
+    <h2>詳細結果</h2>
+    <table>
+        <tr><th>テスト名</th><th>ステータス</th><th>実行時間</th><th>エラー</th></tr>
+        ${data.results.map(result => `
+            <tr class="${result.status}">
+                <td>${result.name}</td>
+                <td>${result.status}</td>
+                <td>${result.duration}ms</td>
+                <td>${result.error || ''}</td>
+            </tr>
+        `).join('')}
+    </table>
+</body>
+</html>
+            `;
+        }
+
+        function copyResults() {
+            const summary = `深堀くん統合テスト結果
+==========================================
+総テスト数: ${testSummary.totalTests}
+成功: ${testSummary.passedTests}
+失敗: ${testSummary.failedTests}
+成功率: ${Math.round((testSummary.passedTests / testSummary.totalTests) * 100)}%
+総実行時間: ${testSummary.totalTime}ms
+実行日時: ${new Date().toLocaleString('ja-JP')}
+==========================================`;
+            
+            navigator.clipboard.writeText(summary).then(() => {
+                addLog('📋 テスト結果をクリップボードにコピーしました');
+            }).catch(err => {
+                addLog('❌ クリップボードへのコピーに失敗しました');
+            });
+        }
+
+        // テスト実行関数
+        async function runFullIntegrationTest() {
+            addLog('🚀 完全統合テスト実行開始');
+            clearResults();
+            
+            if (typeof window.IntegrationTests !== 'undefined') {
+                await window.IntegrationTests.runFullIntegrationTest();
+            } else {
+                addLog('❌ IntegrationTests が読み込まれていません');
+            }
+        }
+
+        async function runModuleConnectivityTest() {
+            addLog('🔗 モジュール連携テスト開始');
+            if (typeof window.IntegrationTests !== 'undefined') {
+                await window.IntegrationTests.runModuleConnectivityTest();
+            }
+        }
+
+        async function runEndToEndTest() {
+            addLog('🎯 エンドツーエンドテスト開始');
+            if (typeof window.IntegrationTests !== 'undefined') {
+                await window.IntegrationTests.runEndToEndTest();
+            }
+        }
+
+        async function runPerformanceIntegrationTest() {
+            addLog('⚡ パフォーマンス統合テスト開始');
+            if (typeof window.IntegrationTests !== 'undefined') {
+                await window.IntegrationTests.runPerformanceIntegrationTest();
+            }
+        }
+
+        async function runRegressionTest() {
+            addLog('🔄 回帰テスト開始');
+            if (typeof window.IntegrationTests !== 'undefined') {
+                await window.IntegrationTests.runRegressionTest();
+            }
+        }
+
+        async function runStressTest() {
+            addLog('💪 ストレステスト開始');
+            if (typeof window.IntegrationTests !== 'undefined') {
+                await window.IntegrationTests.runStressTest();
+            }
+        }
+
+        // モジュール再検出関数
+        function reinitializeModules() {
+            addLog('🔄 モジュール再検出を実行します...');
+            
+            if (window.IntegrationTests) {
+                const connectedModules = window.IntegrationTests.reinitializeTestModules();
+                addLog(`📊 接続されたモジュール数: ${connectedModules}/3`);
+                
+                if (connectedModules === 3) {
+                    addLog('✅ すべてのモジュールが正常に検出されました！');
+                } else {
+                    addLog(`⚠️ ${3 - connectedModules}個のモジュールが検出されませんでした`);
+                }
+            } else {
+                addLog('❌ IntegrationTests モジュールが見つかりません');
+            }
+            
+            // モジュールを再読み込み
+            const modules = [
+                { name: 'ErrorHandlingTests', obj: window.ErrorHandlingTests },
+                { name: 'FileProcessingTests', obj: window.FileProcessingTests },
+                { name: 'VoiceSystemTests', obj: window.VoiceSystemTests },
+                { name: 'IntegrationTests', obj: window.IntegrationTests }
+            ];
+
+            modules.forEach(module => {
+                if (module.obj) {
+                    console.log(`✅ ${module.name} モジュール再読み込み成功`);
+                    addLog(`✅ ${module.name} モジュール再読み込み成功`);
+                } else {
+                    console.log(`❌ ${module.name} モジュール再読み込み失敗`);
+                    addLog(`❌ ${module.name} モジュール再読み込み失敗`);
+                }
+            });
+
+            addLog('🔄 モジュール再検出が完了しました。テストを選択して実行してください。');
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('🔗 統合テストツール初期化完了');
+            addLog('🎯 テストを選択して実行してください');
+        });
+    </script>
+</body>
+</html> 
