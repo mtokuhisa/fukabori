@@ -4,6 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>深堀くん - "ねほりーの""はほりーの"にあなた達の知見を聞かせて</title>
+    
+    <!-- PWA メタタグ -->
+    <meta name="theme-color" content="#2196F3">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="深堀くん">
+    <meta name="description" content="ねほりーの・はほりーのがあなたの知見を深掘り">
+    
+    <!-- PWA マニフェスト -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- ファビコン -->
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="assets/fukabori_logo.png">
+    
     <link rel="stylesheet" href="app/style.css">
 </head>
 <body>
@@ -1155,6 +1171,112 @@
                 console.error('❌ 全知見可視化エラー:', error);
             }
         };
+    </script>
+    
+    <!-- Service Worker 登録 -->
+    <script>
+        // Service Worker 登録 (PWA機能)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(function(registration) {
+                        console.log('✅ Service Worker 登録成功:', registration.scope);
+                        
+                        // 更新チェック
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('🔄 新しいバージョンが利用可能です');
+                                    if (typeof showMessage === 'function') {
+                                        showMessage('info', '新しいバージョンが利用可能です。ページを再読み込みしてください。');
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch(function(error) {
+                        console.warn('⚠️ Service Worker 登録失敗:', error);
+                    });
+            });
+        } else {
+            console.warn('⚠️ このブラウザはService Workerをサポートしていません');
+        }
+        
+        // PWA インストール促進
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('📱 PWA インストール可能 - beforeinstallprompt イベント発生');
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // インストールボタンを表示する場合はここで処理
+            // 現在はブラウザのデフォルトUI（アドレスバーのアイコン）を使用
+            
+            // デバッグ用：インストール可能状態を確認
+            console.log('🔍 PWA インストール条件チェック:');
+            console.log('  - Service Worker: 登録済み');
+            console.log('  - Manifest: 読み込み済み');
+            console.log('  - HTTPS: localhost (OK)');
+            console.log('  - beforeinstallprompt: 発生');
+        });
+        
+        // PWA インストール条件の詳細チェック
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                console.log('🔍 PWA インストール条件の詳細チェック開始...');
+                
+                // 1. Service Worker チェック
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        console.log('✅ Service Worker: 準備完了');
+                    });
+                } else {
+                    console.log('❌ Service Worker: 未サポート');
+                }
+                
+                // 2. Manifest チェック
+                fetch('/manifest.json')
+                    .then(response => response.json())
+                    .then(manifest => {
+                        console.log('✅ Manifest: 読み込み成功');
+                        console.log('  - name:', manifest.name);
+                        console.log('  - start_url:', manifest.start_url);
+                        console.log('  - display:', manifest.display);
+                        console.log('  - icons:', manifest.icons.length, '個');
+                    })
+                    .catch(error => {
+                        console.log('❌ Manifest: 読み込み失敗', error);
+                    });
+                
+                // 3. HTTPS チェック
+                if (location.protocol === 'https:' || location.hostname === 'localhost') {
+                    console.log('✅ HTTPS: OK (', location.protocol, ')');
+                } else {
+                    console.log('❌ HTTPS: 必要 (現在:', location.protocol, ')');
+                }
+                
+                // 4. PWA インストール可能性の手動チェック
+                if (!window.matchMedia('(display-mode: standalone)').matches) {
+                    console.log('📱 PWA: ブラウザモードで実行中 (インストール可能)');
+                } else {
+                    console.log('📱 PWA: スタンドアロンモードで実行中 (既にインストール済み)');
+                }
+                
+                // 5. ブラウザ固有の情報
+                console.log('🌐 ブラウザ情報:');
+                console.log('  - User Agent:', navigator.userAgent);
+                console.log('  - Platform:', navigator.platform);
+                
+            }, 3000); // 3秒後に実行
+        });
+        
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('🎉 PWA インストール完了');
+            if (typeof showMessage === 'function') {
+                showMessage('success', '深堀くんがインストールされました！');
+            }
+        });
     </script>
 </body>
 </html>

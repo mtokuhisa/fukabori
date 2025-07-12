@@ -9,7 +9,7 @@
  * 【責任範囲】
  * - 知見データベース管理（FukaboriKnowledgeDatabase）
  * - CSV管理システム（CategoryManager、UserManager）
- * - 知見ファイル管理（KnowledgeFileManager）
+ * - 知見ファイル管理（KnowledgeFileManager - script.jsで定義）
  * - 全知見ダウンロード機能
  * - 知見永続化・AI整理システム
  * 
@@ -277,96 +277,8 @@ const UserManager = {
 // KNOWLEDGE FILE MANAGEMENT SYSTEM - 知見ファイル管理システム
 // =================================================================================
 
-// 📄 知見ファイル管理システム
-const KnowledgeFileManager = {
-    // 依存関係インターフェース
-    interface: null,
-    
-    // インターフェース初期化
-    _ensureInterface() {
-        if (!this.interface) {
-            this.interface = window.KnowledgeFileManagerInterface;
-            if (!this.interface) {
-                throw new Error('KnowledgeFileManagerInterface が見つかりません');
-            }
-        }
-        return this.interface;
-    },
-
-    // セッションファイル作成
-    createSessionFile(sessionMeta) {
-        try {
-            const knowledgeFile = {
-                metadata: {
-                    session_id: sessionMeta.session_id,
-                    title: `深堀セッション：${sessionMeta.theme}`,
-                    date: new Date().toISOString(),
-                    participant: sessionMeta.participant,
-                    participant_role: sessionMeta.participant_role || 'ユーザー',
-                    category: sessionMeta.category,
-                    theme: sessionMeta.theme,
-                    format_version: "fukabori_v1.0"
-                },
-                insights: [],
-                summary: null,
-                analysis: null
-            };
-            
-            // KnowledgeStateに現在のセッションとして設定
-            window.KnowledgeState.currentSession = knowledgeFile;
-            
-            console.log(`✅ 知見セッションファイル作成: ${sessionMeta.theme}`);
-            return knowledgeFile;
-            
-        } catch (error) {
-            console.error('❌ セッションファイル作成エラー:', error);
-            throw error;
-        }
-    },
-
-    // 知見の追加（DataManagerに移譲予定）
-    addInsight(insight, context, quality) {
-        console.warn('⚠️ KnowledgeFileManager.addInsight は非推奨です。DataManager.addInsight を使用してください');
-        
-        // DataManagerが利用可能かチェック
-        if (window.DataManager && window.DataManager.isInitialized && window.DataManager.isInitialized()) {
-            try {
-                return window.DataManager.addInsight(insight, context, quality);
-            } catch (error) {
-                console.error('❌ DataManager.addInsight実行エラー:', error);
-                // フォールバック処理へ
-            }
-        }
-        
-        // フォールバック実装（DataManager未使用時）
-        const iface = this._ensureInterface();
-        
-        const currentSession = iface.state.getCurrentSession();
-        if (!currentSession) {
-            console.warn('⚠️ アクティブなセッションがありません');
-            return false;
-        }
-
-        const insightEntry = {
-            id: `insight_${Date.now()}`,
-            content: insight,
-            context: context,
-            quality_scores: quality,
-            timestamp: new Date().toISOString(),
-            conversation_context: context.related_conversation || []
-        };
-
-        // インターフェース経由で知見を追加
-        const success = iface.state.addInsightToSession(insightEntry);
-        if (!success) {
-            console.error('❌ 知見の追加に失敗しました');
-            return false;
-        }
-        
-        console.log('✅ 知見を追加:', insight.substring(0, 50) + '...');
-        return true;
-    }
-};
+// 📄 知見ファイル管理システム（script.jsに統合済み）
+// KnowledgeFileManagerはscript.jsで定義されています
 
 // =================================================================================
 // ALL KNOWLEDGE DOWNLOAD FUNCTIONS - 全知見ダウンロード機能
@@ -1011,7 +923,7 @@ window.CategoryManager = CategoryManager;
 window.UserManager = UserManager;
 window.FukaboriKnowledgeDatabase = FukaboriKnowledgeDatabase;
 window.CSVManager = CSVManager;
-window.KnowledgeFileManager = KnowledgeFileManager;
+// KnowledgeFileManagerはscript.jsで定義されています
 window.QualityAssessmentSystem = QualityAssessmentSystem;
 window.KnowledgeManagementInterface = KnowledgeManagementInterface;
 
@@ -1028,4 +940,4 @@ console.log('  - FukaboriKnowledgeDatabase // 知見データベース');
 console.log('  - CategoryManager/UserManager // カテゴリ・ユーザー管理');
 console.log('  - downloadAllKnowledge() // 全知見ダウンロード');
 console.log('  - initializeKnowledgeManagement() // システム初期化');
-console.log('  - KnowledgeFileManager // 知見ファイル管理'); 
+console.log('  - KnowledgeFileManager // script.jsで定義済み'); 

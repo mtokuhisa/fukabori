@@ -1,0 +1,77 @@
+{
+  "name": "深堀くん - AIインタビューアプリ",
+  "short_name": "深堀くん",
+  "description": "ねほりーの・はほりーのがあなたの知見を深掘り",
+  "version": "0.7.3",
+  "start_url": "/深堀くん.html",
+  "display": "standalone",
+  "id": "/深堀くん.html",
+  "orientation": "portrait-primary",
+  "theme_color": "#2196F3",
+  "background_color": "#ffffff",
+  "scope": "/",
+  "lang": "ja",
+  "categories": ["productivity", "business", "education"],
+  "icons": [
+    {
+      "src": "assets/fukabori_logo_main.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "画面キャプチャ/4_1メイン画面立ち上がり_マイク許可.jpg",
+      "sizes": "2638x2018",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "メイン画面 - 音声認識システム"
+    },
+    {
+      "src": "画面キャプチャ/2_1STEP0終了、2回目以降のログイン画面.jpg",
+      "sizes": "2638x2018",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "ログイン画面 - セキュア認証"
+    }
+  ],
+  "features": [
+    "音声認識による知見抽出",
+    "AIによる深掘りインタビュー",
+    "ファイル処理（PDF/Excel/Word対応）",
+    "暗号化されたデータ保存",
+    "オフライン対応"
+  ],
+  "permissions": [
+    "microphone"
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "shortcuts": [
+    {
+      "name": "新しいセッション開始",
+      "short_name": "新規セッション",
+      "description": "新しい知見抽出セッションを開始",
+      "url": "/深堀くん.html?action=new_session",
+      "icons": [
+        {
+          "src": "assets/nehori_avatar.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "設定画面",
+      "short_name": "設定",
+      "description": "APIキーやテーマ設定",
+      "url": "/深堀くん.html?action=settings",
+      "icons": [
+        {
+          "src": "assets/hahori_avatar.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+} 

@@ -86,13 +86,17 @@ class DataManager {
      * サブモジュールの初期化
      */
     async _initializeSubModules() {
-        // カテゴリマネージャーの初期化
-        this.categoryManager = new CategoryManager();
-        await this.categoryManager.initialize();
+        // カテゴリマネージャーの初期化（knowledge-system.jsで定義済みのものを使用）
+        this.categoryManager = window.CategoryManager || new CategoryManager();
+        if (this.categoryManager.initialize) {
+            await this.categoryManager.initialize();
+        }
 
-        // ユーザーマネージャーの初期化
-        this.userManager = new UserManager();
-        await this.userManager.initialize();
+        // ユーザーマネージャーの初期化（knowledge-system.jsで定義済みのものを使用）
+        this.userManager = window.UserManager || null;
+        if (this.userManager && this.userManager.initialize) {
+            await this.userManager.initialize();
+        }
 
         // データベースマネージャーの初期化
         this.databaseManager = new DatabaseManager();
@@ -537,6 +541,10 @@ class DataManager {
 // CATEGORY MANAGER - カテゴリ管理サブモジュール
 // =================================================================================
 
+// CategoryManagerクラス定義（knowledge-system.jsと重複を避けるため削除）
+// knowledge-system.jsで定義済みのCategoryManagerを使用
+
+/*
 class CategoryManager {
     constructor() {
         this.categories = [];
@@ -626,11 +634,16 @@ class CategoryManager {
         ];
     }
 }
+*/
 
 // =================================================================================
 // USER MANAGER - ユーザー管理サブモジュール
 // =================================================================================
 
+// UserManagerクラス定義（knowledge-system.jsと重複を避けるため削除）
+// knowledge-system.jsで定義済みのUserManagerオブジェクトを使用
+
+/*
 class UserManager {
     constructor() {
         this.users = [];
@@ -727,6 +740,7 @@ class UserManager {
         ];
     }
 }
+*/
 
 // =================================================================================
 // DATABASE MANAGER - データベース管理サブモジュール
@@ -843,7 +857,8 @@ class DatabaseManager {
 window.DataManager = new DataManager();
 
 // サブモジュールもグローバル公開（後方互換性のため）
-window.CategoryManager = CategoryManager;
+// CategoryManagerはknowledge-system.jsで定義済みのため、重複を避ける
+// コメントアウトされたクラスは使用しない
 window.UserManager = UserManager;
 window.DatabaseManager = DatabaseManager;
 
