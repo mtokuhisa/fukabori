@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>深堀くん - "ねほりーの""はほりーの"にあなた達の知見を聞かせて</title>
     
+    <!-- 🔄 キャッシュ無効化 - 音声システム更新対応 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <!-- PWA メタタグ -->
     <meta name="theme-color" content="#2196F3">
     <meta name="mobile-web-app-capable" content="yes">
@@ -20,7 +25,9 @@
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="assets/fukabori_logo.png">
     
-    <link rel="stylesheet" href="app/style.css">
+    <link rel="stylesheet" href="app/style.css?v=0.8.0">
+    <!-- 🔧 統一状態管理システム スタイル -->
+    <link rel="stylesheet" href="app/unified-state-manager/styles.css?v=0.8.0">
 </head>
 <body>
     <div class="main-container">
@@ -893,7 +900,24 @@
                 <div class="status-section">
                     <div class="status-title">📊 セッション状況</div>
                     <div class="status-content" id="sessionStatus">
-                        準備中...
+                        <div class="session-info-grid">
+                            <div class="session-item">
+                                <span class="session-label">状態:</span>
+                                <span class="session-value" id="sessionState">準備中</span>
+                            </div>
+                            <div class="session-item">
+                                <span class="session-label">フェーズ:</span>
+                                <span class="session-value" id="sessionPhase">セットアップ</span>
+                            </div>
+                            <div class="session-item">
+                                <span class="session-label">経過時間:</span>
+                                <span class="session-value" id="sessionDuration">00:00</span>
+                            </div>
+                            <div class="session-item">
+                                <span class="session-label">テーマ:</span>
+                                <span class="session-value" id="currentTheme">未設定</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1013,47 +1037,59 @@
     <!-- CryptoJSライブラリ（暗号化機能に必要） -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <!-- ユーティリティ関数 -->
-    <script src="app/utils.js"></script>
+    <script src="app/utils.js?v=0.8.0"></script>
+    <!-- 🔧 統一状態管理システム（モジュール化版） -->
+    <script src="app/unified-state-manager/voice-module.js?v=0.8.0"></script>
+    <script src="app/unified-state-manager/ui-module.js?v=0.8.0"></script>
+    <script src="app/unified-state-manager/core.js?v=0.8.0"></script>
+    <!-- 🔧 旧統一状態管理システム（後方互換性のため保持） -->
+    <script src="app/unified-state-manager.js?v=0.8.0"></script>
+    <!-- 🔧 状態統合アダプター（レガシーシステム連携） -->
+    <script src="app/state-integration-adapter.js?v=0.8.0"></script>
+    <!-- 🔧 UI状態表示システム -->
+    <script src="app/ui-state-display.js?v=0.8.0"></script>
     <!-- 音声システム Phase 1: 基本音声管理 -->
-    <script src="app/voice-core.js"></script>
+    <script src="app/voice-core.js?v=0.8.0"></script>
     <!-- UI/DOM操作管理 -->
-    <script src="app/ui-manager.js"></script>
+    <script src="app/ui-manager.js?v=0.8.0"></script>
     <!-- 画面遷移管理システム -->
-    <script src="app/ui-screens.js"></script>
+    <script src="app/ui-screens.js?v=0.8.0"></script>
     <!-- 基本UI更新管理システム -->
-    <script src="app/ui-basic.js"></script>
-    <!-- UI最適化Phase1: 高度UI管理（モーダル・ガイド・短縮UI） -->
-    <script src="app/ui-advanced.js"></script>
-    <!-- LocalStorage操作システム -->
-    <script src="app/storage-manager.js"></script>
+    <script src="app/ui-basic.js?v=0.8.0"></script>
+    <!-- 高度UI管理システム -->
+    <script src="app/ui-advanced.js?v=0.8.0"></script>
+    <!-- ストレージ管理システム -->
+    <script src="app/storage-manager.js?v=0.8.0"></script>
     <!-- ファイル処理システム -->
-    <script src="app/file-processing.js"></script>
-    <!-- 知見管理システム - Phase C-2-1: 分離・最適化モジュール -->
-    <script src="app/knowledge-system.js"></script>
+    <script src="app/file-processing.js?v=0.8.0"></script>
+    <!-- 知見管理システム -->
+    <script src="app/knowledge-system.js?v=0.8.0"></script>
     <!-- セッション制御システム -->
-    <script src="app/session-controller.js"></script>
+    <script src="app/session-controller.js?v=0.8.0"></script>
     <!-- データ管理システム -->
-    <script src="app/data-manager.js"></script>
-    <!-- Phase 2-3: ファイル管理システム -->
-    <script src="app/file-manager.js"></script>
-    <!-- 🤖 Phase 2-4: AI統合管理システム -->
-    <script src="app/ai-manager.js"></script>
-    <!-- KnowledgeFileManager 依存関係インターフェース -->
-    <script src="app/knowledge-file-manager-interface.js"></script>
-    <!-- APIキー設定モーダル -->
-    <script src="app/api-key-setup.js"></script>
-    <!-- セッション終了システム -->
-    <script src="app/session-manager.js"></script>
+    <script src="app/data-manager.js?v=0.8.0"></script>
+    <!-- ファイル管理システム -->
+    <script src="app/file-manager.js?v=0.8.0"></script>
+    <!-- AI管理システム -->
+    <script src="app/ai-manager.js?v=0.8.0"></script>
+    <!-- 知見ファイル管理インターフェース -->
+    <script src="app/knowledge-file-manager-interface.js?v=0.8.0"></script>
+    <!-- API設定システム -->
+    <script src="app/api-key-setup.js?v=0.8.0"></script>
+    <!-- セッション管理システム -->
+    <script src="app/session-manager.js?v=0.8.0"></script>
+    <!-- セッション開始管理システム -->
+    <script src="app/session-start-manager.js?v=0.8.0"></script>
     <!-- フェーズ管理システム -->
-    <script src="app/phase-manager.js"></script>
-    <script src="app/session-start-manager.js"></script>
-    <!-- 音声システムPhase2: 先読み最適化システム -->
-    <script src="app/voice-phase2-manager.js"></script>
-    <!-- 🔧 音声認識エラーハンドラー (v0.7.2) -->
-    <script src="app/voice-error-handler.js"></script>
-    <!-- 🎨 音声認識UI管理システム (v0.7.2) -->
-    <script src="app/voice-ui-manager.js"></script>
-    <script src="app/script.js"></script>
+    <script src="app/phase-manager.js?v=0.8.0"></script>
+    <!-- 音声システム Phase 2: 高度音声管理 -->
+    <script src="app/voice-phase2-manager.js?v=0.8.0"></script>
+    <!-- 音声エラーハンドリング -->
+    <script src="app/voice-error-handler.js?v=0.8.0"></script>
+    <!-- 🎨 音声UI管理システム -->
+    <script src="app/voice-ui-manager.js?v=0.8.0"></script>
+    <!-- メインスクリプト -->
+    <script src="app/script.js?v=0.8.0"></script>
     
     <!-- prompts.js読み込み後の初期化 -->
     <script>
@@ -1063,6 +1099,18 @@
                 if (typeof updateVoiceSettingsUI === 'function') {
                     updateVoiceSettingsUI();
                     console.log('🔄 prompts.js読み込み後に音声設定UIを更新');
+                }
+                
+                // 🔧 新しい統一状態管理システムの初期化
+                if (window.UnifiedStateManagerCore) {
+                    window.unifiedStateManager = new window.UnifiedStateManagerCore();
+                    window.unifiedStateManager.initialize().then(() => {
+                        console.log('✅ 新しい統一状態管理システム初期化完了');
+                    }).catch(error => {
+                        console.error('❌ 新しい統一状態管理システム初期化エラー:', error);
+                    });
+                } else {
+                    console.warn('⚠️ 新しい統一状態管理システムが見つかりません');
                 }
                 
                 // 🧪 開発モード機能の初期化
@@ -1178,26 +1226,47 @@
         // Service Worker 登録 (PWA機能)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(function(registration) {
-                        console.log('✅ Service Worker 登録成功:', registration.scope);
-                        
-                        // 更新チェック
-                        registration.addEventListener('updatefound', () => {
-                            const newWorker = registration.installing;
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    console.log('🔄 新しいバージョンが利用可能です');
-                                    if (typeof showMessage === 'function') {
-                                        showMessage('info', '新しいバージョンが利用可能です。ページを再読み込みしてください。');
-                                    }
-                                }
-                            });
+                // 🔄 強制キャッシュクリア - 音声システム更新対応
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                        registration.unregister();
+                    }
+                    console.log('🗑️ 既存のService Workerを全て削除しました');
+                    
+                    // キャッシュも全て削除
+                    if ('caches' in window) {
+                        caches.keys().then(function(names) {
+                            for (let name of names) {
+                                caches.delete(name);
+                            }
+                            console.log('🗑️ 既存のキャッシュを全て削除しました');
                         });
-                    })
-                    .catch(function(error) {
-                        console.warn('⚠️ Service Worker 登録失敗:', error);
-                    });
+                    }
+                    
+                    // 新しいService Workerを登録
+                    setTimeout(() => {
+                        navigator.serviceWorker.register('/service-worker.js?v=0.8.0')
+                            .then(function(registration) {
+                                console.log('✅ Service Worker 登録成功 (v0.8.0):', registration.scope);
+                                
+                                // 更新チェック
+                                registration.addEventListener('updatefound', () => {
+                                    const newWorker = registration.installing;
+                                    newWorker.addEventListener('statechange', () => {
+                                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                            console.log('🔄 新しいバージョンが利用可能です');
+                                            if (typeof showMessage === 'function') {
+                                                showMessage('info', '新しいバージョンが利用可能です。ページを再読み込みしてください。');
+                                            }
+                                        }
+                                    });
+                                });
+                            })
+                            .catch(function(error) {
+                                console.warn('⚠️ Service Worker 登録失敗:', error);
+                            });
+                    }, 1000);
+                });
             });
         } else {
             console.warn('⚠️ このブラウザはService Workerをサポートしていません');

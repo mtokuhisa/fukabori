@@ -940,9 +940,16 @@ ${scoreDisplay}
      */
     async _testConnection() {
         try {
+            // 初期化中は一時的に接続テストを許可
+            const wasInitialized = this.isInitialized;
+            this.isInitialized = true;
+            
             const testResponse = await this.sendToCharacter([
                 { role: 'user', content: 'Test' }
             ], 'system');
+            
+            // 初期化状態を元に戻す
+            this.isInitialized = wasInitialized;
             
             console.log('✅ AI接続テスト成功');
             return true;

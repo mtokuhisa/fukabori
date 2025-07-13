@@ -1,7 +1,7 @@
 // 深堀くん - Service Worker v0.7.2
 // PWA機能とオフライン対応
 
-const CACHE_NAME = 'fukabori-kun-v0.7.3';
+const CACHE_NAME = 'fukabori-kun-v0.8.10-ui-fix';
 const urlsToCache = [
   '/深堀くん.html',
   '/app/style.css',
@@ -27,6 +27,7 @@ const urlsToCache = [
   '/app/voice-phase2-manager.js',
   '/app/voice-error-handler.js',
   '/app/voice-ui-manager.js',
+  '/app/unified-state-manager/voice-module.js',
   '/config/app_settings.js',
   '/config/prompts.js',
   '/config/voice_config.js',

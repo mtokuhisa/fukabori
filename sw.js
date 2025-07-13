@@ -1,7 +1,7 @@
 // 深堀くん - Service Worker
 // PWA対応：オフライン機能、キャッシュ管理、バックグラウンド同期
 
-const CACHE_NAME = 'fukabori-v0.7.2';
+const CACHE_NAME = 'fukabori-v0.8.0-voice-system';
 const OFFLINE_URL = '/深堀くん.html';
 
 // キャッシュするリソース
@@ -11,7 +11,6 @@ const urlsToCache = [
   '/app/script.js',
   '/app/utils.js',
   '/app/voice-core.js',
-  '/app/voice-recognition-manager.js',
   '/app/ui-manager.js',
   '/app/ui-screens.js',
   '/app/ui-basic.js',
@@ -31,6 +30,7 @@ const urlsToCache = [
   '/app/voice-phase2-manager.js',
   '/app/voice-error-handler.js',
   '/app/voice-ui-manager.js',
+  '/app/unified-state-manager/voice-module.js',
   '/config/app_config_loader.js',
   '/config/app_settings.js',
   '/config/voice_config.js',

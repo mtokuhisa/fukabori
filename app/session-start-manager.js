@@ -134,6 +134,23 @@ const SessionStartManager = {
             chatArea.classList.remove('hidden');
         }
         
+        // 🎨 新UI: メイン画面表示後にVoiceUIManagerを初期化（DOM更新待ち）
+        if (typeof VoiceUIManager !== 'undefined' && window.voiceUIManager) {
+            try {
+                console.log('🎨 メイン画面移行後のVoiceUIManager初期化開始');
+                // DOM更新を待つ
+                await new Promise(resolve => setTimeout(resolve, 100));
+                const voiceUISuccess = await window.voiceUIManager.initialize();
+                if (voiceUISuccess) {
+                    console.log('✅ メイン画面移行後のVoiceUIManager初期化完了');
+                } else {
+                    console.warn('⚠️ メイン画面移行後のVoiceUIManager初期化失敗');
+                }
+            } catch (error) {
+                console.error('❌ メイン画面移行後のVoiceUIManager初期化エラー:', error);
+            }
+        }
+        
         this.updateSessionStatus('ウォームアップ中', window.AppState.currentTheme);
         window.updateKnowledgeDisplay();
         
@@ -159,6 +176,18 @@ const SessionStartManager = {
         
         try {
             // 🎤 新システム: セッション開始時の音声認識初期化
+            if (!window.stateManager) {
+                console.log('🔄 StateManagerが未初期化 - 音声システムを初期化します');
+                if (typeof window.initializeVoiceSystem === 'function') {
+                    const initialized = window.initializeVoiceSystem();
+                    if (!initialized) {
+                        console.error('❌ 音声システムの初期化に失敗しました');
+                    }
+                } else {
+                    console.error('❌ initializeVoiceSystem関数が見つかりません');
+                }
+            }
+            
             if (window.stateManager) {
                 const started = await window.stateManager.startRecognition();
                 if (started) {
@@ -189,7 +218,7 @@ const SessionStartManager = {
                 await window.stateManager.startRecognition();
                 console.log('✅ 挨拶後の音声認識開始完了（新システム）');
             } else {
-                console.error('❌ StateManagerが未初期化');
+                console.warn('⚠️ StateManagerが未初期化 - 音声認識開始をスキップ');
             }
         } catch (error) {
             console.error('❌ ウォームアップ質問生成エラー:', error);

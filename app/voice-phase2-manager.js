@@ -65,50 +65,114 @@ const DualPreemptiveOptimization = {
                     return 'idle';
                 }
             },
-            
-            // 状況に応じた先読み戦略を決定
+
+            // 先読み戦略を決定
             determinePreemptiveStrategy(situation) {
-                const strategies = {
-                    nehori_speaking: {
-                        trigger: 'immediate',
-                        priority: 'high',
-                        context: 'knowledge_evaluation',
-                        delay: 1000,
-                        targetSpeaker: SPEAKERS.HAHORI
-                    },
-                    hahori_speaking: {
-                        trigger: 'delayed',
-                        priority: 'medium',
-                        context: 'next_question',
-                        delay: 2000,
-                        targetSpeaker: SPEAKERS.NEHORI
-                    },
-                    user_speaking: {
-                        trigger: 'smart',
-                        priority: 'adaptive',
-                        context: 'response_preparation',
-                        delay: 1500,
-                        targetSpeaker: 'both'
-                    },
-                    knowledge_confirmation: {
-                        trigger: 'none',
-                        priority: 'none',
-                        context: 'none',
-                        delay: 0,
-                        targetSpeaker: 'none'
-                    },
-                    idle: {
-                        trigger: 'none',
-                        priority: 'none',
-                        context: 'none',
-                        delay: 0,
-                        targetSpeaker: 'none'
-                    }
-                };
+                const strategy = DualPreemptiveOptimization.phase1.adaptiveStrategy[situation] || 
+                                DualPreemptiveOptimization.phase1.adaptiveStrategy.userSpeaking;
                 
-                return strategies[situation] || strategies.idle;
+                // 戦略に基づいて具体的な設定を決定
+                switch (strategy.trigger) {
+                    case 'immediate':
+                        return {
+                            trigger: 'immediate',
+                            delay: 100,
+                            targetSpeaker: situation === 'nehori_speaking' ? SPEAKERS.HAHORI : SPEAKERS.NEHORI,
+                            priority: strategy.priority
+                        };
+                    case 'delayed':
+                        return {
+                            trigger: 'delayed',
+                            delay: 2000,
+                            targetSpeaker: situation === 'nehori_speaking' ? SPEAKERS.HAHORI : SPEAKERS.NEHORI,
+                            priority: strategy.priority
+                        };
+                    case 'smart':
+                        return {
+                            trigger: 'smart',
+                            delay: 1000,
+                            targetSpeaker: DualPreemptiveOptimization.phase1.situationAnalyzer.determineSmartTargetSpeaker(situation),
+                            priority: strategy.priority
+                        };
+                    default:
+                        return {
+                            trigger: 'none',
+                            delay: 0,
+                            targetSpeaker: null,
+                            priority: 'none'
+                        };
+                }
+            },
+
+            // スマート戦略でのターゲット話者決定
+            determineSmartTargetSpeaker(situation) {
+                // 会話履歴から最適な次の話者を決定
+                const recentMessages = AppState.conversationHistory.slice(-3);
+                const lastSpeaker = recentMessages.length > 0 ? recentMessages[recentMessages.length - 1].sender : null;
+                
+                if (lastSpeaker === SPEAKERS.NEHORI) {
+                    return SPEAKERS.HAHORI;
+                } else if (lastSpeaker === SPEAKERS.HAHORI) {
+                    return SPEAKERS.NEHORI;
+                } else {
+                    return SPEAKERS.NEHORI; // デフォルト
+                }
             }
         }
+    }
+};
+
+// =================================================================================
+// PREEMPTIVE GENERATION MANAGERS - 先読み生成管理オブジェクト
+// =================================================================================
+
+// ねほりーの先読み生成管理
+const nehoriPreemptiveGeneration = {
+    isGenerating: false,
+    startTime: null,
+    generatedQuestion: null,
+    lastPlaybackTime: null,
+    createIntegratedNehoriPrompt: function(conversationContext, themeContext) {
+        return `テーマ「${AppState.currentTheme}」についての深掘り会話が進行中です。
+
+会話コンテキスト:
+${conversationContext}
+
+テーマコンテキスト:
+${themeContext}
+
+あなたは「ねほりーの」です。会話の流れを踏まえて、新しい角度での質問を生成してください。
+200文字以内で、自然で親しみやすい質問をお願いします。`;
+    },
+    generateNehoriQuestionAsync: async function(prompt) {
+        return await window.gptMessagesToCharacterResponse([
+            { role: 'user', content: prompt }
+        ], window.SPEAKERS.NEHORI);
+    }
+};
+
+// はほりーの先読み生成管理
+const hahoriPreemptiveGeneration = {
+    isGenerating: false,
+    startTime: null,
+    generatedResponse: null,
+    lastPlaybackTime: null,
+    createIntegratedHahoriPrompt: function(conversationContext, themeContext) {
+        return `テーマ「${AppState.currentTheme}」についての深掘り会話が進行中です。
+
+会話コンテキスト:
+${conversationContext}
+
+テーマコンテキスト:
+${themeContext}
+
+あなたは「はほりーの」です。会話の流れを踏まえて、適切な応答を生成してください。
+200文字以内で、自然で親しみやすい応答をお願いします。`;
+    },
+    generateHahoriResponseAsync: async function(prompt) {
+        return await window.gptMessagesToCharacterResponse([
+            { role: 'user', content: prompt }
+        ], window.SPEAKERS.HAHORI);
     }
 };
 
@@ -140,20 +204,20 @@ async function startNehoriGenerationDuringHahori() {
     }
     
     // 🔄 会話制御チェック
-    if (window.ConversationGatekeeper.conversationControl.speakingInProgress && 
+    if (window.ConversationGatekeeper?.conversationControl?.speakingInProgress && 
         window.AppState?.currentSpeaker !== window.SPEAKERS?.HAHORI) {
         console.log('🚫 不適切な発話状態のため先読み生成をスキップ');
         return;
     }
     
     // 既存の先読み生成があるかチェック
-    if (this.nehoriPreemptiveGeneration.isGenerating) {
+    if (nehoriPreemptiveGeneration.isGenerating) {
         console.log('🔄 既に先読み生成中 - スキップ');
         return;
     }
     
-    this.nehoriPreemptiveGeneration.isGenerating = true;
-    this.nehoriPreemptiveGeneration.startTime = Date.now();
+    nehoriPreemptiveGeneration.isGenerating = true;
+    nehoriPreemptiveGeneration.startTime = Date.now();
     
     // 🔄 統合処理: 会話履歴とテーマコンテキストを統合
     const conversationContext = window.AppState?.conversationHistory?.map(msg => msg.content).join(' ') || '';
@@ -166,13 +230,13 @@ async function startNehoriGenerationDuringHahori() {
     });
     
     // 🔄 統合プロンプト生成
-    const prompt = this.createIntegratedNehoriPrompt(conversationContext, themeContext);
+    const prompt = nehoriPreemptiveGeneration.createIntegratedNehoriPrompt(conversationContext, themeContext);
     
     // 非同期で生成開始
-    this.generateNehoriQuestionAsync(prompt)
+    nehoriPreemptiveGeneration.generateNehoriQuestionAsync(prompt)
         .then(question => {
             if (question && question.trim()) {
-                this.nehoriPreemptiveGeneration.generatedQuestion = question;
+                nehoriPreemptiveGeneration.generatedQuestion = question;
                 console.log('✅ ねほりーの先読み生成完了');
             } else {
                 console.log('⚠️ ねほりーの先読み生成結果が空');
@@ -182,7 +246,7 @@ async function startNehoriGenerationDuringHahori() {
             console.error('❌ ねほりーの先読み生成エラー:', error);
         })
         .finally(() => {
-            this.nehoriPreemptiveGeneration.isGenerating = false;
+            nehoriPreemptiveGeneration.isGenerating = false;
         });
 }
 
@@ -214,18 +278,18 @@ async function handleNehoriImmediatePlayback() {
     }
     
     // 先読み生成された質問があるかチェック
-    if (!this.nehoriPreemptiveGeneration.generatedQuestion) {
+    if (!nehoriPreemptiveGeneration.generatedQuestion) {
         console.log('📝 先読み生成された質問がありません');
         
         // 🔄 統合フォールバック: 即座生成
         try {
             const conversationContext = window.AppState?.conversationHistory?.map(msg => msg.content).join(' ') || '';
             const themeContext = window.AppState?.selectedThemeDetails?.map(theme => theme.summary).join(' ') || '';
-            const prompt = this.createIntegratedNehoriPrompt(conversationContext, themeContext);
+            const prompt = nehoriPreemptiveGeneration.createIntegratedNehoriPrompt(conversationContext, themeContext);
             
-            const question = await this.generateNehoriQuestionAsync(prompt);
+            const question = await nehoriPreemptiveGeneration.generateNehoriQuestionAsync(prompt);
             if (question && question.trim()) {
-                this.nehoriPreemptiveGeneration.generatedQuestion = question;
+                nehoriPreemptiveGeneration.generatedQuestion = question;
                 console.log('✅ 即座生成完了');
             } else {
                 console.log('⚠️ 即座生成結果が空');
@@ -242,17 +306,17 @@ async function handleNehoriImmediatePlayback() {
     
     try {
         // 🔄 統合処理: 音声合成と再生
-        const audioBlob = await window.ttsTextToAudioBlob(this.nehoriPreemptiveGeneration.generatedQuestion, window.SPEAKERS?.NEHORI);
+        const audioBlob = await window.ttsTextToAudioBlob(nehoriPreemptiveGeneration.generatedQuestion, window.SPEAKERS?.NEHORI);
         
         // チャットに追加
-        await window.addMessageToChat(window.SPEAKERS?.NEHORI, this.nehoriPreemptiveGeneration.generatedQuestion);
+        await window.addMessageToChat(window.SPEAKERS?.NEHORI, nehoriPreemptiveGeneration.generatedQuestion);
         
         // 音声再生
         await window.playPreGeneratedAudio(audioBlob, window.SPEAKERS?.NEHORI);
         
         // 🔄 統合クリーンアップ
-        this.nehoriPreemptiveGeneration.generatedQuestion = null;
-        this.nehoriPreemptiveGeneration.lastPlaybackTime = Date.now();
+        nehoriPreemptiveGeneration.generatedQuestion = null;
+        nehoriPreemptiveGeneration.lastPlaybackTime = Date.now();
         
         console.log('✅ ねほりーの即座再生完了');
         
@@ -281,7 +345,7 @@ async function playPendingNehoriIfNeeded() {
     }
     
     // 先読み生成された質問があるかチェック
-    if (!this.nehoriPreemptiveGeneration.generatedQuestion) {
+    if (!nehoriPreemptiveGeneration.generatedQuestion) {
         console.log('📝 Pending再生する質問がありません');
         return;
     }
@@ -291,17 +355,17 @@ async function playPendingNehoriIfNeeded() {
     
     try {
         // 🔄 統合処理: 音声合成と再生
-        const audioBlob = await window.ttsTextToAudioBlob(this.nehoriPreemptiveGeneration.generatedQuestion, window.SPEAKERS?.NEHORI);
+        const audioBlob = await window.ttsTextToAudioBlob(nehoriPreemptiveGeneration.generatedQuestion, window.SPEAKERS?.NEHORI);
         
         // チャットに追加
-        await window.addMessageToChat(window.SPEAKERS?.NEHORI, this.nehoriPreemptiveGeneration.generatedQuestion);
+        await window.addMessageToChat(window.SPEAKERS?.NEHORI, nehoriPreemptiveGeneration.generatedQuestion);
         
         // 音声再生
         await window.playPreGeneratedAudio(audioBlob, window.SPEAKERS?.NEHORI);
         
         // 🔄 統合クリーンアップ
-        this.nehoriPreemptiveGeneration.generatedQuestion = null;
-        this.nehoriPreemptiveGeneration.lastPlaybackTime = Date.now();
+        nehoriPreemptiveGeneration.generatedQuestion = null;
+        nehoriPreemptiveGeneration.lastPlaybackTime = Date.now();
         
         console.log('✅ ねほりーのPending再生完了');
         
@@ -415,13 +479,13 @@ async function startHahoriGenerationDuringNehori() {
     }
     
     // 既存の先読み生成があるかチェック
-    if (this.hahoriPreemptiveGeneration.isGenerating) {
+    if (hahoriPreemptiveGeneration.isGenerating) {
         console.log('🔄 既に先読み生成中 - スキップ');
         return;
     }
     
-    this.hahoriPreemptiveGeneration.isGenerating = true;
-    this.hahoriPreemptiveGeneration.startTime = Date.now();
+    hahoriPreemptiveGeneration.isGenerating = true;
+    hahoriPreemptiveGeneration.startTime = Date.now();
     
     // 🔄 統合処理: 会話履歴とテーマコンテキストを統合
     const conversationContext = window.AppState?.conversationHistory?.map(msg => msg.content).join(' ') || '';
@@ -434,13 +498,13 @@ async function startHahoriGenerationDuringNehori() {
     });
     
     // 🔄 統合プロンプト生成
-    const prompt = this.createIntegratedHahoriPrompt(conversationContext, themeContext);
+    const prompt = hahoriPreemptiveGeneration.createIntegratedHahoriPrompt(conversationContext, themeContext);
     
     // 非同期で生成開始
-    this.generateHahoriResponseAsync(prompt)
+    hahoriPreemptiveGeneration.generateHahoriResponseAsync(prompt)
         .then(response => {
             if (response && response.trim()) {
-                this.hahoriPreemptiveGeneration.generatedResponse = response;
+                hahoriPreemptiveGeneration.generatedResponse = response;
                 console.log('✅ はほりーの先読み生成完了');
             } else {
                 console.log('⚠️ はほりーの先読み生成結果が空');
@@ -450,7 +514,7 @@ async function startHahoriGenerationDuringNehori() {
             console.error('❌ はほりーの先読み生成エラー:', error);
         })
         .finally(() => {
-            this.hahoriPreemptiveGeneration.isGenerating = false;
+            hahoriPreemptiveGeneration.isGenerating = false;
         });
 }
 
@@ -482,18 +546,18 @@ async function handleHahoriImmediatePlayback() {
     }
     
     // 先読み生成された応答があるかチェック
-    if (!this.hahoriPreemptiveGeneration.generatedResponse) {
+    if (!hahoriPreemptiveGeneration.generatedResponse) {
         console.log('📝 先読み生成された応答がありません');
         
         // 🔄 統合フォールバック: 即座生成
         try {
             const conversationContext = window.AppState?.conversationHistory?.map(msg => msg.content).join(' ') || '';
             const themeContext = window.AppState?.selectedThemeDetails?.map(theme => theme.summary).join(' ') || '';
-            const prompt = this.createIntegratedHahoriPrompt(conversationContext, themeContext);
+            const prompt = hahoriPreemptiveGeneration.createIntegratedHahoriPrompt(conversationContext, themeContext);
             
-            const response = await this.generateHahoriResponseAsync(prompt);
+            const response = await hahoriPreemptiveGeneration.generateHahoriResponseAsync(prompt);
             if (response && response.trim()) {
-                this.hahoriPreemptiveGeneration.generatedResponse = response;
+                hahoriPreemptiveGeneration.generatedResponse = response;
                 console.log('✅ 即座生成完了');
             } else {
                 console.log('⚠️ 即座生成結果が空');
@@ -510,17 +574,17 @@ async function handleHahoriImmediatePlayback() {
     
     try {
         // 🔄 統合処理: 音声合成と再生
-        const audioBlob = await window.ttsTextToAudioBlob(this.hahoriPreemptiveGeneration.generatedResponse, window.SPEAKERS?.HAHORI);
+        const audioBlob = await window.ttsTextToAudioBlob(hahoriPreemptiveGeneration.generatedResponse, window.SPEAKERS?.HAHORI);
         
         // チャットに追加
-        await window.addMessageToChat(window.SPEAKERS?.HAHORI, this.hahoriPreemptiveGeneration.generatedResponse);
+        await window.addMessageToChat(window.SPEAKERS?.HAHORI, hahoriPreemptiveGeneration.generatedResponse);
         
         // 音声再生
         await window.playPreGeneratedAudio(audioBlob, window.SPEAKERS?.HAHORI);
         
         // 🔄 統合クリーンアップ
-        this.hahoriPreemptiveGeneration.generatedResponse = null;
-        this.hahoriPreemptiveGeneration.lastPlaybackTime = Date.now();
+        hahoriPreemptiveGeneration.generatedResponse = null;
+        hahoriPreemptiveGeneration.lastPlaybackTime = Date.now();
         
         console.log('✅ はほりーの即座再生完了');
         
@@ -549,7 +613,7 @@ async function playPendingHahoriIfNeeded() {
     }
     
     // 先読み生成された応答があるかチェック
-    if (!this.hahoriPreemptiveGeneration.generatedResponse) {
+    if (!hahoriPreemptiveGeneration.generatedResponse) {
         console.log('📝 Pending再生する応答がありません');
         return;
     }
@@ -559,17 +623,17 @@ async function playPendingHahoriIfNeeded() {
     
     try {
         // 🔄 統合処理: 音声合成と再生
-        const audioBlob = await window.ttsTextToAudioBlob(this.hahoriPreemptiveGeneration.generatedResponse, window.SPEAKERS?.HAHORI);
+        const audioBlob = await window.ttsTextToAudioBlob(hahoriPreemptiveGeneration.generatedResponse, window.SPEAKERS?.HAHORI);
         
         // チャットに追加
-        await window.addMessageToChat(window.SPEAKERS?.HAHORI, this.hahoriPreemptiveGeneration.generatedResponse);
+        await window.addMessageToChat(window.SPEAKERS?.HAHORI, hahoriPreemptiveGeneration.generatedResponse);
         
         // 音声再生
         await window.playPreGeneratedAudio(audioBlob, window.SPEAKERS?.HAHORI);
         
         // 🔄 統合クリーンアップ
-        this.hahoriPreemptiveGeneration.generatedResponse = null;
-        this.hahoriPreemptiveGeneration.lastPlaybackTime = Date.now();
+        hahoriPreemptiveGeneration.generatedResponse = null;
+        hahoriPreemptiveGeneration.lastPlaybackTime = Date.now();
         
         console.log('✅ はほりーのPending再生完了');
         
@@ -723,27 +787,41 @@ window.handleHahoriImmediatePlayback = handleHahoriImmediatePlayback;
 window.playPendingHahoriIfNeeded = playPendingHahoriIfNeeded;
 
 // 遅延初期化（script.js読み込み後に実行）
-document.addEventListener('DOMContentLoaded', function() {
-    // 他のモジュールの初期化を待つ
-    setTimeout(() => {
-        console.log('🚀 VoicePhase2Manager 遅延初期化開始');
+function initializeVoicePhase2ManagerWhenReady() {
+    // 依存関係のチェック
+    const checkDependencies = () => {
+        return window.AppState && 
+               window.SPEAKERS && 
+               window.gptMessagesToCharacterResponse && 
+               window.ttsTextToAudioBlob && 
+               window.addMessageToChat && 
+               window.playPreGeneratedAudio;
+    };
+    
+    if (checkDependencies()) {
+        console.log('🚀 VoicePhase2Manager 依存関係確認済み - 初期化開始');
         const initialized = VoicePhase2Manager.initialize();
         if (initialized) {
-            console.log('✅ VoicePhase2Manager 遅延初期化完了');
+            console.log('✅ VoicePhase2Manager 初期化完了');
         } else {
-            console.warn('⚠️ VoicePhase2Manager 初期化失敗 - 依存関係待機中');
-            // 再試行機能
-            setTimeout(() => {
-                console.log('🔄 VoicePhase2Manager 初期化再試行');
-                const retrySuccess = VoicePhase2Manager.initialize();
-                if (!retrySuccess) {
-                    console.log('🔧 VoicePhase2Manager 強制初期化実行（部分機能モード）');
-                    VoicePhase2Manager.initialize(true); // 強制初期化
-                }
-            }, 1000);
+            console.log('🔧 VoicePhase2Manager 強制初期化実行（部分機能モード）');
+            VoicePhase2Manager.initialize(true);
         }
-    }, 500); // script.js初期化を待つ
-});
+    } else {
+        console.log('⚠️ VoicePhase2Manager 依存関係待機中 - 再試行します');
+        setTimeout(initializeVoicePhase2ManagerWhenReady, 1000);
+    }
+}
+
+// DOM読み込み完了後に初期化開始
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(initializeVoicePhase2ManagerWhenReady, 1000);
+    });
+} else {
+    // 既にDOMが読み込まれている場合
+    setTimeout(initializeVoicePhase2ManagerWhenReady, 1000);
+}
 
 console.log('✅ VoicePhase2Manager モジュール読み込み完了');
 console.log('📊 分離対象: VoiceOptimization、DualPreemptiveOptimization、8つの音声関数');

@@ -737,16 +737,16 @@ body {
 .transcript-display {
     background: rgba(255, 255, 255, 0.4);
     border-radius: 12px;
-    padding: 15px;
-    margin: 10px 0;
-    min-height: 60px;
+    padding: 20px;
+    margin: 15px 0;
+    min-height: 80px;
     max-height: 200px;
     overflow-y: auto;
     overflow-x: hidden;
     font-style: italic;
     color: #666;
     border-left: 4px solid #3498db;
-    line-height: 1.4;
+    line-height: 1.6;
     word-wrap: break-word;
     white-space: pre-wrap;
 }
@@ -2100,10 +2100,103 @@ input:checked + .slider:before {
     color: white;
 }
 
-/* ==========================================================================
+/* =================================================================================
    First Time Guide Overrides
    ========================================================================== */
 #guideStep4 .glass-button {
     background: linear-gradient(135deg, #4caf50, #45a049);
     color: white;
+}
+
+/* =================================================================================
+   ポップアップメッセージ削除
+   ================================================================================= */
+
+/* 🗑️ ユーザーガイダンス関連の要素を完全に削除 */
+.user-guidance-display,
+#user-guidance-display,
+.unified-status-display,
+#unified-status-display,
+.guidance-content,
+.user-message,
+.available-actions {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* 右ペイン: セッション状況表示の洗練されたデザイン */
+.session-info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 5px 0;
+}
+
+.session-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.session-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-left-color: var(--accent-color);
+}
+
+.session-label {
+    font-size: 11px;
+    color: #999;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.session-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: right;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.session-value.active {
+    color: #28a745;
+}
+
+.session-value.warning {
+    color: #ffc107;
+}
+
+.session-value.error {
+    color: #dc3545;
+}
+
+/* セッション状況の特別なスタイル */
+#sessionState.active {
+    color: #28a745;
+    font-weight: 700;
+}
+
+#sessionPhase.active {
+    color: #06b6d4;
+    font-weight: 700;
+}
+
+#sessionDuration.active {
+    color: #8b5cf6;
+    font-weight: 700;
+}
+
+#currentTheme:not(:empty) {
+    color: #3b82f6;
+    font-weight: 700;
 }

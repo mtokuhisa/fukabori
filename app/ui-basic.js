@@ -28,6 +28,9 @@ function updateSessionStatus(status, theme) {
     const currentTheme = window.UIManager.DOMUtils.get('currentTheme');
     const currentThemeFixed = window.UIManager.DOMUtils.get('currentThemeFixed');
     
+    // 新しいセッション状況表示の更新
+    updateDetailedSessionStatus(status, theme);
+    
     if (sessionStatus) {
         sessionStatus.textContent = status;
         console.log(`✅ セッション状況更新: ${status}`);
@@ -47,6 +50,91 @@ function updateSessionStatus(status, theme) {
         console.log(`✅ 中央ペインテーマ更新: ${theme}`);
     }
 }
+
+/**
+ * 詳細なセッション状況表示を更新
+ */
+function updateDetailedSessionStatus(status, theme) {
+    const sessionState = document.getElementById('sessionState');
+    const sessionPhase = document.getElementById('sessionPhase');
+    const sessionDuration = document.getElementById('sessionDuration');
+    const currentTheme = document.getElementById('currentTheme');
+    
+    // 状態の更新
+    if (sessionState) {
+        sessionState.textContent = status || '準備中';
+        sessionState.className = 'session-value';
+        if (status === 'アクティブ' || status === '認識中') {
+            sessionState.classList.add('active');
+        } else if (status === '一時停止中') {
+            sessionState.classList.add('warning');
+        } else if (status === 'エラー') {
+            sessionState.classList.add('error');
+        }
+    }
+    
+    // フェーズの更新
+    if (sessionPhase) {
+        const currentPhase = window.AppState?.sessionPhase || 'setup';
+        const phaseNames = {
+            'setup': 'セットアップ',
+            'warmup': 'ウォームアップ',
+            'deepdive': '深掘り',
+            'summary': 'まとめ',
+            'completed': '完了'
+        };
+        
+        sessionPhase.textContent = phaseNames[currentPhase] || 'セットアップ';
+        sessionPhase.className = 'session-value';
+        if (currentPhase !== 'setup') {
+            sessionPhase.classList.add('active');
+        }
+    }
+    
+    // 経過時間の更新
+    if (sessionDuration) {
+        const duration = calculateSessionDuration();
+        sessionDuration.textContent = duration;
+        sessionDuration.className = 'session-value';
+        if (duration !== '00:00') {
+            sessionDuration.classList.add('active');
+        }
+    }
+    
+    // テーマの更新
+    if (currentTheme) {
+        currentTheme.textContent = theme || '未設定';
+        currentTheme.className = 'session-value';
+        if (theme && theme !== '未設定') {
+            currentTheme.classList.add('active');
+        }
+    }
+}
+
+/**
+ * セッション経過時間を計算
+ */
+function calculateSessionDuration() {
+    if (!window.AppState?.sessionStartTime) {
+        return '00:00';
+    }
+    
+    const startTime = new Date(window.AppState.sessionStartTime);
+    const now = new Date();
+    const diff = Math.floor((now - startTime) / 1000); // 秒
+    
+    const minutes = Math.floor(diff / 60);
+    const seconds = diff % 60;
+    
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// 定期的にセッション状況を更新
+setInterval(() => {
+    if (window.AppState?.sessionActive) {
+        updateDetailedSessionStatus();
+    }
+}, 1000);
 
 /**
  * 知見表示を更新

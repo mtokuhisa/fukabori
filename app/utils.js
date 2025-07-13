@@ -7,32 +7,47 @@
 window.FukaboriUtils = window.FukaboriUtils || {};
 
 /**
- * メッセージ表示関数
- * @param {string} type - メッセージタイプ (success, error, info, warning)
+ * メッセージ表示（ポップアップ）
  * @param {string} message - 表示するメッセージ
+ * @param {string} type - メッセージタイプ（'info', 'warning', 'error', 'success'）
  */
-function showMessage(type, message) {
-    console.log(`📢 ${type}: ${message}`);
-    
-    // 簡易的なメッセージ表示（実際のUIがあれば置き換え）
-    const messageTypes = {
-        'success': '✅',
-        'error': '❌',
-        'info': '💡',
-        'warning': '⚠️'
-    };
-    
-    const icon = messageTypes[type] || '📢';
-    
-    // コンソール出力（開発用）
-    console.log(`${icon} ${message}`);
-    
-    // 将来的にはUIでのメッセージ表示を実装
-    // 現在は一時的にalertで表示（本番では削除予定）
-    if (type === 'error') {
-        // エラーの場合のみalertで表示
-        setTimeout(() => alert(`${icon} ${message}`), 100);
+function showMessage(message, type = 'info') {
+    // 音声認識関連のエラーメッセージはポップアップ表示しない
+    if (message.includes('音声認識') || message.includes('no-speech') || message.includes('認識エラー')) {
+        console.log(`🔇 音声認識エラー（ポップアップ無効化）: ${message}`);
+        return;
     }
+    
+    // 不要なダイアログを無効化（スムーズなユーザー体験のため）
+    const skipDialogMessages = [
+        'ログインを完了してください',
+        'テーマを入力してください',
+        'ログインに成功しました',
+        'APIキーを設定してください',
+        'テーマ入力欄が見つかりません',
+        'パスワードを入力してください',
+        'パスワード入力欄が見つかりません'
+    ];
+    
+    if (skipDialogMessages.some(skipMsg => message.includes(skipMsg))) {
+        console.log(`🔇 不要なダイアログ（ポップアップ無効化）: ${message}`);
+        return;
+    }
+    
+    // 重要な確認ダイアログは残す（誤操作防止）
+    const importantDialogs = [
+        'セッションを終了しますか',
+        'ログイン画面に戻りますか',
+        'マイクの使用許可が拒否されています'
+    ];
+    
+    if (importantDialogs.some(important => message.includes(important))) {
+        alert(`${type.toUpperCase()}: ${message}`);
+        return;
+    }
+    
+    // その他のメッセージはコンソールのみ
+    console.log(`📢 ${type.toUpperCase()}: ${message}`);
 }
 
 /**
