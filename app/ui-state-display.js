@@ -15,6 +15,14 @@
 // 
 // =================================================================================
 
+// 🔧 SYSTEM CONTROL FLAGS - システム制御フラグ
+const UI_STATE_DISPLAY_CONFIG = {
+    ENABLED: false,  // 🚫 UIStateDisplay機能を無効化
+    AUTO_INITIALIZE: false,  // 🚫 自動初期化を無効化
+    MANUAL_ONLY: true,  // ✅ 手動初期化のみ許可
+    DEBUG_MODE: false
+};
+
 class UIStateDisplaySystem {
     constructor() {
         this.initialized = false;
@@ -23,6 +31,12 @@ class UIStateDisplaySystem {
         this.animations = new Map();
         this.updateQueue = [];
         this.isUpdating = false;
+        
+        // 🔧 無効化フラグチェック
+        this.enabled = UI_STATE_DISPLAY_CONFIG.ENABLED;
+        if (!this.enabled) {
+            console.log('🚫 UIStateDisplay: システムが無効化されています');
+        }
     }
     
     // =================================================================================
@@ -30,6 +44,12 @@ class UIStateDisplaySystem {
     // =================================================================================
     
     async initialize() {
+        // 🔧 無効化チェック
+        if (!this.enabled) {
+            console.log('🚫 UIStateDisplay: 無効化により初期化をスキップ');
+            return false;
+        }
+        
         if (this.initialized) return;
         
         console.log('🔄 UI状態表示システム初期化開始');
@@ -60,10 +80,53 @@ class UIStateDisplaySystem {
     }
     
     // =================================================================================
+    // 手動制御メソッド
+    // =================================================================================
+    
+    enable() {
+        this.enabled = true;
+        console.log('✅ UIStateDisplay: システムを有効化');
+        return this;
+    }
+    
+    disable() {
+        this.enabled = false;
+        console.log('🚫 UIStateDisplay: システムを無効化');
+        this.cleanup();
+        return this;
+    }
+    
+    cleanup() {
+        // UI要素の削除
+        Object.values(this.displayElements).forEach(element => {
+            if (element && element.parentNode) {
+                element.parentNode.removeChild(element);
+            }
+        });
+        this.displayElements = {};
+        
+        // アニメーションの停止
+        this.animations.forEach(animation => {
+            if (animation.cancel) animation.cancel();
+        });
+        this.animations.clear();
+        
+        // 更新キューのクリア
+        this.updateQueue = [];
+        this.isUpdating = false;
+        
+        this.initialized = false;
+        console.log('🧹 UIStateDisplay: クリーンアップ完了');
+    }
+    
+    // =================================================================================
     // UI要素の作成
     // =================================================================================
     
     createDisplayElements() {
+        // 🔧 無効化チェック
+        if (!this.enabled) return;
+        
         // メイン状態表示パネル
         this.createMainStatusPanel();
         
@@ -560,6 +623,9 @@ class UIStateDisplaySystem {
     // =================================================================================
     
     setupStateListeners() {
+        // 🔧 無効化チェック
+        if (!this.enabled) return;
+        
         this.unifiedStateManager.addListener((eventType, data, state) => {
             this.handleStateChange(eventType, data, state);
         });
@@ -568,6 +634,9 @@ class UIStateDisplaySystem {
     }
     
     handleStateChange(eventType, data, state) {
+        // 🔧 無効化チェック
+        if (!this.enabled) return;
+        
         // 更新キューに追加
         this.updateQueue.push({ eventType, data, state });
         
@@ -578,6 +647,9 @@ class UIStateDisplaySystem {
     }
     
     async processUpdateQueue() {
+        // 🔧 無効化チェック
+        if (!this.enabled) return;
+        
         this.isUpdating = true;
         
         while (this.updateQueue.length > 0) {
@@ -589,6 +661,9 @@ class UIStateDisplaySystem {
     }
     
     async applyStateUpdate({ eventType, data, state }) {
+        // 🔧 無効化チェック
+        if (!this.enabled) return;
+        
         switch (eventType) {
             case 'system_state_changed':
                 this.updateSystemDisplay(state.system);
@@ -872,6 +947,9 @@ class UIStateDisplaySystem {
     }
     
     updateAllDisplays() {
+        // 🔧 無効化チェック
+        if (!this.enabled) return;
+        
         if (!this.unifiedStateManager) return;
         
         const state = this.unifiedStateManager.getState();
@@ -968,10 +1046,12 @@ class UIStateDisplaySystem {
     
     debugDisplayStatus() {
         const status = {
+            enabled: this.enabled,
             initialized: this.initialized,
             elementsCreated: Object.keys(this.displayElements).length,
             updateQueueLength: this.updateQueue.length,
-            isUpdating: this.isUpdating
+            isUpdating: this.isUpdating,
+            config: UI_STATE_DISPLAY_CONFIG
         };
         
         console.log('🔍 UI状態表示システム - 表示状況:', status);
@@ -984,23 +1064,30 @@ class UIStateDisplaySystem {
 // =================================================================================
 
 if (typeof window !== 'undefined') {
-    // DOMContentLoaded後に初期化
-    document.addEventListener('DOMContentLoaded', () => {
-        // 統一状態管理システムの初期化を待つ
-        const initializeDisplay = async () => {
-            if (window.UnifiedStateManager && window.UnifiedStateManager.initialized) {
-                window.UIStateDisplay = new UIStateDisplaySystem();
-                await window.UIStateDisplay.initialize();
-                
-                console.log('✅ UI状態表示システムが利用可能になりました');
-            } else {
-                // 統一状態管理システムの初期化を待つ
-                setTimeout(initializeDisplay, 100);
-            }
-        };
-        
-        initializeDisplay();
-    });
+    // 🔧 自動初期化を無効化
+    if (UI_STATE_DISPLAY_CONFIG.AUTO_INITIALIZE) {
+        // DOMContentLoaded後に初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 統一状態管理システムの初期化を待つ
+            const initializeDisplay = async () => {
+                if (window.UnifiedStateManager && window.UnifiedStateManager.initialized) {
+                    window.UIStateDisplay = new UIStateDisplaySystem();
+                    await window.UIStateDisplay.initialize();
+                    
+                    console.log('✅ UI状態表示システムが利用可能になりました');
+                } else {
+                    // 統一状態管理システムの初期化を待つ
+                    setTimeout(initializeDisplay, 100);
+                }
+            };
+            
+            initializeDisplay();
+        });
+    } else {
+        // 手動初期化のみ - インスタンスのみ作成
+        window.UIStateDisplay = new UIStateDisplaySystem();
+        console.log('🔧 UIStateDisplay: 手動初期化モード（自動初期化無効）');
+    }
 }
 
 // CommonJS/ESモジュール対応

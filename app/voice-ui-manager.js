@@ -1,46 +1,42 @@
 // =================================================================================
-// VOICE UI MANAGER - 音声UI管理システム v0.8.14
-// =================================================================================
-// 
-// 🎨 洗練されたデザイン要件対応：
-// - 中央下部（統合コントロール）固定配置（ポップアップではない）
-// - 大きなマイクアイコンメイン（48px）
-// - 操作ボタン（アイコン+テキスト）
-// - 手動一時停止機能
-// - 洗練されたデザイン
-// 
+// VOICE UI MANAGER - 音声UI管理システム
 // =================================================================================
 
+// 🔧 SYSTEM CONTROL FLAGS - システム制御フラグ
+const VOICE_UI_MANAGER_CONFIG = {
+    ENABLED: false,  // 🚫 VoiceUIManager機能を無効化
+    AUTO_INITIALIZE: false,  // 🚫 自動初期化を無効化
+    MANUAL_ONLY: true,  // ✅ 手動初期化のみ許可
+    FIXED_POSITION: false,  // 🚫 固定位置表示を無効化
+    DEBUG_MODE: false
+};
+
+/**
+ * 音声UI管理システム
+ * 音声認識の視覚的フィードバックとユーザー操作を提供
+ */
 class VoiceUIManager {
     constructor() {
         this.isInitialized = false;
         this.voiceModule = null;
-        this.elements = {};
-        this.userPausedManually = false; // ユーザーが手動で一時停止したかのフラグ
+        this.container = null;
+        this.micIcon = null;
+        this.stateText = null;
+        this.toggleButton = null;
+        this.endButton = null;
+        this.monitoringInterval = null;
+        this.userPausedManually = false;
         
-        // 🎨 洗練されたデザイン設定
-        this.stateConfig = {
-            colors: {
-                'starting': '#6c757d',     // グレー
-                'active': '#28a745',       // グリーン
-                'stopping': '#ffc107',     // イエロー
-                'error': '#dc3545',        // レッド
-                'network-error': '#dc3545', // レッド
-                'permission-denied': '#dc3545', // レッド
-                'idle': '#6c757d'          // グレー
-            },
-            messages: {
-                'starting': '認識を開始しています...',
-                'active': '音声認識中',
-                'stopping': '一時停止中',
-                'error': '認識エラー',
-                'network-error': 'ネットワークエラー',
-                'permission-denied': 'マイクの許可が必要です',
-                'idle': '待機中'
-            }
-        };
+        // 🔧 無効化フラグチェック
+        this.enabled = VOICE_UI_MANAGER_CONFIG.ENABLED;
+        this.autoInitialize = VOICE_UI_MANAGER_CONFIG.AUTO_INITIALIZE;
+        this.fixedPosition = VOICE_UI_MANAGER_CONFIG.FIXED_POSITION;
         
-        console.log('🎨 VoiceUIManager初期化完了 - 洗練されたデザイン v0.8.14');
+        if (!this.enabled) {
+            console.log('🚫 VoiceUIManager: システムが無効化されています');
+        }
+        
+        console.log('🎨 VoiceUIManager初期化完了 - 無効化状態:', !this.enabled);
     }
 
     // =================================================================================
@@ -48,9 +44,15 @@ class VoiceUIManager {
     // =================================================================================
     
     async initialize() {
+        // 🔧 無効化チェック
+        if (!this.enabled) {
+            console.log('🚫 VoiceUIManager: 無効化により初期化をスキップ');
+            return false;
+        }
+        
         if (this.isInitialized) {
             console.log('⚠️ VoiceUIManager既に初期化済み');
-            return;
+            return true;
         }
         
         try {
@@ -123,13 +125,11 @@ class VoiceUIManager {
         document.body.appendChild(voiceUI);
         
         // 要素の参照を保存
-        this.elements = {
-            container: voiceUI,
-            micIcon: document.getElementById('voiceMicIcon'),
-            stateText: document.getElementById('voiceStateText'),
-            toggleButton: document.getElementById('voiceToggleButton'),
-            endButton: document.getElementById('voiceEndButton')
-        };
+        this.container = voiceUI;
+        this.micIcon = document.getElementById('voiceMicIcon');
+        this.stateText = document.getElementById('voiceStateText');
+        this.toggleButton = document.getElementById('voiceToggleButton');
+        this.endButton = document.getElementById('voiceEndButton');
         
         console.log('✅ 音声UI作成完了');
     }
@@ -140,12 +140,12 @@ class VoiceUIManager {
     
     setupEventListeners() {
         // 一時停止/再開ボタン
-        this.elements.toggleButton.addEventListener('click', () => {
+        this.toggleButton.addEventListener('click', () => {
             this.handleToggleClick();
         });
         
         // セッション終了ボタン
-        this.elements.endButton.addEventListener('click', () => {
+        this.endButton.addEventListener('click', () => {
             this.handleEndClick();
         });
         
@@ -179,7 +179,7 @@ class VoiceUIManager {
     }
 
     updateMicIcon(state) {
-        const micIcon = this.elements.micIcon;
+        const micIcon = this.micIcon;
         if (!micIcon) return;
         
         // 状態に応じたクラスを設定
@@ -194,7 +194,7 @@ class VoiceUIManager {
     }
 
     updateStateText(state) {
-        const stateText = this.elements.stateText;
+        const stateText = this.stateText;
         if (!stateText) return;
         
         const message = this.stateConfig.messages[state] || '不明な状態';
@@ -203,7 +203,7 @@ class VoiceUIManager {
     }
 
     updateToggleButton(state) {
-        const toggleButton = this.elements.toggleButton;
+        const toggleButton = this.toggleButton;
         if (!toggleButton) return;
         
         const icon = toggleButton.querySelector('.button-icon');
@@ -266,15 +266,15 @@ class VoiceUIManager {
     // =================================================================================
     
     show() {
-        if (this.elements.container) {
-            this.elements.container.style.display = 'flex';
+        if (this.container) {
+            this.container.style.display = 'flex';
             console.log('✅ 音声UI表示');
         }
     }
 
     hide() {
-        if (this.elements.container) {
-            this.elements.container.style.display = 'none';
+        if (this.container) {
+            this.container.style.display = 'none';
             console.log('✅ 音声UI非表示');
         }
     }
@@ -465,35 +465,66 @@ class VoiceUIManager {
 // グローバル初期化
 // =================================================================================
 
-// VoiceUIManagerのインスタンスを作成
-window.VoiceUIManager = new VoiceUIManager();
-
-// 初期化関数をグローバルに公開
-window.initializeVoiceUI = async function() {
-    // メイン画面でのみ初期化を実行
-    const chatArea = document.getElementById('chatArea');
-    const setupPanel = document.getElementById('setupPanel');
+// 🔧 フラグベースの条件付きインスタンス作成
+if (VOICE_UI_MANAGER_CONFIG.ENABLED || VOICE_UI_MANAGER_CONFIG.MANUAL_ONLY) {
+    // VoiceUIManagerのインスタンスを作成
+    window.VoiceUIManager = new VoiceUIManager();
     
-    // ログイン画面の場合は初期化しない
-    if (!chatArea || !setupPanel || !chatArea.classList.contains('hidden')) {
-        console.log('🔇 ログイン画面のためVoiceUI初期化をスキップ');
-        return false;
-    }
+    // 初期化関数をグローバルに公開
+    window.initializeVoiceUI = async function() {
+        // 🔧 無効化チェック
+        if (!VOICE_UI_MANAGER_CONFIG.ENABLED) {
+            console.log('🚫 VoiceUIManager: 無効化により初期化をスキップ');
+            return false;
+        }
+        
+        // メイン画面でのみ初期化を実行
+        const chatArea = document.getElementById('chatArea');
+        const setupPanel = document.getElementById('setupPanel');
+        
+        // ログイン画面の場合は初期化しない
+        if (!chatArea || !setupPanel || !chatArea.classList.contains('hidden')) {
+            console.log('🔇 ログイン画面のためVoiceUI初期化をスキップ');
+            return false;
+        }
+        
+        // メイン画面でのみ初期化実行
+        return await window.VoiceUIManager.initialize();
+    };
     
-    // メイン画面でのみ初期化実行
-    return await window.VoiceUIManager.initialize();
-};
-
-// 自動初期化を無効化 - メイン画面遷移時のみ手動で初期化
-// 以下のコードをコメントアウトして自動初期化を停止
-/*
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => window.initializeVoiceUI(), 1000);
-    });
+    // 🔧 手動有効化関数
+    window.enableVoiceUI = function() {
+        VOICE_UI_MANAGER_CONFIG.ENABLED = true;
+        console.log('✅ VoiceUIManager: 手動で有効化されました');
+        return true;
+    };
+    
+    // 🔧 手動無効化関数
+    window.disableVoiceUI = function() {
+        VOICE_UI_MANAGER_CONFIG.ENABLED = false;
+        if (window.VoiceUIManager && window.VoiceUIManager.isInitialized) {
+            window.VoiceUIManager.hide();
+        }
+        console.log('🚫 VoiceUIManager: 手動で無効化されました');
+        return true;
+    };
+    
 } else {
-    setTimeout(() => window.initializeVoiceUI(), 1000);
+    console.log('🚫 VoiceUIManager: 完全無効化により作成をスキップ');
 }
-*/
 
-console.log('🎨 VoiceUIManager v0.8.15 読み込み完了 - 自動初期化無効化'); 
+// 🔧 自動初期化を完全無効化
+if (VOICE_UI_MANAGER_CONFIG.AUTO_INITIALIZE && VOICE_UI_MANAGER_CONFIG.ENABLED) {
+    // 自動初期化コード（現在は無効化）
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => window.initializeVoiceUI(), 1000);
+        });
+    } else {
+        setTimeout(() => window.initializeVoiceUI(), 1000);
+    }
+} else {
+    console.log('🚫 VoiceUIManager: 自動初期化無効化');
+}
+
+console.log('🎨 VoiceUIManager v0.8.0.3 読み込み完了 - 条件付き無効化実装'); 

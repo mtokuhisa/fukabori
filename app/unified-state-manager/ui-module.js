@@ -3,10 +3,29 @@
  * ユーザー向け状態表示とガイダンス管理
  */
 
+// 🔧 SYSTEM CONTROL FLAGS - システム制御フラグ
+const UI_MODULE_CONFIG = {
+    ENABLED: false,  // 🚫 UIModule機能を無効化
+    AUTO_INITIALIZE: false,  // 🚫 自動初期化を無効化
+    RIGHT_PANE_UPDATES: false,  // 🚫 右ペイン更新を無効化
+    STATUS_DISPLAY: false,  // 🚫 状態表示を無効化
+    MANUAL_ONLY: true,  // ✅ 手動初期化のみ許可
+    DEBUG_MODE: false
+};
+
 class UIModule {
     constructor(stateManager) {
         this.stateManager = stateManager;
         this.isInitialized = false;
+        
+        // 🔧 無効化フラグチェック
+        this.enabled = UI_MODULE_CONFIG.ENABLED;
+        this.rightPaneEnabled = UI_MODULE_CONFIG.RIGHT_PANE_UPDATES;
+        this.statusDisplayEnabled = UI_MODULE_CONFIG.STATUS_DISPLAY;
+        
+        if (!this.enabled) {
+            console.log('🚫 UIModule: システムが無効化されています');
+        }
         
         // UI状態
         this.state = {
@@ -53,6 +72,12 @@ class UIModule {
     // =================================================================================
     
     async initialize() {
+        // 🔧 無効化チェック
+        if (!this.enabled) {
+            console.log('🚫 UIModule: 無効化により初期化をスキップ');
+            return false;
+        }
+        
         if (this.isInitialized) return true;
         
         try {
@@ -80,28 +105,56 @@ class UIModule {
         }
     }
     
-    detectScreenSize() {
-        const width = window.innerWidth;
-        
-        if (width < 768) {
-            this.updateState({
-                isMobile: true,
-                screenSize: 'mobile'
-            });
-        } else if (width < 1024) {
-            this.updateState({
-                isMobile: false,
-                screenSize: 'tablet'
-            });
-        } else {
-            this.updateState({
-                isMobile: false,
-                screenSize: 'desktop'
-            });
-        }
+    // =================================================================================
+    // 手動制御メソッド
+    // =================================================================================
+    
+    enable() {
+        this.enabled = true;
+        console.log('✅ UIModule: システムを有効化');
+        return this;
     }
     
+    disable() {
+        this.enabled = false;
+        console.log('🚫 UIModule: システムを無効化');
+        this.cleanup();
+        return this;
+    }
+    
+    enableRightPane() {
+        this.rightPaneEnabled = true;
+        console.log('✅ UIModule: 右ペイン更新を有効化');
+        return this;
+    }
+    
+    disableRightPane() {
+        this.rightPaneEnabled = false;
+        console.log('🚫 UIModule: 右ペイン更新を無効化');
+        return this;
+    }
+    
+    cleanup() {
+        // UI要素の削除
+        Object.values(this.elements).forEach(element => {
+            if (element && element.parentNode) {
+                element.parentNode.removeChild(element);
+            }
+        });
+        this.elements = {};
+        
+        this.isInitialized = false;
+        console.log('🧹 UIModule: クリーンアップ完了');
+    }
+    
+    // =================================================================================
+    // UI要素の作成
+    // =================================================================================
+    
     createUIElements() {
+        // 🔧 無効化チェック
+        if (!this.enabled) return;
+        
         // 状態表示パネルの作成
         this.createStatusDisplay();
         
@@ -115,6 +168,9 @@ class UIModule {
     }
     
     createStatusDisplay() {
+        // 🔧 無効化チェック
+        if (!this.enabled || !this.statusDisplayEnabled) return;
+        
         // 既存の要素をチェック
         let statusContainer = document.getElementById('unified-status-display');
         
@@ -159,6 +215,9 @@ class UIModule {
     }
     
     createUserGuidance() {
+        // 🔧 無効化チェック
+        if (!this.enabled) return;
+        
         // 既存の要素をチェック
         let guidanceContainer = document.getElementById('user-guidance-display');
         
@@ -225,6 +284,9 @@ class UIModule {
     // =================================================================================
     
     updateDisplay() {
+        // 🔧 無効化チェック
+        if (!this.enabled) return;
+        
         this.updateStatusDisplay();
         this.updateUserGuidance();
         this.updateNotifications();
@@ -521,6 +583,9 @@ class UIModule {
     // =================================================================================
     
     updateState(updates) {
+        // 🔧 無効化チェック
+        if (!this.enabled) return;
+        
         Object.assign(this.state, updates);
         this.stateManager.updateState('ui', this.state);
     }
@@ -530,6 +595,9 @@ class UIModule {
     }
     
     handleStateChange(event) {
+        // 🔧 無効化チェック
+        if (!this.enabled) return;
+        
         // 状態変更に応じてUIを更新
         this.updateDisplay();
     }
@@ -546,7 +614,29 @@ class UIModule {
             elementsCreated: Object.keys(this.elements).filter(key => this.elements[key]).length
         };
     }
+
+    // =================================================================================
+    // デバッグメソッド
+    // =================================================================================
+    
+    debugStatus() {
+        const status = {
+            enabled: this.enabled,
+            rightPaneEnabled: this.rightPaneEnabled,
+            statusDisplayEnabled: this.statusDisplayEnabled,
+            isInitialized: this.isInitialized,
+            elementsCreated: Object.keys(this.elements).length,
+            config: UI_MODULE_CONFIG
+        };
+        
+        console.log('🔍 UIModule - 状況:', status);
+        return status;
+    }
 }
 
-// グローバルエクスポート
-window.UIModule = UIModule; 
+// CommonJS/ESモジュール対応
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = UIModule;
+} else if (typeof window !== 'undefined') {
+    window.UIModule = UIModule;
+} 
