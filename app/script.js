@@ -3939,6 +3939,27 @@ document.addEventListener('DOMContentLoaded', async function() {
     updateSessionStatus('準備中...', '未設定');
     window.updateKnowledgeDisplay();
     
+    // 🔧 Step 3.1: 右ペインセッション状況表示の初期化
+    if (typeof window.initializeRightPaneSessionDisplay === 'function') {
+        try {
+            const rightPaneInitialized = window.initializeRightPaneSessionDisplay();
+            if (rightPaneInitialized) {
+                console.log('✅ 右ペインセッション状況表示初期化完了');
+                // 自動更新を開始
+                if (typeof window.startRightPaneSessionDisplayUpdates === 'function') {
+                    window.startRightPaneSessionDisplayUpdates();
+                    console.log('✅ 右ペインセッション状況表示自動更新開始');
+                }
+            } else {
+                console.warn('⚠️ 右ペインセッション状況表示初期化失敗');
+            }
+        } catch (error) {
+            console.error('❌ 右ペインセッション状況表示初期化エラー:', error);
+        }
+    } else {
+        console.warn('⚠️ 右ペインセッション状況表示関数が見つかりません');
+    }
+    
     // 🎯 新機能: 音声ベース知見評価設定初期化
     loadKnowledgeSettings();
     updateKnowledgeSettingsDisplay();

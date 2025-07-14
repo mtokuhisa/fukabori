@@ -4,10 +4,11 @@
 
 // 🔧 SYSTEM CONTROL FLAGS - システム制御フラグ
 const VOICE_UI_MANAGER_CONFIG = {
-    ENABLED: false,  // 🚫 VoiceUIManager機能を無効化
+    ENABLED: true,  // ✅ VoiceUIManager機能を有効化（音声認識継続処理のため）
     AUTO_INITIALIZE: false,  // 🚫 自動初期化を無効化
     MANUAL_ONLY: true,  // ✅ 手動初期化のみ許可
     FIXED_POSITION: false,  // 🚫 固定位置表示を無効化
+    UI_DISPLAY: false,  // 🚫 UI表示を無効化（新設）
     DEBUG_MODE: false
 };
 
@@ -31,12 +32,15 @@ class VoiceUIManager {
         this.enabled = VOICE_UI_MANAGER_CONFIG.ENABLED;
         this.autoInitialize = VOICE_UI_MANAGER_CONFIG.AUTO_INITIALIZE;
         this.fixedPosition = VOICE_UI_MANAGER_CONFIG.FIXED_POSITION;
+        this.uiDisplay = VOICE_UI_MANAGER_CONFIG.UI_DISPLAY;  // 🔧 UI表示制御
         
         if (!this.enabled) {
             console.log('🚫 VoiceUIManager: システムが無効化されています');
+        } else if (!this.uiDisplay) {
+            console.log('🎨 VoiceUIManager: UI表示のみ無効化 - 音声認識継続処理は有効');
         }
         
-        console.log('🎨 VoiceUIManager初期化完了 - 無効化状態:', !this.enabled);
+        console.log('🎨 VoiceUIManager初期化完了 - UI表示:', this.uiDisplay, '音声処理:', this.enabled);
     }
 
     // =================================================================================
@@ -48,6 +52,13 @@ class VoiceUIManager {
         if (!this.enabled) {
             console.log('🚫 VoiceUIManager: 無効化により初期化をスキップ');
             return false;
+        }
+        
+        // 🔧 UI表示が無効化されている場合はUI初期化をスキップ
+        if (!this.uiDisplay) {
+            console.log('🎨 VoiceUIManager: UI表示無効化 - UI初期化をスキップ');
+            this.isInitialized = true;  // 音声処理機能のみ有効化
+            return true;
         }
         
         if (this.isInitialized) {
@@ -450,14 +461,31 @@ class VoiceUIManager {
     // 公開メソッド
     // =================================================================================
     
-    // 手動一時停止フラグの取得
+    // 音声認識継続処理サポート機能（UI表示無効化時も動作）
     isUserPausedManually() {
+        // 🔧 UI表示が無効化されていてもこの機能は提供
+        if (!this.enabled) {
+            console.log('🚫 VoiceUIManager: システム無効化により手動一時停止チェック不可');
+            return false;
+        }
+        
+        // UI表示無効化時は常にfalse（手動一時停止なし）
+        if (!this.uiDisplay) {
+            return false;
+        }
+        
         return this.userPausedManually;
     }
-    
-    // 手動一時停止フラグのリセット
+
     resetUserPauseFlag() {
+        // 🔧 UI表示が無効化されていてもこの機能は提供
+        if (!this.enabled) {
+            console.log('🚫 VoiceUIManager: システム無効化により手動一時停止リセット不可');
+            return;
+        }
+        
         this.userPausedManually = false;
+        console.log('🔄 手動一時停止フラグをリセット');
     }
 }
 

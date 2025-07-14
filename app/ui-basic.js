@@ -20,6 +20,257 @@
 // 
 // =================================================================================
 
+// 🔧 RIGHT PANE SESSION DISPLAY - 右ペインセッション状況表示機能
+// Step 3.1: 既存UIManagerを使用した右ペインセッション状況表示の実装
+// 内部管理v0.8.0.5
+
+/**
+ * 右ペインセッション状況表示の初期化
+ */
+function initializeRightPaneSessionDisplay() {
+    const statusPanel = document.querySelector('.status-panel');
+    if (!statusPanel) {
+        console.warn('⚠️ 右ペイン(.status-panel)が見つかりません');
+        return false;
+    }
+    
+    // 既存のセッション状況セクションを確認
+    const existingSessionStatus = document.getElementById('sessionStatus');
+    if (existingSessionStatus) {
+        console.log('✅ 既存のセッション状況セクションを拡張します');
+        
+        // 既存の要素に新しいIDを追加して機能を拡張
+        const sessionState = document.getElementById('sessionState');
+        const sessionPhase = document.getElementById('sessionPhase');
+        const sessionDuration = document.getElementById('sessionDuration');
+        const currentTheme = document.getElementById('currentTheme');
+        
+        // 既存の要素を右ペイン用の要素として活用
+        if (sessionState) sessionState.id = 'rightPaneSystemStatus';
+        if (sessionPhase) sessionPhase.id = 'rightPaneSessionPhase';
+        if (sessionDuration) sessionDuration.id = 'rightPaneSessionDuration';
+        if (currentTheme) currentTheme.id = 'rightPaneCurrentTheme';
+        
+        // 不足している要素を追加
+        const sessionGrid = existingSessionStatus.querySelector('.session-info-grid');
+        if (sessionGrid) {
+            // 音声認識状態と知見数を追加
+            const voiceStatusHTML = `
+                <div class="session-item">
+                    <span class="session-label">🎤 音声認識:</span>
+                    <span class="session-value" id="rightPaneVoiceStatus">待機中</span>
+                </div>
+                <div class="session-item">
+                    <span class="session-label">💡 知見数:</span>
+                    <span class="session-value" id="rightPaneKnowledgeCount">0件</span>
+                </div>
+            `;
+            sessionGrid.insertAdjacentHTML('beforeend', voiceStatusHTML);
+        }
+        
+        // 既存の要素のIDを復元（重複ID問題を解決）
+        if (sessionState) sessionState.id = 'sessionState';
+        if (sessionPhase) sessionPhase.id = 'sessionPhase';
+        if (sessionDuration) sessionDuration.id = 'sessionDuration';
+        if (currentTheme) currentTheme.id = 'currentTheme';
+        
+        console.log('✅ 既存セッション状況セクションを拡張しました');
+        return true;
+    }
+    
+    // 既存のセッション状況がない場合は新規作成
+    const sessionDisplayHTML = `
+        <div class="status-section">
+            <div class="status-title">📊 セッション状況</div>
+            <div class="status-content" id="sessionStatus">
+                <div class="session-info-grid">
+                    <div class="session-item">
+                        <span class="session-label">🎯 テーマ:</span>
+                        <span class="session-value" id="rightPaneCurrentTheme">未設定</span>
+                    </div>
+                    <div class="session-item">
+                        <span class="session-label">📈 進行状況:</span>
+                        <span class="session-value" id="rightPaneSessionPhase">セットアップ</span>
+                    </div>
+                    <div class="session-item">
+                        <span class="session-label">💡 知見数:</span>
+                        <span class="session-value" id="rightPaneKnowledgeCount">0件</span>
+                    </div>
+                    <div class="session-item">
+                        <span class="session-label">🎤 音声認識:</span>
+                        <span class="session-value" id="rightPaneVoiceStatus">待機中</span>
+                    </div>
+                    <div class="session-item">
+                        <span class="session-label">⏱️ 経過時間:</span>
+                        <span class="session-value" id="rightPaneSessionDuration">00:00</span>
+                    </div>
+                    <div class="session-item">
+                        <span class="session-label">🔄 システム状態:</span>
+                        <span class="session-value" id="rightPaneSystemStatus">準備中</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 右ペインの適切な位置に挿入
+    const knowledgeSettingsSection = statusPanel.querySelector('.status-section');
+    if (knowledgeSettingsSection) {
+        knowledgeSettingsSection.insertAdjacentHTML('beforebegin', sessionDisplayHTML);
+    } else {
+        statusPanel.insertAdjacentHTML('beforeend', sessionDisplayHTML);
+    }
+    
+    console.log('✅ 右ペインセッション状況表示を初期化しました');
+    return true;
+}
+
+/**
+ * 右ペインセッション状況表示の切り替え
+ */
+function toggleRightPaneSessionDisplay() {
+    const content = document.getElementById('sessionStatusContent');
+    const toggle = document.querySelector('.session-status-toggle .toggle-icon');
+    
+    if (content && toggle) {
+        const isHidden = content.style.display === 'none';
+        content.style.display = isHidden ? 'block' : 'none';
+        toggle.textContent = isHidden ? '▼' : '▲';
+        console.log(`✅ 右ペインセッション表示を${isHidden ? '展開' : '折りたたみ'}しました`);
+    }
+}
+
+/**
+ * 右ペインセッション状況表示のスタイル注入
+ */
+function injectRightPaneSessionStyles() {
+    const styleId = 'rightPaneSessionStyles';
+    if (document.getElementById(styleId)) return;
+    
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+        .session-status-display {
+            background: var(--glass-bg, rgba(255, 255, 255, 0.9));
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.2));
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .session-status-display:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .session-status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: var(--primary-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            color: white;
+            font-weight: 600;
+        }
+        
+        .session-status-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .session-status-toggle {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .session-status-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .session-status-content {
+            padding: 20px;
+        }
+        
+        .session-info-grid {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .session-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .session-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary, #666);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .session-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary, #333);
+            padding: 8px 12px;
+            background: var(--input-bg, #f8f9fa);
+            border-radius: 8px;
+            border: 1px solid var(--input-border, #e9ecef);
+            transition: all 0.2s ease;
+        }
+        
+        .session-value.active {
+            background: var(--success-light, #d4edda);
+            border-color: var(--success, #28a745);
+            color: var(--success-dark, #155724);
+        }
+        
+        .session-value.warning {
+            background: var(--warning-light, #fff3cd);
+            border-color: var(--warning, #ffc107);
+            color: var(--warning-dark, #856404);
+        }
+        
+        .session-value.error {
+            background: var(--danger-light, #f8d7da);
+            border-color: var(--danger, #dc3545);
+            color: var(--danger-dark, #721c24);
+        }
+        
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            .session-status-display {
+                margin-bottom: 15px;
+            }
+            
+            .session-status-header {
+                padding: 12px 15px;
+            }
+            
+            .session-status-content {
+                padding: 15px;
+            }
+            
+            .session-info-grid {
+                gap: 12px;
+            }
+        }
+    `;
+    
+    document.head.appendChild(style);
+}
+
 /**
  * セッション状況とテーマ表示を更新
  */
@@ -30,6 +281,9 @@ function updateSessionStatus(status, theme) {
     
     // 新しいセッション状況表示の更新
     updateDetailedSessionStatus(status, theme);
+    
+    // 🔧 右ペインセッション状況表示の更新
+    updateRightPaneSessionDisplay(status, theme);
     
     if (sessionStatus) {
         sessionStatus.textContent = status;
@@ -294,6 +548,161 @@ function updateVoiceCommandsDisplay() {
         console.log('✅ 音声コマンド表示更新完了');
     }
 }
+
+/**
+ * 右ペインセッション状況表示の更新
+ */
+function updateRightPaneSessionDisplay(status, theme) {
+    // 既存のHTML要素を使用
+    const rightPaneTheme = document.getElementById('currentTheme');
+    const rightPanePhase = document.getElementById('sessionPhase');
+    const rightPaneKnowledgeCount = document.getElementById('rightPaneKnowledgeCount');
+    const rightPaneVoiceStatus = document.getElementById('rightPaneVoiceStatus');
+    const rightPaneDuration = document.getElementById('sessionDuration');
+    const rightPaneSystemStatus = document.getElementById('sessionState');
+    
+    // テーマの更新
+    if (rightPaneTheme) {
+        const themeText = theme || '未設定';
+        rightPaneTheme.textContent = themeText;
+        rightPaneTheme.className = 'session-value';
+        if (theme) {
+            rightPaneTheme.classList.add('active');
+        }
+    }
+    
+    // フェーズの更新
+    if (rightPanePhase) {
+        const currentPhase = window.AppState?.sessionPhase || 'setup';
+        const phaseNames = {
+            'setup': 'セットアップ',
+            'warmup': 'ウォームアップ',
+            'deepdive': '深掘り',
+            'summary': 'まとめ',
+            'completed': '完了'
+        };
+        
+        rightPanePhase.textContent = phaseNames[currentPhase] || 'セットアップ';
+        rightPanePhase.className = 'session-value';
+        if (currentPhase !== 'setup') {
+            rightPanePhase.classList.add('active');
+        }
+    }
+    
+    // 知見数の更新
+    if (rightPaneKnowledgeCount) {
+        const knowledgeCount = window.AppState?.knowledgeItems?.length || 0;
+        rightPaneKnowledgeCount.textContent = `${knowledgeCount}件`;
+        rightPaneKnowledgeCount.className = 'session-value';
+        if (knowledgeCount > 0) {
+            rightPaneKnowledgeCount.classList.add('active');
+        }
+    }
+    
+    // 音声認識状態の更新
+    if (rightPaneVoiceStatus) {
+        const voiceStatus = getVoiceRecognitionStatus();
+        rightPaneVoiceStatus.textContent = voiceStatus;
+        rightPaneVoiceStatus.className = 'session-value';
+        if (voiceStatus === '認識中' || voiceStatus === 'アクティブ') {
+            rightPaneVoiceStatus.classList.add('active');
+        } else if (voiceStatus === '一時停止中') {
+            rightPaneVoiceStatus.classList.add('warning');
+        } else if (voiceStatus === 'エラー') {
+            rightPaneVoiceStatus.classList.add('error');
+        }
+    }
+    
+    // 経過時間の更新
+    if (rightPaneDuration) {
+        const duration = calculateSessionDuration();
+        rightPaneDuration.textContent = duration;
+        rightPaneDuration.className = 'session-value';
+        if (duration !== '00:00') {
+            rightPaneDuration.classList.add('active');
+        }
+    }
+    
+    // システム状態の更新
+    if (rightPaneSystemStatus) {
+        rightPaneSystemStatus.textContent = status || '準備中';
+        rightPaneSystemStatus.className = 'session-value';
+        if (status === 'アクティブ' || status === '認識中') {
+            rightPaneSystemStatus.classList.add('active');
+        } else if (status === '一時停止中') {
+            rightPaneSystemStatus.classList.add('warning');
+        } else if (status === 'エラー') {
+            rightPaneSystemStatus.classList.add('error');
+        }
+    }
+}
+
+/**
+ * 音声認識状態の取得
+ */
+function getVoiceRecognitionStatus() {
+    try {
+        if (window.unifiedStateManager) {
+            const voiceModule = window.unifiedStateManager.getModule('voice');
+            if (voiceModule) {
+                const state = voiceModule.getState();
+                if (state.isRecognizing) return '認識中';
+                if (state.isListening) return 'アクティブ';
+                if (state.isPaused) return '一時停止中';
+                if (state.hasError) return 'エラー';
+            }
+        }
+        
+        // VoiceUIManagerからの状態取得
+        if (window.voiceUIManager && window.voiceUIManager.isUserPausedManually) {
+            if (window.voiceUIManager.isUserPausedManually()) {
+                return '一時停止中';
+            }
+        }
+        
+        return '待機中';
+    } catch (error) {
+        console.warn('⚠️ 音声認識状態の取得に失敗:', error);
+        return '不明';
+    }
+}
+
+/**
+ * 右ペインセッション状況表示の自動更新を開始
+ */
+function startRightPaneSessionDisplayUpdates() {
+    // 既存の更新間隔があれば停止
+    if (window.rightPaneUpdateInterval) {
+        clearInterval(window.rightPaneUpdateInterval);
+    }
+    
+    // 5秒間隔で更新
+    window.rightPaneUpdateInterval = setInterval(() => {
+        const currentStatus = window.AppState?.sessionStatus || '準備中';
+        const currentTheme = window.AppState?.currentTheme || null;
+        updateRightPaneSessionDisplay(currentStatus, currentTheme);
+    }, 5000);
+    
+    console.log('✅ 右ペインセッション状況表示の自動更新を開始しました');
+}
+
+/**
+ * 右ペインセッション状況表示の自動更新を停止
+ */
+function stopRightPaneSessionDisplayUpdates() {
+    if (window.rightPaneUpdateInterval) {
+        clearInterval(window.rightPaneUpdateInterval);
+        window.rightPaneUpdateInterval = null;
+        console.log('✅ 右ペインセッション状況表示の自動更新を停止しました');
+    }
+}
+
+// グローバル関数として公開
+window.initializeRightPaneSessionDisplay = initializeRightPaneSessionDisplay;
+window.toggleRightPaneSessionDisplay = toggleRightPaneSessionDisplay;
+window.updateRightPaneSessionDisplay = updateRightPaneSessionDisplay;
+window.startRightPaneSessionDisplayUpdates = startRightPaneSessionDisplayUpdates;
+window.stopRightPaneSessionDisplayUpdates = stopRightPaneSessionDisplayUpdates;
 
 // =================================================================================
 // UI BASIC OBJECT - UIBasicオブジェクト
