@@ -734,22 +734,21 @@ body {
     line-height: 1.5;
 }
 
-/* 🎨 リアルタイム音声認識パネル - Step 2で有効化 */
+/* 🚫 独立したリアルタイム音声認識パネルを無効化 - 新しい統合バーを使用 */
 .transcript-panel {
+    display: none !important; /* ポップアップ表示を完全に無効化 */
     position: fixed;
     bottom: 140px; /* VoiceUIManagerの上に配置 */
     left: 50%;
     transform: translateX(-50%);
     width: 90%;
     max-width: 800px;
-    max-height: 200px; /* 高さ制限を追加 */
     z-index: 900; /* VoiceUIManagerより低い */
     border-radius: 15px;
     backdrop-filter: blur(10px);
     background: rgba(255, 255, 255, 0.95);
     border: 2px solid rgba(255, 255, 255, 0.8);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-    overflow-y: auto; /* スクロール可能にする */
 }
 
 /* 🎨 新デザイン要件: transcript-panelの非表示制御 */

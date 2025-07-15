@@ -856,8 +856,6 @@
                     <!-- メッセージがここに追加される -->
                 </div>
 
-                <!-- 🎯 Step 1: 新しいtranscript-display（transcript-panelに統合済み） -->
-
                 <!-- 音声コントロール -->
                 <div class="voice-controls">
                     <!-- 音声状態表示（左端） -->
@@ -981,7 +979,7 @@
         </div>
 
         <!-- 🎨 新デザイン要件: リアルタイム音声認識表示（独立パネル） -->
-        <div class="transcript-panel glass-panel" id="transcriptPanel">
+        <div class="transcript-panel glass-panel hidden" id="transcriptPanel">
             <div class="transcript-display" id="transcriptDisplay">
                 音声認識待機中...（「どうぞ」と言うとAIが応答します）
             </div>

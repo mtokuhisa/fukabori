@@ -244,166 +244,25 @@ function updateKnowledgeDisplay() {
  */
 function updateTranscriptDisplay() {
     const transcriptArea = window.UIManager.DOMUtils.get('transcriptArea');
-    const transcriptDisplay = window.UIManager.DOMUtils.get('transcriptDisplay');
     const microphoneButton = window.UIManager.DOMUtils.get('microphoneButton');
     
-    // 表示テキストを決定
-    let displayText = '';
-    
-    if (AppState.currentSpeaker !== SPEAKERS.NULL) {
-        displayText = `🎤 ${AppState.currentSpeaker}が話しています...`;
-    } else if (AppState.finalTranscript) {
-        displayText = `💬 ${AppState.finalTranscript}`;
-    } else if (AppState.interimTranscript) {
-        displayText = `📝 ${AppState.interimTranscript}`;
-    } else {
-        displayText = '🎙️ 音声認識待機中...';
-    }
-    
-    // 既存のtranscriptArea更新
     if (transcriptArea) {
-        transcriptArea.textContent = displayText;
-    }
-    
-    // 新しいtranscriptDisplay更新（Step 2で追加）
-    if (transcriptDisplay) {
-        transcriptDisplay.textContent = displayText;
+        let displayText = '';
         
-        // 🎯 自動スクロール機能
-        const transcriptPanel = window.UIManager.DOMUtils.get('transcriptPanel');
-        if (transcriptPanel) {
-            transcriptPanel.scrollTop = transcriptPanel.scrollHeight;
+        if (AppState.currentSpeaker !== SPEAKERS.NULL) {
+            displayText = `🎤 ${AppState.currentSpeaker}が話しています...`;
+        } else if (AppState.finalTranscript) {
+            displayText = `💬 ${AppState.finalTranscript}`;
+        } else if (AppState.interimTranscript) {
+            displayText = `📝 ${AppState.interimTranscript}`;
+        } else {
+            displayText = '🎙️ 音声認識待機中...';
         }
+        
+        transcriptArea.textContent = displayText;
+        console.log(`✅ 音声認識表示更新: ${displayText.substring(0, 30)}...`);
     }
-    
-    console.log(`✅ 音声認識表示更新: ${displayText.substring(0, 30)}...`);
 }
-
-/**
- * 🎯 Step 2: 長いユーザー発言のテスト用関数
- */
-function testLongUtteranceDisplay() {
-    const transcriptDisplay = window.UIManager.DOMUtils.get('transcriptDisplay');
-    const transcriptPanel = window.UIManager.DOMUtils.get('transcriptPanel');
-    
-    if (!transcriptDisplay || !transcriptPanel) {
-        console.error('❌ transcript-display要素が見つかりません');
-        return;
-    }
-    
-    // 長い発言のテスト
-    const longText = `📝 これは非常に長いユーザー発言のテストです。音声認識システムが長い発言を適切に処理できるかをテストしています。スクロール機能が正常に動作するかを確認します。`.repeat(10);
-    
-    transcriptDisplay.textContent = longText;
-    
-    // 自動スクロール実行
-    transcriptPanel.scrollTop = transcriptPanel.scrollHeight;
-    
-    console.log('✅ 長いユーザー発言テスト完了');
-    console.log(`📏 テキスト長: ${longText.length}文字`);
-    console.log(`📜 スクロール位置: ${transcriptPanel.scrollTop}px`);
-}
-
-// グローバルエクスポート
-window.testLongUtteranceDisplay = testLongUtteranceDisplay;
-
-/**
- * 🎯 Step 2: 既存システムとの共存確認テスト
- */
-function testCoexistenceVerification() {
-    const transcriptDisplay = window.UIManager.DOMUtils.get('transcriptDisplay');
-    const transcriptPanel = window.UIManager.DOMUtils.get('transcriptPanel');
-    const transcriptCompact = window.UIManager.DOMUtils.get('transcriptCompact');
-    const transcriptArea = window.UIManager.DOMUtils.get('transcriptArea');
-    
-    console.log('🔍 Step 2 共存確認テスト開始');
-    
-    // 新システムチェック
-    if (transcriptDisplay && transcriptPanel) {
-        console.log('✅ 新システム (transcript-display): 利用可能');
-        console.log(`📏 Panel表示状態: ${transcriptPanel.style.display || 'visible'}`);
-        console.log(`📝 Display内容: ${transcriptDisplay.textContent.substring(0, 30)}...`);
-    } else {
-        console.error('❌ 新システム (transcript-display): 利用不可');
-    }
-    
-    // 既存システムチェック
-    if (transcriptCompact) {
-        console.log('✅ 既存システム (transcript-compact): 利用可能');
-        console.log(`📝 Compact内容: ${transcriptCompact.textContent.substring(0, 30)}...`);
-    } else {
-        console.log('⚠️ 既存システム (transcript-compact): 見つかりません');
-    }
-    
-    if (transcriptArea) {
-        console.log('✅ 既存システム (transcript-area): 利用可能');
-        console.log(`📝 Area内容: ${transcriptArea.textContent.substring(0, 30)}...`);
-    } else {
-        console.log('⚠️ 既存システム (transcript-area): 見つかりません');
-    }
-    
-    // テスト更新実行
-    console.log('🔄 updateTranscriptDisplay()を実行してテスト');
-    updateTranscriptDisplay();
-    
-    console.log('🎯 Step 2 共存確認テスト完了');
-}
-
-// グローバルエクスポート
-window.testCoexistenceVerification = testCoexistenceVerification;
-
-/**
- * 🎯 Step 2: 包括的統合テスト（開発者用）
- */
-function runStep2ComprehensiveTest() {
-    console.log('🧪 ===== Step 2 包括的統合テスト開始 =====');
-    
-    // 1. HTML構造確認
-    console.log('\n1️⃣ HTML構造確認');
-    const transcriptDisplay = document.getElementById('transcriptDisplay');
-    const transcriptPanel = document.getElementById('transcriptPanel');
-    const transcriptCompact = document.getElementById('transcriptCompact');
-    
-    console.log(`✅ transcriptDisplay: ${transcriptDisplay ? '存在' : '❌ 不存在'}`);
-    console.log(`✅ transcriptPanel: ${transcriptPanel ? '存在' : '❌ 不存在'}`);
-    console.log(`✅ transcriptCompact: ${transcriptCompact ? '存在' : '❌ 不存在'}`);
-    
-    // 2. CSS表示確認
-    console.log('\n2️⃣ CSS表示確認');
-    if (transcriptPanel) {
-        const style = window.getComputedStyle(transcriptPanel);
-        console.log(`📏 position: ${style.position}`);
-        console.log(`📏 display: ${style.display}`);
-        console.log(`📏 bottom: ${style.bottom}`);
-        console.log(`📏 max-height: ${style.maxHeight}`);
-        console.log(`📏 overflow-y: ${style.overflowY}`);
-    }
-    
-    // 3. JavaScript機能確認
-    console.log('\n3️⃣ JavaScript機能確認');
-    console.log('🔄 updateTranscriptDisplay()テスト実行中...');
-    updateTranscriptDisplay();
-    
-    // 4. 長いテキストテスト
-    console.log('\n4️⃣ 長いテキストテスト');
-    testLongUtteranceDisplay();
-    
-    // 5. 共存確認テスト
-    console.log('\n5️⃣ 共存確認テスト');
-    testCoexistenceVerification();
-    
-    // 6. 緊急機能確認
-    console.log('\n6️⃣ 緊急機能確認');
-    console.log(`🚨 emergencyRollback: ${typeof window.emergencyRollback === 'function' ? '利用可能' : '❌ 不可'}`);
-    console.log(`🔄 switchToNewTranscript: ${typeof window.switchToNewTranscript === 'function' ? '利用可能' : '❌ 不可'}`);
-    
-    console.log('\n🎯 ===== Step 2 包括的統合テスト完了 =====');
-    console.log('✅ 新しいtranscript-displayシステムが有効化されました！');
-    console.log('📝 テスト方法: 音声認識を開始して、新しいパネルの動作を確認してください。');
-}
-
-// グローバルエクスポート
-window.runStep2ComprehensiveTest = runStep2ComprehensiveTest;
 
 /**
  * マイクボタンの状態を更新
