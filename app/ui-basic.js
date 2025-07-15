@@ -45,6 +45,14 @@ function initializeRightPaneSessionDisplay() {
     const existingSessionDuration = document.getElementById('sessionDuration');
     const existingCurrentTheme = document.getElementById('currentTheme');
     
+    // デバッグ情報を追加
+    console.log('🔍 セッション状況表示要素チェック:', {
+        sessionState: !!existingSessionState,
+        sessionPhase: !!existingSessionPhase,
+        sessionDuration: !!existingSessionDuration,
+        currentTheme: !!existingCurrentTheme
+    });
+    
     if (existingSessionState && existingSessionPhase && existingSessionDuration && existingCurrentTheme) {
         console.log('✅ 既存のセッション状況表示要素を発見しました');
         
@@ -60,6 +68,21 @@ function initializeRightPaneSessionDisplay() {
         return true;
     } else {
         console.warn('⚠️ 既存のセッション状況表示要素が見つかりません');
+        console.log('💡 見つからない要素:', {
+            sessionState: !existingSessionState,
+            sessionPhase: !existingSessionPhase,
+            sessionDuration: !existingSessionDuration,
+            currentTheme: !existingCurrentTheme
+        });
+        
+        // エラーハンドリング: 部分的な初期化
+        window.rightPaneElements = {
+            sessionState: existingSessionState,
+            sessionPhase: existingSessionPhase,
+            sessionDuration: existingSessionDuration,
+            currentTheme: existingCurrentTheme
+        };
+        
         return false;
     }
 }
@@ -406,6 +429,93 @@ function runStep2ComprehensiveTest() {
 window.runStep2ComprehensiveTest = runStep2ComprehensiveTest;
 
 /**
+ * 🎯 transcript-panel 表示強制テスト
+ */
+function forceShowTranscriptPanel() {
+    const transcriptPanel = document.getElementById('transcriptPanel');
+    const transcriptDisplay = document.getElementById('transcriptDisplay');
+    
+    console.log('🔄 transcript-panel 表示強制テスト開始');
+    
+    if (!transcriptPanel) {
+        console.error('❌ transcript-panel 要素が見つかりません');
+        return;
+    }
+    
+    if (!transcriptDisplay) {
+        console.error('❌ transcript-display 要素が見つかりません');
+        return;
+    }
+    
+    // 強制的に表示
+    transcriptPanel.classList.remove('hidden');
+    transcriptPanel.style.display = 'block';
+    transcriptPanel.style.visibility = 'visible';
+    transcriptPanel.style.opacity = '1';
+    
+    // テスト用テキストを設定
+    transcriptDisplay.textContent = '🎯 transcript-panel 表示テスト中... 新しいパネルが正常に表示されています！';
+    
+    console.log('✅ transcript-panel を強制表示しました');
+    console.log('📏 Panel位置:', transcriptPanel.getBoundingClientRect());
+    console.log('🎨 Panel表示状態:', {
+        display: transcriptPanel.style.display,
+        visibility: transcriptPanel.style.visibility,
+        opacity: transcriptPanel.style.opacity,
+        classList: Array.from(transcriptPanel.classList)
+    });
+}
+
+// グローバルエクスポート
+window.forceShowTranscriptPanel = forceShowTranscriptPanel;
+
+/**
+ * 🎯 キャラクターアバターグラデーション効果テスト
+ */
+function testCharacterAvatarGradients() {
+    console.log('🧪 キャラクターアバターグラデーション効果テスト開始');
+    
+    const nehoriAvatar = document.getElementById('nehoriAvatar');
+    const hahoriAvatar = document.getElementById('hahoriAvatar');
+    
+    if (!nehoriAvatar) {
+        console.error('❌ nehoriAvatar 要素が見つかりません');
+        return;
+    }
+    
+    if (!hahoriAvatar) {
+        console.error('❌ hahoriAvatar 要素が見つかりません');
+        return;
+    }
+    
+    console.log('✅ 両方のアバター要素を確認しました');
+    
+    // テスト1: ねほりーのグラデーション
+    console.log('🔄 テスト1: ねほりーのグラデーション効果');
+    nehoriAvatar.classList.add('speaking');
+    hahoriAvatar.classList.remove('speaking');
+    
+    setTimeout(() => {
+        // テスト2: はほりーのグラデーション
+        console.log('🔄 テスト2: はほりーのグラデーション効果');
+        nehoriAvatar.classList.remove('speaking');
+        hahoriAvatar.classList.add('speaking');
+        
+        setTimeout(() => {
+            // テスト3: 両方のグラデーション解除
+            console.log('🔄 テスト3: 両方のグラデーション解除');
+            nehoriAvatar.classList.remove('speaking');
+            hahoriAvatar.classList.remove('speaking');
+            
+            console.log('✅ キャラクターアバターグラデーション効果テスト完了');
+        }, 2000);
+    }, 2000);
+}
+
+// グローバルエクスポート
+window.testCharacterAvatarGradients = testCharacterAvatarGradients;
+
+/**
  * マイクボタンの状態を更新
  */
 function updateMicrophoneButton() {
@@ -517,7 +627,13 @@ function updateRightPaneSessionDisplay(status, theme) {
     const elements = window.rightPaneElements;
     if (!elements) {
         console.warn('⚠️ 右ペインセッション状況表示要素が初期化されていません');
-        return;
+        // 緊急初期化を試行
+        if (initializeRightPaneSessionDisplay()) {
+            console.log('✅ 緊急初期化が成功しました');
+        } else {
+            console.log('❌ 緊急初期化も失敗しました');
+            return;
+        }
     }
     
     // テーマの更新
@@ -794,16 +910,28 @@ class RightPanelBackgroundManager {
     updateBackgroundForSpeaker(speaker) {
         if (!this.statusPanel) return;
 
+        // キャラクター画像要素を取得
+        const nehoriAvatar = document.getElementById('nehoriAvatar');
+        const hahoriAvatar = document.getElementById('hahoriAvatar');
+
         // 既存のスピーカークラスを削除
         this.statusPanel.classList.remove('speaker-nehori', 'speaker-hahori', 'speaker-user');
+        
+        // 🎨 キャラクター画像のspeakingクラスを削除
+        if (nehoriAvatar) nehoriAvatar.classList.remove('speaking');
+        if (hahoriAvatar) hahoriAvatar.classList.remove('speaking');
 
         // 新しいスピーカークラスを追加
         if (speaker === window.SPEAKERS?.NEHORI) {
             this.statusPanel.classList.add('speaker-nehori');
-            console.log('🎨 右パネル背景変化: ねほりーの発話');
+            // 🎨 ねほりーの画像に縦長丸グラデーション効果を追加
+            if (nehoriAvatar) nehoriAvatar.classList.add('speaking');
+            console.log('🎨 右パネル背景変化: ねほりーの発話（縦長丸グラデーション）');
         } else if (speaker === window.SPEAKERS?.HAHORI) {
             this.statusPanel.classList.add('speaker-hahori');
-            console.log('🎨 右パネル背景変化: はほりーの発話');
+            // 🎨 はほりーの画像に縦長丸グラデーション効果を追加
+            if (hahoriAvatar) hahoriAvatar.classList.add('speaking');
+            console.log('🎨 右パネル背景変化: はほりーの発話（縦長丸グラデーション）');
         } else if (speaker === window.SPEAKERS?.USER) {
             this.statusPanel.classList.add('speaker-user');
             console.log('🎨 右パネル背景変化: ユーザー発話');
@@ -1015,13 +1143,13 @@ function initializeVoiceStateDisplay() {
     updateRealtimeTranscript('');
     
             // 統合状態管理システムとの連携
-        if (window.UnifiedStateManager) {
+        if (window.unifiedStateManager) {
             try {
                 // 音声認識状態の監視
                 const checkVoiceState = () => {
                     try {
                         // 正しいAPIを使用: getModule('voice')
-                        const voiceModule = window.UnifiedStateManager.getModule('voice');
+                        const voiceModule = window.unifiedStateManager.getModule('voice');
                         if (voiceModule && voiceModule.getState) {
                             const voiceState = voiceModule.getState();
                             if (voiceState.recognitionState) {

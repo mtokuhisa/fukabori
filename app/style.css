@@ -737,13 +737,13 @@ body {
 /* 🎨 リアルタイム音声認識パネル - Step 2で有効化 */
 .transcript-panel {
     position: fixed;
-    bottom: 140px; /* VoiceUIManagerの上に配置 */
+    bottom: 20px; /* より見やすい位置に調整 */
     left: 50%;
     transform: translateX(-50%);
     width: 90%;
     max-width: 800px;
     max-height: 200px; /* 高さ制限を追加 */
-    z-index: 900; /* VoiceUIManagerより低い */
+    z-index: 1500; /* より高いz-indexで確実に表示 */
     border-radius: 15px;
     backdrop-filter: blur(10px);
     background: rgba(255, 255, 255, 0.95);
@@ -755,6 +755,48 @@ body {
 /* 🎨 新デザイン要件: transcript-panelの非表示制御 */
 .transcript-panel.hidden {
     display: none !important;
+}
+
+/* 🎨 キャラクター画像の縦長丸グラデーション効果 */
+.avatar {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.avatar::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 160px;
+    border-radius: 50%;
+    background: transparent;
+    filter: blur(15px);
+    transition: all 0.3s ease;
+    z-index: -1;
+    opacity: 0;
+}
+
+/* ねほりーの話者時の縦長丸グラデーション */
+.avatar.nehori.speaking::before {
+    background: radial-gradient(ellipse 60px 80px at center, 
+        rgba(0, 150, 255, 0.6) 0%,
+        rgba(0, 150, 255, 0.4) 40%,
+        rgba(0, 150, 255, 0.2) 70%,
+        transparent 100%);
+    opacity: 1;
+}
+
+/* はほりーの話者時の縦長丸グラデーション */
+.avatar.hahori.speaking::before {
+    background: radial-gradient(ellipse 60px 80px at center, 
+        rgba(255, 100, 0, 0.6) 0%,
+        rgba(255, 100, 0, 0.4) 40%,
+        rgba(255, 100, 0, 0.2) 70%,
+        transparent 100%);
+    opacity: 1;
 }
 
 .transcript-display {
