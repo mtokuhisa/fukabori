@@ -291,6 +291,12 @@ class VoiceModule {
         // 🔧 既存システムとの互換性：AppStateの更新
         this.updateAppStateTranscript(interimTranscript, finalTranscript);
         
+        // 🎨 新機能: リアルタイム音声認識表示の更新
+        const displayTranscript = interimTranscript || finalTranscript;
+        if (displayTranscript && window.updateRealtimeTranscript) {
+            window.updateRealtimeTranscript(displayTranscript);
+        }
+        
         // 最終結果の場合、外部に通知
         if (finalTranscript) {
             this.notifyListeners('finalResult', {
@@ -460,6 +466,11 @@ class VoiceModule {
         
         // 統一状態管理システムに通知
         this.stateManager.updateState('voice', this.state);
+        
+        // 🎨 新機能: 音声状態表示の更新
+        if (updates.recognitionState && window.updateVoiceStateDisplay) {
+            window.updateVoiceStateDisplay(updates.recognitionState);
+        }
         
         // 状態変更をリスナーに通知
         this.notifyListeners('stateChange', {

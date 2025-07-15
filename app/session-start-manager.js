@@ -126,6 +126,7 @@ const SessionStartManager = {
 
         const setupPanel = window.UIManager.DOMUtils.get('setupPanel');
         const chatArea = window.UIManager.DOMUtils.get('chatArea');
+        const transcriptPanel = window.UIManager.DOMUtils.get('transcriptPanel');
         
         if (setupPanel) {
             setupPanel.classList.add('hidden');
@@ -133,14 +134,31 @@ const SessionStartManager = {
         if (chatArea) {
             chatArea.classList.remove('hidden');
         }
+        // 🎨 新デザイン要件: セッション開始時にtranscript-panelを表示
+        if (transcriptPanel) {
+            transcriptPanel.classList.remove('hidden');
+            console.log('✅ transcript-panelを表示しました');
+        }
+
+        // 🎨 新デザイン要件: 右パネル背景変化管理システムの初期化
+        if (window.UIBasic && window.UIBasic.rightPanel && window.UIBasic.rightPanel.initializeBackgroundManager) {
+            window.UIBasic.rightPanel.initializeBackgroundManager();
+        } else if (window.initializeRightPanelBackgroundManager) {
+            window.initializeRightPanelBackgroundManager();
+        }
+        
+        // 🎨 新機能: 音声状態表示とリアルタイム音声認識の初期化
+        if (window.initializeVoiceStateDisplay) {
+            window.initializeVoiceStateDisplay();
+        }
         
         // 🎨 新UI: メイン画面表示後にVoiceUIManagerを初期化（DOM更新待ち）
-        if (typeof VoiceUIManager !== 'undefined' && window.voiceUIManager) {
+        if (typeof VoiceUIManager !== 'undefined' && window.VoiceUIManager) {
             try {
                 console.log('🎨 メイン画面移行後のVoiceUIManager初期化開始');
                 // DOM更新を待つ
                 await new Promise(resolve => setTimeout(resolve, 100));
-                const voiceUISuccess = await window.voiceUIManager.initialize();
+                const voiceUISuccess = await window.VoiceUIManager.initialize();
                 if (voiceUISuccess) {
                     console.log('✅ メイン画面移行後のVoiceUIManager初期化完了');
                 } else {

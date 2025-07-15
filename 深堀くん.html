@@ -25,9 +25,9 @@
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="assets/fukabori_logo.png">
     
-    <link rel="stylesheet" href="app/style.css?v=0.8.0">
+    <link rel="stylesheet" href="app/style.css?v=0.8.4">
     <!-- 🔧 統一状態管理システム スタイル -->
-    <link rel="stylesheet" href="app/unified-state-manager/styles.css?v=0.8.0">
+    <link rel="stylesheet" href="app/unified-state-manager/styles.css?v=0.8.4">
 </head>
 <body>
     <div class="main-container">
@@ -856,18 +856,22 @@
                     <!-- メッセージがここに追加される -->
                 </div>
 
-                <!-- 音声認識表示 -->
-                <div class="transcript-display" id="transcriptDisplay">
-                    音声認識待機中...（「どうぞ」と言うとAIが応答します）
-                </div>
-
                 <!-- 音声コントロール -->
                 <div class="voice-controls">
-                    <button id="micButton" class="mic-button idle" onclick="toggleMicrophone()">
-                        🎤
-                    </button>
-                    <button class="glass-button" onclick="forceStopAllActivity()">⏹️ 強制停止</button>
+                    <!-- 音声状態表示（左端） -->
+                    <div class="voice-state-compact" id="voiceStateCompact">
+                        <span class="state-icon" id="stateIcon">🎤</span>
+                        <span class="state-text" id="stateText">待機中</span>
+                    </div>
+                    
+                    <!-- 操作ボタン（中央） -->
+                    <button class="glass-button" onclick="forceStopAllActivity()">⏸️ 一時停止</button>
                     <button class="glass-button" onclick="endConversationSession()">🚪 終了</button>
+                    
+                    <!-- リアルタイム音声認識（右端） -->
+                    <div class="transcript-compact" id="transcriptCompact">
+                        <span class="transcript-text" id="transcriptText">...</span>
+                    </div>
                 </div>
             </div>
 
@@ -973,6 +977,13 @@
                 </div>
             </div>
         </div>
+
+        <!-- 🎨 新デザイン要件: リアルタイム音声認識表示（独立パネル） -->
+        <div class="transcript-panel glass-panel hidden" id="transcriptPanel">
+            <div class="transcript-display" id="transcriptDisplay">
+                音声認識待機中...（「どうぞ」と言うとAIが応答します）
+            </div>
+        </div>
     </div>
 
     <!-- 設定データファイル読み込み -->
@@ -1039,7 +1050,7 @@
     <!-- ユーティリティ関数 -->
     <script src="app/utils.js?v=0.8.0"></script>
     <!-- 🔧 統一状態管理システム（モジュール化版） -->
-    <script src="app/unified-state-manager/voice-module.js?v=0.8.0"></script>
+    <script src="app/unified-state-manager/voice-module.js?v=0.8.4"></script>
     <script src="app/unified-state-manager/ui-module.js?v=0.8.0"></script>
     <script src="app/unified-state-manager/core.js?v=0.8.0"></script>
     <!-- 🔧 旧統一状態管理システム（後方互換性のため保持） -->
@@ -1055,7 +1066,7 @@
     <!-- 画面遷移管理システム -->
     <script src="app/ui-screens.js?v=0.8.0"></script>
     <!-- 基本UI更新管理システム -->
-    <script src="app/ui-basic.js?v=0.8.0"></script>
+    <script src="app/ui-basic.js?v=0.8.4"></script>
     <!-- 高度UI管理システム -->
     <script src="app/ui-advanced.js?v=0.8.0"></script>
     <!-- ストレージ管理システム -->
@@ -1087,7 +1098,7 @@
     <!-- 音声エラーハンドリング -->
     <script src="app/voice-error-handler.js?v=0.8.0"></script>
     <!-- 🎨 音声UI管理システム -->
-    <script src="app/voice-ui-manager.js?v=0.8.0"></script>
+    <script src="app/voice-ui-manager.js?v=0.8.2"></script>
     <!-- メインスクリプト -->
     <script src="app/script.js?v=0.8.0"></script>
     

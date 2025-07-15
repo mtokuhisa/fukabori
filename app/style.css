@@ -734,61 +734,156 @@ body {
     line-height: 1.5;
 }
 
+/* 🚫 独立したリアルタイム音声認識パネルを無効化 - 新しい統合バーを使用 */
+.transcript-panel {
+    display: none !important; /* ポップアップ表示を完全に無効化 */
+    position: fixed;
+    bottom: 140px; /* VoiceUIManagerの上に配置 */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 800px;
+    z-index: 900; /* VoiceUIManagerより低い */
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+/* 🎨 新デザイン要件: transcript-panelの非表示制御 */
+.transcript-panel.hidden {
+    display: none !important;
+}
+
 .transcript-display {
-    background: rgba(255, 255, 255, 0.4);
+    background: transparent; /* 🎨 背景をパネルに委譲 */
     border-radius: 12px;
     padding: 20px;
-    margin: 15px 0;
-    min-height: 80px;
-    max-height: 200px;
+    margin: 0; /* 🎨 マージン削除（パネル内なので） */
+    min-height: 120px; /* 🎨 以前の大きさに復元 */
+    max-height: 300px; /* 🎨 高さ制限を緩和し、長い発声に対応 */
     overflow-y: auto;
     overflow-x: hidden;
     font-style: italic;
     color: #666;
-    border-left: 4px solid #3498db;
+    border: none; /* 🎨 ボーダーをパネルに委譲 */
     line-height: 1.6;
     word-wrap: break-word;
     white-space: pre-wrap;
+    font-size: 16px;
+    font-weight: 500;
 }
 
+/* 🎨 音声コントロール: 会話の邪魔をしない統合バー（改良版レイアウト） */
 .voice-controls {
     display: flex;
-    gap: 10px;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
     justify-content: center;
-    padding: 20px;
+    padding: 12px 20px;
+    max-height: 80px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    backdrop-filter: blur(5px);
+    margin-top: 10px;
     flex-wrap: wrap;
 }
 
-.mic-button {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
+/* 音声状態表示（上部・控えめ） */
+.voice-state-compact {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 24px;
+    gap: 8px;
+    font-size: 14px;
+    color: #666;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    backdrop-filter: blur(3px);
+    min-width: 120px;
+    order: 1; /* 上部に配置 */
+}
+
+.state-icon {
+    font-size: 16px;
     transition: all 0.3s ease;
-    position: relative;
 }
 
-.mic-button.recording {
-    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-    color: white;
-    animation: pulse 1.5s infinite;
+.state-text {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
 }
 
-.mic-button.idle {
-    background: linear-gradient(135deg, #4ecdc4, #44a08d);
-    color: white;
+/* 6つの音声認識状態の色分け */
+.voice-state-compact.starting .state-icon { color: #6c757d; }
+.voice-state-compact.active .state-icon { color: #28a745; }
+.voice-state-compact.stopping .state-icon { color: #ffc107; }
+.voice-state-compact.error .state-icon { color: #dc3545; }
+.voice-state-compact.network-error .state-icon { color: #dc3545; }
+.voice-state-compact.permission-denied .state-icon { color: #dc3545; }
+.voice-state-compact.idle .state-icon { color: #6c757d; }
+
+/* 操作ボタン行 */
+.voice-controls .glass-button {
+    order: 2; /* 状態表示の下に配置 */
+    margin: 0 4px;
 }
 
-.mic-button.processing {
-    background: linear-gradient(135deg, #ffd93d, #ff9800);
-    color: white;
-    animation: spin 1s linear infinite;
+/* リアルタイム音声認識（下部・控えめ） */
+.transcript-compact {
+    display: flex;
+    align-items: center;
+    padding: 3px 10px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    backdrop-filter: blur(3px);
+    min-width: 200px;
+    max-width: 400px;
+    order: 3; /* 最下部に配置 */
 }
+
+.transcript-text {
+    font-size: 13px;
+    color: #888;
+    opacity: 0.8;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-style: italic;
+}
+
+/* 🎨 700pxルール遵守: 音声コントロールのレスポンシブ対応 */
+@media (max-width: 700px) {
+    .voice-controls {
+        gap: 6px;
+        padding: 8px 15px;
+        max-height: none;
+    }
+    
+    .voice-state-compact {
+        width: 100%;
+        justify-content: center;
+        min-width: auto;
+    }
+    
+    .voice-controls .glass-button {
+        flex: 1;
+        min-width: 70px;
+        font-size: 12px;
+    }
+    
+    .transcript-compact {
+        width: 100%;
+        min-width: auto;
+        max-width: none;
+        text-align: center;
+    }
+}
+
+
 
 @keyframes pulse {
     0% { transform: scale(1); }
@@ -812,10 +907,77 @@ body {
     }
 }
 
-.status-section {
-    padding: 15px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.3);
+/* 🎨 右パネル背景変化: 話者による薄い背景変化（!important不使用） */
+.status-panel.speaker-nehori {
+    background: linear-gradient(135deg, 
+        rgba(139, 92, 246, 0.05), 
+        rgba(139, 92, 246, 0.02));
+    transition: background 0.3s ease;
+}
+
+.status-panel.speaker-hahori {
+    background: linear-gradient(135deg, 
+        rgba(6, 182, 212, 0.05), 
+        rgba(6, 182, 212, 0.02));
+    transition: background 0.3s ease;
+}
+
+.status-panel.speaker-user {
+    background: linear-gradient(135deg, 
+        rgba(34, 197, 94, 0.05), 
+        rgba(34, 197, 94, 0.02));
+    transition: background 0.3s ease;
+}
+
+.status-panel.speaker-nehori.pulse-animation {
+    animation: nehori-pulse 2s infinite;
+}
+
+.status-panel.speaker-hahori.pulse-animation {
+    animation: hahori-pulse 2s infinite;
+}
+
+.status-panel.speaker-user.pulse-animation {
+    animation: user-pulse 2s infinite;
+}
+
+@keyframes nehori-pulse {
+    0%, 100% { 
+        background: linear-gradient(135deg, 
+            rgba(139, 92, 246, 0.05), 
+            rgba(139, 92, 246, 0.02));
+    }
+    50% { 
+        background: linear-gradient(135deg, 
+            rgba(139, 92, 246, 0.1), 
+            rgba(139, 92, 246, 0.05));
+    }
+}
+
+@keyframes hahori-pulse {
+    0%, 100% { 
+        background: linear-gradient(135deg, 
+            rgba(6, 182, 212, 0.05), 
+            rgba(6, 182, 212, 0.02));
+    }
+    50% { 
+        background: linear-gradient(135deg, 
+            rgba(6, 182, 212, 0.1), 
+            rgba(6, 182, 212, 0.05));
+    }
+}
+
+@keyframes user-pulse {
+    0%, 100% { 
+        background: linear-gradient(135deg, 
+            rgba(34, 197, 94, 0.05), 
+            rgba(34, 197, 94, 0.02));
+    }
+    50% { 
+        background: linear-gradient(135deg, 
+            rgba(34, 197, 94, 0.1), 
+            rgba(34, 197, 94, 0.05));
+    }
 }
 
 .status-title {
@@ -1391,6 +1553,22 @@ body {
     
     .floating-complete-btn {
         width: 100%;
+    }
+
+    /* 🎨 新デザイン要件: transcript-panelのモバイル対応 */
+    .transcript-panel {
+        bottom: 120px; /* モバイルでVoiceUIManagerとの間隔を調整 */
+        width: 95%;
+        left: 2.5%;
+        right: 2.5%;
+        transform: none;
+    }
+
+    .transcript-display {
+        padding: 15px;
+        min-height: 50px;
+        max-height: 100px;
+        font-size: 14px;
     }
 }
 

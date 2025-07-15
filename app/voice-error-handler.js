@@ -361,8 +361,8 @@ class VoiceSystemInitializer {
             if (!window.VoiceUIManager) {
                 console.warn('⚠️ VoiceUIManager が見つかりません');
                 return false;
-            }
-            
+}
+
             // インスタンス作成
             const voiceUIManager = new window.VoiceUIManager();
             

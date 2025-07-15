@@ -89,13 +89,13 @@ class DataManager {
         // カテゴリマネージャーの初期化（knowledge-system.jsで定義済みのものを使用）
         this.categoryManager = window.CategoryManager || new CategoryManager();
         if (this.categoryManager.initialize) {
-            await this.categoryManager.initialize();
+        await this.categoryManager.initialize();
         }
 
         // ユーザーマネージャーの初期化（knowledge-system.jsで定義済みのものを使用）
         this.userManager = window.UserManager || null;
         if (this.userManager && this.userManager.initialize) {
-            await this.userManager.initialize();
+        await this.userManager.initialize();
         }
 
         // データベースマネージャーの初期化

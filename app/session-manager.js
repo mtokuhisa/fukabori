@@ -231,6 +231,13 @@ const SessionEndManager = {
             window.AppState.phase = window.PHASES.CLOSING;
             window.AppState.currentSpeaker = window.SPEAKERS.NULL;
             
+            // 🎨 新デザイン要件: セッション終了時にtranscript-panelを非表示
+            const transcriptPanel = document.getElementById('transcriptPanel');
+            if (transcriptPanel) {
+                transcriptPanel.classList.add('hidden');
+                console.log('✅ transcript-panelを非表示にしました');
+            }
+            
             console.log('✅ セッション状態リセット完了');
         } catch (error) {
             console.error('❌ セッション状態リセットエラー:', error);
@@ -298,6 +305,13 @@ const SessionEndManager = {
             const messagesContainer = window.UIManager?.DOMUtils?.get('messagesContainer');
             if (messagesContainer) {
                 messagesContainer.innerHTML = '';
+            }
+            
+            // 🎨 新デザイン要件: ログイン画面復帰時にtranscript-panelを非表示
+            const transcriptPanel = document.getElementById('transcriptPanel');
+            if (transcriptPanel) {
+                transcriptPanel.classList.add('hidden');
+                console.log('✅ transcript-panelを非表示にしました（ログイン画面復帰）');
             }
             
             // ログイン画面を表示

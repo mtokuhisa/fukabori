@@ -88,6 +88,89 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding: 15px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+/* 🎨 新デザイン要件: 右パネル背景変化（話者による色変化 + 脈動効果） */
+.status-section.nehori-speaking {
+    background: linear-gradient(135deg, 
+        rgba(139, 92, 246, 0.2) 0%, 
+        rgba(139, 92, 246, 0.1) 50%, 
+        rgba(139, 92, 246, 0.05) 100%
+    ) !important;
+    animation: pulse-nehori 2s ease-in-out infinite;
+}
+
+.status-section.hahori-speaking {
+    background: linear-gradient(135deg, 
+        rgba(6, 182, 212, 0.2) 0%, 
+        rgba(6, 182, 212, 0.1) 50%, 
+        rgba(6, 182, 212, 0.05) 100%
+    ) !important;
+    animation: pulse-hahori 2s ease-in-out infinite;
+}
+
+.status-section.user-speaking {
+    background: linear-gradient(135deg, 
+        rgba(34, 197, 94, 0.2) 0%, 
+        rgba(34, 197, 94, 0.1) 50%, 
+        rgba(34, 197, 94, 0.05) 100%
+    ) !important;
+    animation: pulse-user 2s ease-in-out infinite;
+}
+
+@keyframes pulse-nehori {
+    0%, 100% { 
+        background: linear-gradient(135deg, 
+            rgba(139, 92, 246, 0.2) 0%, 
+            rgba(139, 92, 246, 0.1) 50%, 
+            rgba(139, 92, 246, 0.05) 100%
+        ) !important;
+    }
+    50% { 
+        background: linear-gradient(135deg, 
+            rgba(139, 92, 246, 0.35) 0%, 
+            rgba(139, 92, 246, 0.25) 50%, 
+            rgba(139, 92, 246, 0.15) 100%
+        ) !important;
+    }
+}
+
+@keyframes pulse-hahori {
+    0%, 100% { 
+        background: linear-gradient(135deg, 
+            rgba(6, 182, 212, 0.2) 0%, 
+            rgba(6, 182, 212, 0.1) 50%, 
+            rgba(6, 182, 212, 0.05) 100%
+        ) !important;
+    }
+    50% { 
+        background: linear-gradient(135deg, 
+            rgba(6, 182, 212, 0.35) 0%, 
+            rgba(6, 182, 212, 0.25) 50%, 
+            rgba(6, 182, 212, 0.15) 100%
+        ) !important;
+    }
+}
+
+@keyframes pulse-user {
+    0%, 100% { 
+        background: linear-gradient(135deg, 
+            rgba(34, 197, 94, 0.2) 0%, 
+            rgba(34, 197, 94, 0.1) 50%, 
+            rgba(34, 197, 94, 0.05) 100%
+        ) !important;
+    }
+    50% { 
+        background: linear-gradient(135deg, 
+            rgba(34, 197, 94, 0.35) 0%, 
+            rgba(34, 197, 94, 0.25) 50%, 
+            rgba(34, 197, 94, 0.15) 100%
+        ) !important;
+    }
 }
 
 .status-item {

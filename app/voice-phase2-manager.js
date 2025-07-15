@@ -65,7 +65,7 @@ const DualPreemptiveOptimization = {
                     return 'idle';
                 }
             },
-
+            
             // 先読み戦略を決定
             determinePreemptiveStrategy(situation) {
                 const strategy = DualPreemptiveOptimization.phase1.adaptiveStrategy[situation] || 
@@ -75,29 +75,29 @@ const DualPreemptiveOptimization = {
                 switch (strategy.trigger) {
                     case 'immediate':
                         return {
-                            trigger: 'immediate',
+                        trigger: 'immediate',
                             delay: 100,
                             targetSpeaker: situation === 'nehori_speaking' ? SPEAKERS.HAHORI : SPEAKERS.NEHORI,
                             priority: strategy.priority
                         };
                     case 'delayed':
                         return {
-                            trigger: 'delayed',
-                            delay: 2000,
+                        trigger: 'delayed',
+                        delay: 2000,
                             targetSpeaker: situation === 'nehori_speaking' ? SPEAKERS.HAHORI : SPEAKERS.NEHORI,
                             priority: strategy.priority
                         };
                     case 'smart':
                         return {
-                            trigger: 'smart',
+                        trigger: 'smart',
                             delay: 1000,
                             targetSpeaker: DualPreemptiveOptimization.phase1.situationAnalyzer.determineSmartTargetSpeaker(situation),
                             priority: strategy.priority
                         };
                     default:
                         return {
-                            trigger: 'none',
-                            delay: 0,
+                        trigger: 'none',
+                        delay: 0,
                             targetSpeaker: null,
                             priority: 'none'
                         };
@@ -804,13 +804,13 @@ function initializeVoicePhase2ManagerWhenReady() {
         if (initialized) {
             console.log('✅ VoicePhase2Manager 初期化完了');
         } else {
-            console.log('🔧 VoicePhase2Manager 強制初期化実行（部分機能モード）');
+                    console.log('🔧 VoicePhase2Manager 強制初期化実行（部分機能モード）');
             VoicePhase2Manager.initialize(true);
-        }
+                }
     } else {
         console.log('⚠️ VoicePhase2Manager 依存関係待機中 - 再試行します');
         setTimeout(initializeVoicePhase2ManagerWhenReady, 1000);
-    }
+        }
 }
 
 // DOM読み込み完了後に初期化開始

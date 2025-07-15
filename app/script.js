@@ -1976,6 +1976,15 @@ async function processFinalTranscript(text) {
         return;
     }
 
+    // 🎨 新機能: ユーザー発話時の話者変化イベントを発行
+    if (window.dispatchEvent) {
+        const speakerChangeEvent = new CustomEvent('speaker-change', {
+            detail: { speaker: SPEAKERS.USER }
+        });
+        window.dispatchEvent(speakerChangeEvent);
+        console.log(`🎨 話者変化イベント発行: ${SPEAKERS.USER} (ユーザー発話開始)`);
+    }
+
     // 🔧 Phase B: 音声認識訂正機能（「どうぞ」は除外）
     // 特別なコマンド（どうぞ、テーマ変更等）を先に処理
     if (text.includes('どうぞ') || text.includes('ドウゾ') || text.includes('どーぞ') ||
@@ -2553,6 +2562,15 @@ async function playPreGeneratedAudio(audioBlob, speaker) {
         
         AppState.currentSpeaker = speaker;
         
+        // 🎨 新機能: 話者変化イベントを発行（右パネル背景変化のため）
+        if (window.dispatchEvent) {
+            const speakerChangeEvent = new CustomEvent('speaker-change', {
+                detail: { speaker: speaker }
+            });
+            window.dispatchEvent(speakerChangeEvent);
+            console.log(`🎨 話者変化イベント発行: ${speaker}`);
+        }
+        
         // Phase 3: はほりーの発声開始時にねほりーの生成を開始
         if (speaker === SPEAKERS.HAHORI && VoiceOptimization.phase3.isActive) {
             VoiceOptimization.phase3.hahoriSpeechStartTime = Date.now();
@@ -2562,6 +2580,15 @@ async function playPreGeneratedAudio(audioBlob, speaker) {
         audio.onended = async () => {
             AppState.currentSpeaker = SPEAKERS.NULL;
             URL.revokeObjectURL(audio.src);
+            
+            // 🎨 新機能: 話者変化イベントを発行（発話終了時）
+            if (window.dispatchEvent) {
+                const speakerChangeEvent = new CustomEvent('speaker-change', {
+                    detail: { speaker: null }
+                });
+                window.dispatchEvent(speakerChangeEvent);
+                console.log('🎨 話者変化イベント発行: null (発話終了)');
+            }
             
             // Phase 3: はほりーの発声終了後、ねほりーのを即座に再生
             if (speaker === SPEAKERS.HAHORI && VoiceOptimization.phase3.shouldPlayNehoriImmediately) {
@@ -2577,6 +2604,16 @@ async function playPreGeneratedAudio(audioBlob, speaker) {
         audio.onerror = (error) => {
             AppState.currentSpeaker = SPEAKERS.NULL;
             URL.revokeObjectURL(audio.src);
+            
+            // 🎨 新機能: 話者変化イベントを発行（エラー時）
+            if (window.dispatchEvent) {
+                const speakerChangeEvent = new CustomEvent('speaker-change', {
+                    detail: { speaker: null }
+                });
+                window.dispatchEvent(speakerChangeEvent);
+                console.log('🎨 話者変化イベント発行: null (エラー)');
+            }
+            
             reject(error);
         };
         

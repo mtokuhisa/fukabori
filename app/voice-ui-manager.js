@@ -7,8 +7,8 @@ const VOICE_UI_MANAGER_CONFIG = {
     ENABLED: true,  // ✅ VoiceUIManager機能を有効化（音声認識継続処理のため）
     AUTO_INITIALIZE: false,  // 🚫 自動初期化を無効化
     MANUAL_ONLY: true,  // ✅ 手動初期化のみ許可
-    FIXED_POSITION: false,  // 🚫 固定位置表示を無効化
-    UI_DISPLAY: false,  // 🚫 UI表示を無効化（新設）
+    FIXED_POSITION: false,  // 🚫 固定位置表示を無効化（会話の邪魔を避ける）
+    UI_DISPLAY: false,  // 🚫 UI表示を無効化（既存voice-controlsを活用）
     DEBUG_MODE: false
 };
 
@@ -27,6 +27,28 @@ class VoiceUIManager {
         this.endButton = null;
         this.monitoringInterval = null;
         this.userPausedManually = false;
+        
+        // 🎨 新デザイン要件: 6つの音声認識状態の表示設定
+        this.stateConfig = {
+            messages: {
+                'starting': '認識を開始中...',
+                'active': '認識中',
+                'stopping': '認識を一時停止中 - →で再開',
+                'error': '認識エラー - 自動再開試行中',
+                'network-error': 'エラー - 自動再開試行中',
+                'permission-denied': 'マイクの許可が必要です',
+                'idle': '待機中'
+            },
+            colors: {
+                'starting': '#6c757d',    // Gray
+                'active': '#28a745',      // Green
+                'stopping': '#ffc107',    // Yellow
+                'error': '#dc3545',       // Red
+                'network-error': '#dc3545', // Red
+                'permission-denied': '#dc3545', // Red
+                'idle': '#6c757d'         // Gray
+            }
+        };
         
         // 🔧 無効化フラグチェック
         this.enabled = VOICE_UI_MANAGER_CONFIG.ENABLED;
@@ -67,16 +89,13 @@ class VoiceUIManager {
         }
         
         try {
-            // 統合状態管理システムの取得 - 正しい参照方法に修正
-            if (window.unifiedStateManager) {
-                this.voiceModule = window.unifiedStateManager.getModule('voice');
-            } else if (window.UnifiedStateManager) {
-                this.voiceModule = window.UnifiedStateManager.getModule('voice');
-            }
-            
-            if (!this.voiceModule) {
-                console.warn('⚠️ VoiceModule未初期化 - 初期化を中止');
-                return false;
+            // 統合状態管理システムとの連携確認
+            if (window.UnifiedStateManager) {
+                console.log('✅ 統一状態管理システム連携確認完了');
+                this.stateManager = window.UnifiedStateManager;
+            } else {
+                console.warn('⚠️ 統一状態管理システム未初期化 - 基本機能のみで初期化');
+                this.stateManager = null;
             }
             
             // UI要素の作成
@@ -178,15 +197,30 @@ class VoiceUIManager {
     }
 
     updateVoiceState() {
-        if (!this.voiceModule) return;
+        let recognitionState = 'idle';
         
-        const state = this.voiceModule.getState();
-        if (!state) return;
+        // 統一状態管理システムから状態を取得
+        if (this.stateManager && typeof this.stateManager.getVoiceState === 'function') {
+            const voiceState = this.stateManager.getVoiceState();
+            recognitionState = voiceState?.recognitionState || 'idle';
+        } else if (window.UnifiedStateManager && typeof window.UnifiedStateManager.getVoiceState === 'function') {
+            const voiceState = window.UnifiedStateManager.getVoiceState();
+            recognitionState = voiceState?.recognitionState || 'idle';
+        } else {
+            // フォールバック: 既存システムから状態を推測
+            if (window.AppState?.microphoneActive) {
+                recognitionState = 'active';
+            } else if (window.AppState?.isProcessing) {
+                recognitionState = 'processing';
+            } else {
+                recognitionState = 'idle';
+            }
+        }
         
         // 状態に応じてUIを更新
-        this.updateMicIcon(state.recognitionState);
-        this.updateStateText(state.recognitionState);
-        this.updateToggleButton(state.recognitionState);
+        this.updateMicIcon(recognitionState);
+        this.updateStateText(recognitionState);
+        this.updateToggleButton(recognitionState);
     }
 
     updateMicIcon(state) {
@@ -510,8 +544,8 @@ if (VOICE_UI_MANAGER_CONFIG.ENABLED || VOICE_UI_MANAGER_CONFIG.MANUAL_ONLY) {
         const chatArea = document.getElementById('chatArea');
         const setupPanel = document.getElementById('setupPanel');
         
-        // ログイン画面の場合は初期化しない
-        if (!chatArea || !setupPanel || !chatArea.classList.contains('hidden')) {
+        // ログイン画面の場合は初期化しない（setupPanelが表示されている場合）
+        if (!chatArea || !setupPanel || !setupPanel.classList.contains('hidden')) {
             console.log('🔇 ログイン画面のためVoiceUI初期化をスキップ');
             return false;
         }
@@ -556,3 +590,194 @@ if (VOICE_UI_MANAGER_CONFIG.AUTO_INITIALIZE && VOICE_UI_MANAGER_CONFIG.ENABLED) 
 }
 
 console.log('🎨 VoiceUIManager v0.8.0.3 読み込み完了 - 条件付き無効化実装'); 
+
+// 🔧 デバッグ用: VoiceUIManager状態確認機能
+window.debugVoiceUIManager = function() {
+    console.log('🔍 VoiceUIManager デバッグ情報:');
+    console.log('  - CONFIG:', VOICE_UI_MANAGER_CONFIG);
+    console.log('  - インスタンス存在:', !!window.VoiceUIManager);
+    console.log('  - DOM要素:');
+    console.log('    - chatArea:', document.getElementById('chatArea'));
+    console.log('    - setupPanel:', document.getElementById('setupPanel'));
+    console.log('    - 既存のvoice-ui-container:', document.getElementById('voice-ui-container'));
+    
+    const chatArea = document.getElementById('chatArea');
+    const setupPanel = document.getElementById('setupPanel');
+    
+    if (chatArea && setupPanel) {
+        console.log('  - chatArea.hidden:', chatArea.classList.contains('hidden'));
+        console.log('  - setupPanel.hidden:', setupPanel.classList.contains('hidden'));
+    }
+    
+    // セッション状態も確認
+    console.log('  - AppState.sessionActive:', window.AppState?.sessionActive);
+    console.log('  - AppState.currentSpeaker:', window.AppState?.currentSpeaker);
+};
+
+// 🔧 デバッグ用: VoiceUIManager強制初期化機能
+window.forceInitializeVoiceUIManager = async function() {
+    console.log('🔧 VoiceUIManager強制初期化開始...');
+    
+    if (!window.VoiceUIManager) {
+        console.error('❌ VoiceUIManagerインスタンスが存在しません');
+        return false;
+    }
+    
+    try {
+        // 設定を一時的に有効化
+        const originalConfig = { ...VOICE_UI_MANAGER_CONFIG };
+        VOICE_UI_MANAGER_CONFIG.ENABLED = true;
+        VOICE_UI_MANAGER_CONFIG.UI_DISPLAY = true;
+        VOICE_UI_MANAGER_CONFIG.FIXED_POSITION = true;
+        
+        console.log('✅ 設定を一時的に有効化:', VOICE_UI_MANAGER_CONFIG);
+        
+        // 強制初期化実行
+        const result = await window.VoiceUIManager.initialize();
+        
+        if (result) {
+            console.log('✅ VoiceUIManager強制初期化成功');
+            
+            // 状態監視も開始
+            window.VoiceUIManager.startStateMonitoring();
+            console.log('✅ VoiceUIManager状態監視開始');
+            
+            return true;
+        } else {
+            console.error('❌ VoiceUIManager強制初期化失敗');
+            return false;
+        }
+        
+    } catch (error) {
+        console.error('❌ VoiceUIManager強制初期化エラー:', error);
+        return false;
+    }
+};
+
+// 🔧 デバッグ用: 右パネル背景変化テスト機能
+window.testRightPanelBackground = function() {
+    console.log('🎨 右パネル背景変化テスト開始...');
+    
+    const statusSections = document.querySelectorAll('.status-section');
+    console.log('  - 発見した.status-section要素:', statusSections.length);
+    
+    if (statusSections.length === 0) {
+        console.error('❌ .status-section要素が見つかりません');
+        return false;
+    }
+    
+    // 各要素をテスト
+    statusSections.forEach((section, index) => {
+        console.log(`  - 要素${index + 1}:`, section);
+        console.log(`    - クラス:`, section.className);
+        console.log(`    - 現在のスタイル:`, window.getComputedStyle(section).background);
+    });
+    
+    // テスト用にクラスを追加
+    const targetSection = statusSections[1] || statusSections[0]; // 2番目の要素を優先
+    if (targetSection) {
+        console.log('🎨 テスト用クラス適用開始...');
+        
+        // 既存のクラスを削除
+        targetSection.classList.remove('nehori-speaking', 'hahori-speaking', 'user-speaking');
+        
+        // ねほりーのテスト
+        targetSection.classList.add('nehori-speaking');
+        console.log('✅ ねほりーのクラス適用完了');
+        
+        setTimeout(() => {
+            targetSection.classList.remove('nehori-speaking');
+            targetSection.classList.add('hahori-speaking');
+            console.log('✅ はほりーのクラス適用完了');
+            
+            setTimeout(() => {
+                targetSection.classList.remove('hahori-speaking');
+                targetSection.classList.add('user-speaking');
+                console.log('✅ ユーザークラス適用完了');
+                
+                setTimeout(() => {
+                    targetSection.classList.remove('user-speaking');
+                    console.log('✅ テスト完了 - 通常状態に戻る');
+                }, 3000);
+            }, 3000);
+        }, 3000);
+        
+        return true;
+    } else {
+        console.error('❌ テスト対象の要素が見つかりません');
+        return false;
+    }
+}; 
+
+// 🔧 デバッグ用: VoiceUIManager包括テスト機能
+window.testVoiceUIManagerComplete = async function() {
+    console.log('🔧 VoiceUIManager包括テスト開始...');
+    
+    // 1. 設定確認
+    console.log('📋 1. 設定確認:');
+    console.log('  - CONFIG:', VOICE_UI_MANAGER_CONFIG);
+    
+    // 2. インスタンス確認
+    console.log('📋 2. インスタンス確認:');
+    console.log('  - window.VoiceUIManager存在:', !!window.VoiceUIManager);
+    if (window.VoiceUIManager) {
+        console.log('  - isInitialized:', window.VoiceUIManager.isInitialized);
+        console.log('  - enabled:', window.VoiceUIManager.enabled);
+        console.log('  - uiDisplay:', window.VoiceUIManager.uiDisplay);
+    }
+    
+    // 3. DOM要素確認
+    console.log('📋 3. DOM要素確認:');
+    const chatArea = document.getElementById('chatArea');
+    const setupPanel = document.getElementById('setupPanel');
+    const existingContainer = document.getElementById('voice-ui-container');
+    
+    console.log('  - chatArea:', !!chatArea, chatArea ? `hidden: ${chatArea.classList.contains('hidden')}` : 'なし');
+    console.log('  - setupPanel:', !!setupPanel, setupPanel ? `hidden: ${setupPanel.classList.contains('hidden')}` : 'なし');
+    console.log('  - 既存のvoice-ui-container:', !!existingContainer);
+    
+    // 4. 強制初期化テスト
+    console.log('📋 4. 強制初期化テスト:');
+    if (window.VoiceUIManager) {
+        try {
+            const result = await window.VoiceUIManager.initialize();
+            console.log('  - 初期化結果:', result);
+            
+            // 初期化後のDOM確認
+            const container = document.getElementById('voice-ui-container');
+            console.log('  - voice-ui-container作成:', !!container);
+            if (container) {
+                console.log('    - container表示:', !container.classList.contains('hidden'));
+                console.log('    - container位置:', window.getComputedStyle(container).position);
+                console.log('    - container.innerHTML:', container.innerHTML.length, '文字');
+            }
+            
+        } catch (error) {
+            console.error('  - 初期化エラー:', error);
+        }
+    }
+    
+    // 5. 状態監視テスト
+    console.log('📋 5. 状態監視テスト:');
+    if (window.VoiceUIManager && window.VoiceUIManager.isInitialized) {
+        console.log('  - 状態監視開始');
+        window.VoiceUIManager.startStateMonitoring();
+        
+        // 3秒後に状態を確認
+        setTimeout(() => {
+            console.log('  - 3秒後の状態確認');
+            const container = document.getElementById('voice-ui-container');
+            if (container) {
+                console.log('    - container依然存在:', !!container);
+                console.log('    - 現在の表示:', !container.classList.contains('hidden'));
+            }
+        }, 3000);
+    }
+    
+    return {
+        configOk: VOICE_UI_MANAGER_CONFIG.ENABLED && VOICE_UI_MANAGER_CONFIG.UI_DISPLAY,
+        instanceExists: !!window.VoiceUIManager,
+        domReady: !!chatArea && !!setupPanel,
+        sessionActive: setupPanel ? setupPanel.classList.contains('hidden') : false
+    };
+}; 
