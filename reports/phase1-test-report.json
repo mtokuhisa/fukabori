@@ -1,0 +1,167 @@
+{
+  "timestamp": "2025-07-20T20:17:39.972Z",
+  "duration": 18,
+  "results": {
+    "success": 20,
+    "error": 0,
+    "warning": 1,
+    "total": 31
+  },
+  "details": [
+    {
+      "timestamp": "2025-07-20T20:17:39.955Z",
+      "level": "info",
+      "message": "🚀 Phase 1 自動テスト開始"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.966Z",
+      "level": "info",
+      "message": "📁 Test 1: ファイル存在確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.966Z",
+      "level": "success",
+      "message": "✅ app/voice-processing-manager.js 存在確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.966Z",
+      "level": "success",
+      "message": "✅ app/script.js 存在確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.966Z",
+      "level": "success",
+      "message": "✅ 深堀くん.html 存在確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.966Z",
+      "level": "info",
+      "message": "🔗 Test 2: HTMLファイル統合確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.966Z",
+      "level": "success",
+      "message": "✅ voice-processing-manager.js の読み込み確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.966Z",
+      "level": "success",
+      "message": "✅ script.js の読み込み確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.967Z",
+      "level": "success",
+      "message": "✅ スクリプト読み込み順序が正しい"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.967Z",
+      "level": "info",
+      "message": "🔍 Test 3: JavaScript構文チェック"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.968Z",
+      "level": "success",
+      "message": "✅ app/voice-processing-manager.js 基本構文OK"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.970Z",
+      "level": "info",
+      "message": "async関数 42個 検出"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.970Z",
+      "level": "warning",
+      "message": "⚠️ app/script.js 構文に注意が必要な箇所があります"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.970Z",
+      "level": "info",
+      "message": "🏗️ Test 4: VoiceProcessingManagerクラス構造確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.970Z",
+      "level": "success",
+      "message": "✅ constructor メソッド確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.970Z",
+      "level": "success",
+      "message": "✅ initialize メソッド確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.970Z",
+      "level": "success",
+      "message": "✅ processFinalTranscript メソッド確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.970Z",
+      "level": "success",
+      "message": "✅ callOriginalProcessor メソッド確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.970Z",
+      "level": "success",
+      "message": "✅ fallbackToOriginal メソッド確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.970Z",
+      "level": "success",
+      "message": "✅ log メソッド確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.970Z",
+      "level": "success",
+      "message": "✅ getStats メソッド確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.970Z",
+      "level": "success",
+      "message": "✅ getDebugInfo メソッド確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.970Z",
+      "level": "success",
+      "message": "✅ デバッグ関数群 確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.970Z",
+      "level": "success",
+      "message": "✅ グローバル公開 確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.970Z",
+      "level": "info",
+      "message": "🔄 Test 5: script.js統合確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.971Z",
+      "level": "success",
+      "message": "✅ processFinalTranscriptOriginal関数 確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.971Z",
+      "level": "success",
+      "message": "✅ 新しいprocessFinalTranscript関数 確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.972Z",
+      "level": "success",
+      "message": "✅ フォールバック機能 確認"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.972Z",
+      "level": "info",
+      "message": "📊 テスト結果サマリー"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.972Z",
+      "level": "info",
+      "message": "実行時間: 18ms"
+    },
+    {
+      "timestamp": "2025-07-20T20:17:39.972Z",
+      "level": "info",
+      "message": "成功: 20, エラー: 0, 警告: 1"
+    }
+  ]
+}

@@ -144,6 +144,7 @@ function initializeMigrationSystem() {
     const transcriptDisplay = document.getElementById('transcriptDisplay');
     
     console.log('🔍 システム確認:');
+    console.log('  - transcript-compact:', !!transcriptCompact);
     console.log('  - transcript-display:', !!transcriptDisplay);
     
     // transcript-displayシステムを使用
@@ -428,7 +429,6 @@ window.voiceRecognitionController = {
 
 // 🔧 新しい音声システムは以下を使用:
 // - window.VoiceModule (app/unified-state-manager/voice-module.js)
-// - window.VoiceUIManager (app/voice-ui-manager.js)
 // - window.VoiceSystemInitializer (app/voice-error-handler.js)
 
 // =================================================================================
@@ -2243,7 +2243,12 @@ function updateTranscriptDisplay() {
     }
 }
 
-async function processFinalTranscript(text) {
+// =================================================================================
+// Phase 1: VoiceProcessingManager 統合
+// =================================================================================
+
+// 元のprocessFinalTranscript関数をバックアップ
+async function processFinalTranscriptOriginal(text) {
     if (AppState.currentSpeaker !== SPEAKERS.NULL) {
         return;
     }
@@ -2255,6 +2260,17 @@ async function processFinalTranscript(text) {
         });
         window.dispatchEvent(speakerChangeEvent);
         console.log(`🎨 話者変化イベント発行: ${SPEAKERS.USER} (ユーザー発話開始)`);
+    }
+
+    // 🔧 確認応答の除去
+    if (AppState.waitingForClearConfirmation && (text.includes("はい") || text.includes("うん"))) {
+        // "はい"も文字起こしから除去
+        if (AppState.transcriptHistory.length > 0) {
+            AppState.transcriptHistory.pop(); // 最新の"はい"エントリを削除
+        }
+        AppState.currentTranscript = AppState.transcriptHistory.join(" ");
+        window.updateTranscriptDisplay();
+        console.log("🎯 確認応答「はい」を文字起こしから除去");
     }
 
     // 🔧 Phase B: 音声認識訂正機能（「どうぞ」は除外）
@@ -2272,8 +2288,20 @@ async function processFinalTranscript(text) {
         if (correctionCommand.type === 'deletion' || correctionCommand.type === 'replacement') {
             console.log('🔧 音声訂正コマンド検出:', correctionCommand);
             
-            // 現在の入力を設定（累積された文字起こし）
-            const currentInput = AppState.transcriptHistory.join(' ');
+            // 🎯 シンプル修正：音声コマンド除去
+            if (correctionCommand.type === "deletion" && correctionCommand.action === "delete_characters") {
+                // 音声コマンドパターンを除去
+                const cleanedText = removeVoiceCommand(text, correctionCommand.count);
+                
+                // transcriptHistoryの最新エントリを置き換え
+                if (AppState.transcriptHistory.length > 0) {
+                    AppState.transcriptHistory[AppState.transcriptHistory.length - 1] = cleanedText;
+                }
+                console.log(`🎯 音声コマンド除去: "${text}" → "${cleanedText}"`);
+            }
+            
+            // 現在の入力を設定（音声コマンド除去済み）
+            const currentInput = AppState.transcriptHistory.join(" ");
             SpeechCorrectionSystem.setCurrentInput(currentInput);
             
             // 訂正コマンドを実行
@@ -2297,16 +2325,7 @@ async function processFinalTranscript(text) {
         }
     }
 
-    // 従来の文字削除コマンド（下位互換性のため維持）
-    if (text.includes('文字消して') || text.includes('もじけして') || text.includes('クリアして')) {
-        AppState.transcriptHistory = [];
-        AppState.currentTranscript = '';
-        SpeechCorrectionSystem.setCurrentInput('');
-        window.updateTranscriptDisplay();
-        console.log('✅ 文字起こしをクリアしました');
-        await provideCorrectionFeedback('文字を削除しました');
-        return;
-    }
+    // 🔧 従来の削除コマンド処理は SpeechCorrectionSystem に統一されました
 
     if (text.includes('テーマ変更') || text.includes('テーマを変え')) {
         await handleThemeChange();
@@ -2339,6 +2358,36 @@ async function processFinalTranscript(text) {
     } else {
         console.log('「どうぞ」を待機中 - 文字起こし蓄積:', text);
         console.log('現在の累積文字起こし:', AppState.transcriptHistory.join(' '));
+    }
+}
+
+// =================================================================================
+// Phase 1: 新しいprocessFinalTranscript関数（VoiceProcessingManager経由）
+// =================================================================================
+
+async function processFinalTranscript(text) {
+    try {
+        // VoiceProcessingManagerが利用可能か確認
+        if (window.VoiceProcessingManager) {
+            // VoiceProcessingManagerインスタンスを作成（初回のみ）
+            if (!window.voiceProcessingManagerInstance) {
+                window.voiceProcessingManagerInstance = new window.VoiceProcessingManager();
+                const initialized = await window.voiceProcessingManagerInstance.initialize();
+                if (!initialized) {
+                    console.warn('[VoiceProcessingManager] 初期化失敗 - フォールバックを使用');
+                }
+            }
+            
+            // VoiceProcessingManagerを経由して処理
+            return await window.voiceProcessingManagerInstance.processFinalTranscript(text);
+        } else {
+            console.warn('[VoiceProcessingManager] 利用不可 - 従来処理を直接実行');
+            return await processFinalTranscriptOriginal(text);
+        }
+    } catch (error) {
+        console.error('[VoiceProcessingManager] エラー:', error);
+        // エラー時は従来処理にフォールバック
+        return await processFinalTranscriptOriginal(text);
     }
 }
 
@@ -3429,95 +3478,126 @@ function handleModalBackgroundClick(event) {
 function toggleMicrophone() {
     console.log('💡 toggleMicrophone が実行されました');
     
-    // 新しい統一状態管理システムを優先使用
-    if (window.unifiedStateManager) {
-        const voiceModule = window.unifiedStateManager.getModule('voice');
-        if (voiceModule) {
-            const state = voiceModule.getState();
-            console.log('🔄 新しい統一状態管理システムを使用:', state.recognitionState);
-            
-            if (state.recognitionState === 'active') {
-                voiceModule.stopRecognition();
-            } else {
-                voiceModule.startRecognition();
+    try {
+        // 🔧 統一状態管理システム - 正しいアクセス方法
+        if (!window.unifiedStateManager) {
+            throw new Error('統一状態管理システムが未初期化');
+        }
+        
+        const voiceModule = window.unifiedStateManager.modules.get('voice');
+        if (!voiceModule) {
+            throw new Error('音声モジュールが利用不可 - 統一状態管理システム未初期化');
+        }
+        
+        const state = voiceModule.getState();
+        console.log('🔄 統一状態管理システム使用:', state.recognitionState);
+        
+        if (state.recognitionState === 'active') {
+            console.log('⏸️ 手動一時停止（透明継続無効）');
+            voiceModule.pauseRecognition();
+        } else if (state.recognitionState === 'paused' || state.recognitionState === 'idle' || state.recognitionState === 'stopping') {
+            console.log('▶️ 手動再開');
+            voiceModule.resumeRecognition();
+        }
+        
+        // UI更新
+        updatePauseResumeButton();
+        
+    } catch (error) {
+        console.error('❌ 音声制御エラー:', error.message);
+        console.log('🔄 音声認識システム初期化中の可能性があります - 再試行してください');
+        
+        // フォールバック: 直接音声認識を試行
+        if (window.recognition) {
+            try {
+                window.recognition.stop();
+                console.log('🔄 フォールバック音声認識停止');
+            } catch (fallbackError) {
+                console.log('🎤 フォールバック音声認識開始試行');
+                // 通常は何もしない（システム初期化待ち）
             }
-            return;
         }
     }
-    
-    // 旧システムとの互換性
-    if (!stateManager) {
-        console.error('❌ StateManagerが未初期化');
-        return;
-    }
-    
-    const state = stateManager.getState();
-    
-    if (state.recognition === 'active') {
-        stateManager.stopRecognition();
-    } else {
-        stateManager.startRecognition();
-    }
 }
 
-function startRealtimeRecognition() {
-    console.log('🎤 音声認識を開始します（新システム）');
-    
-    if (!stateManager) {
-        console.error('❌ StateManagerが未初期化');
-        return;
-    }
-    
-    stateManager.startRecognition();
-}
+// 🔧 レガシー関数は削除 - toggleMicrophoneに統一
 
-function stopRealtimeRecognition() {
-    console.log('🎤 音声認識を停止します（新システム）');
-    
-    if (!stateManager) {
-        console.error('❌ StateManagerが未初期化');
-        return;
-    }
-    
-    stateManager.stopRecognition();
-}
+// =================================================================================
+// VOICE CONTROL - シンプル音声制御システム
+// =================================================================================
 
-
-function forceStopAllActivity() {
-    console.log('💡 forceStopAllActivity が実行されました');
+/**
+ * 一時停止ボタンのシンプルUI更新
+ * UnifiedStateManagerの状態のみに基づく軽量実装
+ */
+function updatePauseResumeButton() {
+    const pauseBtn = document.getElementById('pauseResumeBtn');
+    if (!pauseBtn) return;
     
-    // 音声認識停止
-    if (AppState.speechRecognition) {
-        try {
-            AppState.speechRecognition.stop();
-        } catch (error) {
-            console.log('音声認識停止エラー:', error);
+    try {
+        let isActive = false;
+        
+        // 🔧 統一状態管理システム - 正しいアクセス方法
+        if (window.unifiedStateManager) {
+            const voiceModule = window.unifiedStateManager.modules.get('voice');
+            if (voiceModule) {
+                const state = voiceModule.getState();
+                isActive = state && state.recognitionState === 'active';
+                
+                // paused状態の場合は明示的に再開表示
+                if (state && state.recognitionState === 'paused') {
+                    isActive = false; // 一時停止中は再開ボタンを表示
+                }
+            }
         }
-    }
-    
-    // 🔧 Phase B: 音声再生強制停止
-    const stoppedAudioCount = AudioControlManager.forceStopAllAudio('force_stop_activity');
-    
-    AppState.currentSpeaker = SPEAKERS.NULL;
-    
-    // 🔧 推奨方法: ConversationGatekeeperを使用して音声認識状態を更新
-    if (AppState.voiceRecognitionStability) {
-    AppState.voiceRecognitionStability.isRecognitionActive = false;
-    }
-    
-    window.updateMicrophoneButton();
-    window.showMessage('info', `全ての活動を強制停止しました（音声${stoppedAudioCount}件停止）`);
-    
-    // 少し待ってから音声認識を再開（許可状態をチェックしてから）
-    setTimeout(() => {
-        const permissionDenied = localStorage.getItem('microphonePermissionDenied') === 'true';
-        if (!permissionDenied && AppState.voiceRecognitionStability.micPermissionGranted) {
-            restartSpeechRecognition();
+        
+        // ボタンの表示とスタイルを更新
+        if (isActive) {
+            // 音声認識中 = 一時停止可能
+            pauseBtn.innerHTML = '⏸️ 一時停止';
+            pauseBtn.style.backgroundColor = ''; // 通常色（CSSデフォルト）
+            pauseBtn.style.color = '';
         } else {
-            console.log('🚫 強制停止後の再開条件未満 - スキップ');
+            // 音声認識停止中 = 再開可能
+            pauseBtn.innerHTML = '▶️ 再開';
+            pauseBtn.style.backgroundColor = '#4CAF50'; // 緑色
+            pauseBtn.style.color = 'white';
         }
-    }, 2000);
+        
+    } catch (error) {
+        // エラーは静かにログのみ
+        console.debug('一時停止ボタン更新エラー:', error);
+    }
 }
+
+/**
+ * 一時停止ボタンの定期更新を開始
+ * セッション開始時に呼び出される
+ */
+function startPauseButtonMonitoring() {
+    if (window.pauseButtonMonitoringInterval) {
+        clearInterval(window.pauseButtonMonitoringInterval);
+    }
+    
+    window.pauseButtonMonitoringInterval = setInterval(() => {
+        updatePauseResumeButton();
+    }, 1000); // 1秒間隔で更新（軽量化）
+    
+    console.log('✅ 一時停止ボタン監視開始');
+}
+
+// 🔧 監視システム統合完了: VoiceUIManagerの既存500ms監視に統合済み
+// setupPauseResumeButtonMonitoring() - 削除（重複監視の除去）
+
+// 🔧 統一システム対応: AppState変化時の一時停止ボタン更新
+if (typeof window !== 'undefined') {
+    window.addEventListener('appStateChanged', () => {
+        setTimeout(() => updatePauseResumeButton(), 100);
+    });
+}
+
+
+// forceStopAllActivity関数を削除 - マッチポンプ設計の根本原因であったため完全除去
 
 // =================================================================================
 // SESSION MANAGEMENT - セッション管理システム
@@ -3673,7 +3753,9 @@ window.testApiKey = testApiKey;
 window.handleModalBackgroundClick = handleModalBackgroundClick;
 window.startSession = startSession;
 window.toggleMicrophone = toggleMicrophone;
-window.forceStopAllActivity = forceStopAllActivity;
+// window.forceStopAllActivity = forceStopAllActivity; // マッチポンプ設計除去のため削除
+window.updatePauseResumeButton = updatePauseResumeButton;
+window.startPauseButtonMonitoring = startPauseButtonMonitoring;
 window.endConversationSession = endConversationSession;
 window.downloadMarkdownReport = downloadMarkdownReport;
 window.downloadKnowledgeFile = downloadKnowledgeFile;
@@ -3897,11 +3979,21 @@ window.SmartVoicePanelManager = SmartVoicePanelManager;
 
 // 🔧 Phase B: 音声認識訂正システム
 const SpeechCorrectionSystem = {
-    // 削除コマンドパターン
+    // 削除コマンドパターン（通常会話での誤動作防止のため厳密化）
     deletionPatterns: [
-        '削除', '消して', '文字消して', 'クリア',
-        '間違い', 'やり直し', 'リセット', '文字削除',
-        '消去', '文字消去', '全部削除', '全部消して'
+        /^削除$/,           // 「削除」単体
+        /^クリア$/,         // 「クリア」単体  
+        /^全削除$/,         // 「全削除」
+        /^全部削除$/,       // 「全部削除」
+        /^全て削除$/,       // 「全て削除」
+        /^リセット$/,       // 「リセット」単体
+        /^文字消して$/,     // 「文字消して」単体
+        /^もじけして$/,     // 「もじけして」単体
+        /^クリアして$/,     // 「クリアして」単体
+        /文字起こしを?削除/, // 「文字起こしを削除」
+        /文字起こしを?クリア/, // 「文字起こしをクリア」
+        /^間違い$/,         // 「間違い」単体
+        /^やり直し$/        // 「やり直し」単体
     ],
     
     // 部分削除パターン（正規表現）
@@ -3948,30 +4040,40 @@ const SpeechCorrectionSystem = {
         return { type: 'normal', text: cleanText };
     },
     
-    // 削除コマンド検出
+    // 削除コマンド検出（優先順位: 数値削除 > 全削除 > 文字列削除）
     checkDeletionCommand(text) {
-        // 完全削除
-        if (this.deletionPatterns.some(pattern => text.includes(pattern))) {
-            return { action: 'clear_all' };
-        }
+        const cleanText = text.toLowerCase().trim();
         
-        // 部分削除
+        // 🎯 優先度1: 数値指定削除（最優先）
         for (const pattern of this.partialDeletionPatterns) {
             const match = text.match(pattern);
             if (match) {
                 if (match[1] && !isNaN(match[1])) {
                     // 数字指定削除
+                    const count = parseInt(match[1]);
                     return { 
                         action: 'delete_characters', 
-                        count: parseInt(match[1])
+                        count: count,
+                        requiresConfirmation: count > 30  // 30文字以上は確認
                     };
                 } else if (match[1]) {
                     // 指定文字列削除
                     return { 
                         action: 'delete_string', 
-                        target: match[1]
+                        target: match[1],
+                        requiresConfirmation: false
                     };
                 }
+            }
+        }
+        
+        // 🎯 優先度2: 全削除（確認付き）
+        for (const pattern of this.deletionPatterns) {
+            if (pattern.test(cleanText)) {
+                return { 
+                    action: 'clear_all',
+                    requiresConfirmation: true  // 全削除は必ず確認
+                };
             }
         }
         
@@ -4005,9 +4107,28 @@ const SpeechCorrectionSystem = {
         return null;
     },
     
-    // 訂正処理の実行
+    // 訂正処理の実行（確認機能付き）
     async executeCorrectionCommand(command) {
         console.log('🔧 音声訂正コマンド実行:', command);
+        
+        // 確認が必要な場合の処理
+        if (command.requiresConfirmation) {
+            let confirmMessage = '';
+            if (command.action === 'clear_all') {
+                confirmMessage = '全ての文字起こしを削除します。よろしいですか？';
+            } else if (command.action === 'delete_characters') {
+                confirmMessage = `${command.count}文字を削除します。大きな数値ですが、よろしいですか？`;
+            }
+            
+            const confirmed = confirm(confirmMessage);
+            if (!confirmed) {
+                return { 
+                    success: true, 
+                    message: '削除をキャンセルしました',
+                    feedback: '削除をキャンセルしました' 
+                };
+            }
+        }
         
         switch (command.action) {
             case 'clear_all':
@@ -4038,9 +4159,9 @@ const SpeechCorrectionSystem = {
         };
     },
     
-    // 最後のN文字削除
+    // 最後のN文字削除（置き換え処理版）
     deleteLastCharacters(count) {
-        if (count <= 0) return { success: false, message: '削除する文字数が不正です' };
+        if (count <= 0) return { success: false, message: "削除する文字数が不正です" };
         
         const originalLength = this.currentInput.length;
         const deleteCount = Math.min(count, originalLength);
@@ -4054,7 +4175,6 @@ const SpeechCorrectionSystem = {
             feedback: `${deleteCount}文字削除しました`
         };
     },
-    
     // 指定文字列削除
     deleteSpecificString(target) {
         if (!this.currentInput.includes(target)) {
@@ -4127,6 +4247,30 @@ window.SpeechCorrectionSystem = SpeechCorrectionSystem;
 window.testCorrectionCommand = (text) => SpeechCorrectionSystem.detectCorrectionCommand(text);
 window.executeCorrectionCommand = (command) => SpeechCorrectionSystem.executeCorrectionCommand(command);
 window.provideCorrectionFeedback = provideCorrectionFeedback;
+
+// 🎯 シンプル修正：音声コマンド除去関数
+window.removeVoiceCommand = function(text, expectedCount) {
+    // ✅ 改良：「してください」対応の音声コマンド除去パターン
+    const voiceCommandPatterns = [
+        new RegExp(`(.+?)\\s+(${expectedCount})文字削除(?:して(?:ください)?)?$`),        // "テキスト 3文字削除", "テキスト 3文字削除してください"
+        new RegExp(`(.+?)\\s+(${expectedCount})文字消して(?:ください)?$`),               // "テキスト 3文字消して", "テキスト 3文字消してください"  
+        new RegExp(`(.+?)\\s+(${expectedCount})文字\\s*削除(?:して(?:ください)?)?$`),     // "テキスト 3文字 削除してください"
+        new RegExp(`(.+?)\\s+(${expectedCount})文字\\s*消して(?:ください)?$`),           // "テキスト 3文字 消してください"
+        new RegExp(`(.+?)\\s+最後の(${expectedCount})文字\\s*削除(?:して(?:ください)?)?$`), // "テキスト 最後の3文字削除してください"
+        new RegExp(`(.+?)\\s+最後の(${expectedCount})文字\\s*消して(?:ください)?$`),     // "テキスト 最後の3文字消してください"
+        new RegExp(`(.+?)\\s+(${expectedCount})\\s*文字\\s*削除(?:して(?:ください)?)?$`), // "テキスト 3 文字 削除してください"
+        new RegExp(`(.+?)\\s+(${expectedCount})\\s*文字\\s*消して(?:ください)?$`)        // "テキスト 3 文字 消してください"
+    ];
+    
+    for (const pattern of voiceCommandPatterns) {
+        const match = text.match(pattern);
+        if (match) {
+            return match[1].trim(); // 音声コマンド前の部分のみ返す
+        }
+    }
+    
+    return text; // パターンが見つからない場合は元のまま
+}
 
 // ヘルプガイド切り替え関数
 // 🔧 UI最適化Phase1: ヘルプガイド管理機能をapp/ui-advanced.jsに移動
@@ -4381,26 +4525,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         SmartVoicePanelManager.init();
     }
     
-    // 🎨 新UI: VoiceUIManagerの初期化を無効化（ログイン画面での表示を防ぐ）
-    // メイン画面遷移時にのみ手動で初期化する
-    /*
-    if (typeof VoiceUIManager !== 'undefined') {
-        try {
-            console.log('🎨 VoiceUIManager初期化開始');
-            window.voiceUIManager = new VoiceUIManager();
-            const voiceUISuccess = await window.voiceUIManager.initialize();
-            if (voiceUISuccess) {
-                console.log('✅ VoiceUIManager初期化完了');
-            } else {
-                console.warn('⚠️ VoiceUIManager初期化失敗');
-            }
-        } catch (error) {
-            console.error('❌ VoiceUIManager初期化エラー:', error);
-        }
-    } else {
-        console.warn('⚠️ VoiceUIManager が見つかりません');
-    }
-    */
+    // 🔧 VoiceUIManager削除完了 - 統一状態管理システムに完全移行
     
     console.log('✅ 初期化完了（状態管理・知見管理・SessionController・スマート音声パネル・新UI機能付き）');
 });
@@ -6484,6 +6609,17 @@ async function initializeFileManager() {
 
 // 音声システムの自動初期化
 document.addEventListener('DOMContentLoaded', function() {
+    // 🔧 統一状態管理システムの初期化（音声システム前に実行）
+    setTimeout(async () => {
+        console.log('🏗️ 統一状態管理システム初期化開始');
+        try {
+            await initializeUnifiedStateManager();
+            console.log('✅ 統一状態管理システム初期化完了');
+        } catch (error) {
+            console.error('❌ 統一状態管理システム初期化エラー:', error);
+        }
+    }, 30);
+    
     // 少し遅延させて他のシステムの初期化を待つ
     setTimeout(() => {
         console.log('🚀 音声システム自動初期化開始');

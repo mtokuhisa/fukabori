@@ -2,7 +2,7 @@
   "name": "深堀くん - AIインタビューアプリ",
   "short_name": "深堀くん",
   "description": "ねほりーの・はほりーのがあなたの知見を深掘り",
-  "version": "0.8.0",
+  "version": "0.7.5",
   "start_url": "/深堀くん.html",
   "display": "standalone",
   "id": "/深堀くん.html",

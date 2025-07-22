@@ -595,12 +595,14 @@ function updateVoiceCommandsDisplay() {
  */
 function updateRightPaneSessionDisplay(status, theme) {
     // 既存の要素を取得
-    const elements = window.rightPaneElements;
+    let elements = window.rightPaneElements;
     if (!elements) {
         console.warn('⚠️ 右ペインセッション状況表示要素が初期化されていません');
         // 緊急初期化を試行
         if (initializeRightPaneSessionDisplay()) {
             console.log('✅ 緊急初期化が成功しました');
+            // 🔧 緊急初期化後に要素を再取得
+            elements = window.rightPaneElements;
         } else {
             console.log('❌ 緊急初期化も失敗しました');
             return;
@@ -1091,7 +1093,7 @@ function updateRealtimeTranscript(transcriptText = '') {
     const transcriptElement = document.getElementById('transcriptText');
     
     if (!transcriptElement) {
-        console.warn('⚠️ リアルタイム音声認識要素が見つかりません');
+        // 🎯 Phase B: 要素がない場合は静かに処理をスキップ（エラー抑制）
         return;
     }
     

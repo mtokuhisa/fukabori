@@ -179,6 +179,11 @@ const SessionStartManager = {
             return;
         }
         
+        // 🎨 一時停止ボタン監視開始
+        if (window.startPauseButtonMonitoring) {
+            window.startPauseButtonMonitoring();
+        }
+        
         await this.startWarmupPhase();
     },
     

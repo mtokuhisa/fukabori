@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 実際の修正効果確認テスト - 深堀くんv2.0</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5; 
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            padding-bottom: 20px; 
+            border-bottom: 2px solid #007AFF; 
+        }
+        .test-controls { 
+            margin-bottom: 20px; 
+            padding: 20px; 
+            background: #f8f9fa; 
+            border-radius: 6px; 
+        }
+        .test-button { 
+            background: #007AFF; 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 6px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            margin-right: 10px; 
+        }
+        .test-button:hover { background: #0056b3; }
+        .test-button:disabled { background: #ccc; cursor: not-allowed; }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 4px; 
+            font-weight: bold; 
+        }
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .log-container { 
+            background: #000; 
+            color: #0f0; 
+            padding: 20px; 
+            border-radius: 6px; 
+            font-family: 'Courier New', monospace; 
+            height: 400px; 
+            overflow-y: auto; 
+            margin-top: 20px; 
+        }
+        .summary { 
+            margin-top: 20px; 
+            padding: 20px; 
+            background: #f8f9fa; 
+            border-radius: 6px; 
+        }
+        .summary-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+            margin-top: 15px; 
+        }
+        .summary-item { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 4px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+        }
+        .app-link { 
+            display: inline-block; 
+            background: #28a745; 
+            color: white; 
+            padding: 10px 20px; 
+            text-decoration: none; 
+            border-radius: 6px; 
+            margin-top: 10px; 
+        }
+        .app-link:hover { background: #218838; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 実際の修正効果確認テスト</h1>
+            <p>構造的シンプル化修正後の動作を実際のブラウザ環境で検証</p>
+            <a href="./深堀くん.html" class="app-link" target="_blank">🚀 深堀くんv2.0を開く</a>
+        </div>
+
+        <div class="test-controls">
+            <button id="runTestBtn" class="test-button">🧪 修正効果確認テストを実行</button>
+            <button id="clearLogBtn" class="test-button">🗑️ ログクリア</button>
+            <button id="toggleMicBtn" class="test-button">🎤 toggleMicrophone直接テスト</button>
+        </div>
+
+        <div id="statusContainer"></div>
+
+        <div class="summary" id="summaryContainer" style="display: none;">
+            <h3>📊 テスト結果サマリー</h3>
+            <div class="summary-grid" id="summaryGrid"></div>
+        </div>
+
+        <div class="log-container" id="logContainer">
+            <div>🔄 テスト実行待機中...</div>
+            <div>📋 このテストは以下を確認します:</div>
+            <div>  ✅ VoiceUIManager完全削除確認</div>
+            <div>  ✅ 自動復旧システム無効化確認</div>
+            <div>  ✅ 統一状態管理システムアクセス確認</div>
+            <div>  ✅ toggleMicrophone安全実行確認</div>
+            <div>  ✅ 一時停止ボタン機能確認</div>
+            <div>  ✅ Voice Module機能確認</div>
+        </div>
+    </div>
+
+    <!-- 深堀くんのスクリプトを読み込み（テスト対象） -->
+    <script src="config/app_settings.js"></script>
+    <script src="config/prompts.js"></script>
+    <script src="config/app_config_loader.js"></script>
+    <script src="app/utils.js?v=0.8.0"></script>
+    <script src="config/voice_config.js"></script>
+    
+    <!-- 統一状態管理システム -->
+    <script src="app/unified-state-manager/voice-module.js?v=0.8.4"></script>
+    <script src="app/unified-state-manager/ui-module.js?v=0.8.0"></script>
+    <script src="app/unified-state-manager/core.js?v=0.8.0"></script>
+    <script src="app/unified-state-manager.js?v=0.8.0"></script>
+    
+    <!-- メインスクリプト -->
+    <script src="app/script.js?v=0.8.0"></script>
+    
+    <!-- テストスクリプト -->
+    <script src="actual-fix-verification-test.js"></script>
+
+    <script>
+        let logContainer, statusContainer, summaryContainer, summaryGrid;
+        let testRunning = false;
+
+        function initializeUI() {
+            logContainer = document.getElementById('logContainer');
+            statusContainer = document.getElementById('statusContainer');
+            summaryContainer = document.getElementById('summaryContainer');
+            summaryGrid = document.getElementById('summaryGrid');
+
+            // ボタンイベントリスナー
+            document.getElementById('runTestBtn').addEventListener('click', runTests);
+            document.getElementById('clearLogBtn').addEventListener('click', clearLog);
+            document.getElementById('toggleMicBtn').addEventListener('click', testToggleMicrophone);
+
+            // ログ出力をキャプチャ
+            const originalConsoleLog = console.log;
+            console.log = function(...args) {
+                originalConsoleLog(...args);
+                appendLog(args.join(' '));
+            };
+
+            appendLog('🔄 テストランナー初期化完了');
+        }
+
+        function appendLog(message) {
+            if (logContainer) {
+                const div = document.createElement('div');
+                div.textContent = message;
+                logContainer.appendChild(div);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            statusContainer.appendChild(statusDiv);
+
+            // 5秒後に自動削除
+            setTimeout(() => {
+                if (statusDiv.parentNode) {
+                    statusDiv.parentNode.removeChild(statusDiv);
+                }
+            }, 5000);
+        }
+
+        function clearLog() {
+            if (logContainer) {
+                logContainer.innerHTML = '<div>🗑️ ログクリア完了</div>';
+            }
+            if (statusContainer) {
+                statusContainer.innerHTML = '';
+            }
+            if (summaryContainer) {
+                summaryContainer.style.display = 'none';
+            }
+        }
+
+        async function runTests() {
+            if (testRunning) {
+                showStatus('⚠️ テスト実行中です。しばらくお待ちください。', 'info');
+                return;
+            }
+
+            testRunning = true;
+            document.getElementById('runTestBtn').disabled = true;
+            document.getElementById('runTestBtn').textContent = '🔄 テスト実行中...';
+
+            try {
+                showStatus('🧪 修正効果確認テスト開始', 'info');
+                
+                if (typeof window.runActualFixVerification === 'function') {
+                    const report = await window.runActualFixVerification();
+                    displaySummary(report);
+
+                    if (report.success) {
+                        showStatus(`🎉 全テスト成功！ (${report.successCount}/${report.totalTests})`, 'success');
+                    } else {
+                        showStatus(`⚠️ 問題検出 (成功: ${report.successCount}, 失敗: ${report.failureCount})`, 'error');
+                    }
+                } else {
+                    showStatus('❌ テスト関数が見つかりません', 'error');
+                }
+
+            } catch (error) {
+                showStatus(`❌ テスト実行エラー: ${error.message}`, 'error');
+                appendLog(`❌ テスト実行エラー: ${error.message}`);
+            } finally {
+                testRunning = false;
+                document.getElementById('runTestBtn').disabled = false;
+                document.getElementById('runTestBtn').textContent = '🧪 修正効果確認テストを実行';
+            }
+        }
+
+        function displaySummary(report) {
+            summaryGrid.innerHTML = '';
+            
+            // 総合結果
+            const overallDiv = document.createElement('div');
+            overallDiv.className = 'summary-item';
+            overallDiv.innerHTML = `
+                <h4>📊 総合結果</h4>
+                <p>成功率: ${Math.round((report.successCount / report.totalTests) * 100)}%</p>
+                <p>成功: ${report.successCount}</p>
+                <p>失敗: ${report.failureCount}</p>
+            `;
+            summaryGrid.appendChild(overallDiv);
+
+            // 個別結果
+            report.results.forEach(result => {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'summary-item';
+                const icon = result.status === 'success' ? '✅' : '❌';
+                resultDiv.innerHTML = `
+                    <h4>${icon} ${result.name}</h4>
+                    <p>${result.message}</p>
+                `;
+                summaryGrid.appendChild(resultDiv);
+            });
+
+            summaryContainer.style.display = 'block';
+        }
+
+        function testToggleMicrophone() {
+            try {
+                appendLog('🧪 toggleMicrophone直接テスト実行...');
+                if (typeof window.toggleMicrophone === 'function') {
+                    window.toggleMicrophone();
+                    showStatus('✅ toggleMicrophone実行完了', 'success');
+                } else {
+                    showStatus('❌ toggleMicrophone関数が見つかりません', 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ toggleMicrophone実行エラー: ${error.message}`, 'error');
+                appendLog(`❌ toggleMicrophone実行エラー: ${error.message}`);
+            }
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', initializeUI);
+
+        // ページ読み込み完了後に自動実行オプション
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                appendLog('🚀 ページ読み込み完了 - テスト実行準備完了');
+                appendLog('📋 「🧪 修正効果確認テストを実行」ボタンを押してください');
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

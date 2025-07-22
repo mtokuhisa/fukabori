@@ -34,11 +34,11 @@ class VoiceModule {
             lastActivity: Date.now()
         };
         
-        // 🔧 自動復旧システム
+        // 🔧 設計思想: 「無音は正常」- 自動復旧システム完全無効化
         this.autoRecovery = {
-            enabled: true,
-            maxAttempts: 3,
-            retryDelay: 1000,
+            enabled: false,  // 無音時間監視廃止
+            maxAttempts: 0,
+            retryDelay: 0,
             currentAttempt: 0,
             lastAttemptTime: null
         };
@@ -230,21 +230,32 @@ class VoiceModule {
         }
     }
     
-    // 🔧 新機能：一時停止（トグル機能）
+    /**
+     * 手動一時停止（透明継続を無効化）
+     */
     pauseRecognition() {
         if (this.state.recognitionState === 'active') {
-            this.stopRecognition();
-        } else if (this.state.recognitionState === 'idle') {
-            this.startRecognition();
+            console.log('⏸️ 手動一時停止実行');
+            this.updateState({ recognitionState: 'paused' });
+            this.recognition.stop();
+        } else {
+            console.log('⏸️ 音声認識は動作していません');
         }
     }
     
-    // 🔧 新機能：再開
+    /**
+     * 手動再開（一時停止からの復帰）
+     */
     resumeRecognition() {
-        if (this.state.recognitionState === 'idle') {
+        if (this.state.recognitionState === 'paused' || this.state.recognitionState === 'idle') {
+            console.log('▶️ 手動再開実行');
             this.startRecognition();
+        } else {
+            console.log('▶️ 音声認識は既に動作中です');
         }
     }
+    
+    // 🔧 レガシー機能削除完了 - 新しい手動一時停止システムに移行済み
     
     // 🔧 継続的音声認識用：結果処理再開
     resumeProcessing(reason = 'unknown') {
@@ -309,26 +320,135 @@ class VoiceModule {
     handleEnd() {
         console.log('🏁 音声認識終了イベント');
         
+        // 手動停止の場合は状態をそのまま維持
+        if (this.state.recognitionState === 'stopping') {
+            this.updateState({ 
+                recognitionState: 'idle',
+                isListening: false 
+            });
+            return;
+        }
+        
+        // 🔧 透明な継続システム: ブラウザAPI無音終了を隠蔽して継続
+        if (this.shouldContinueTransparently()) {
+            console.log('🔄 透明継続: 無音終了を隠蔽して音声認識を継続');
+            this.performTransparentContinuation();
+        } else {
+            console.log('✅ 音声認識終了 - セッション終了またはエラー状態');
+            this.updateState({ recognitionState: 'idle' });
+        }
+    }
+    
+    /**
+     * 透明継続の条件判定
+     * セッションアクティブかつエラー状態でない場合に継続
+     */
+    shouldContinueTransparently() {
         // セッション状態確認
         if (!window.AppState?.sessionActive) {
-            console.log('🚫 セッション非アクティブ - 再開なし');
-            this.updateState({ recognitionState: 'idle' });
-            return;
+            console.log('🚫 セッション非アクティブ - 透明継続なし');
+            return false;
         }
         
-        // ユーザーが手動で一時停止した場合は自動復旧しない
-        if (window.VoiceUIManager && window.VoiceUIManager.isUserPausedManually()) {
-            console.log('🔇 ユーザーが手動で一時停止したため自動復旧を無効化');
-            this.updateState({ recognitionState: 'idle' });
-            return;
+        // エラー状態確認（no-speechエラーは除外）
+        if (this.state.recognitionState === 'error') {
+            // 🔧 no-speechエラーは「無音は正常」として透明継続を許可
+            if (this.state.lastError && this.state.lastError.includes('no-speech')) {
+                console.log('🤫 no-speechエラー - 無音正常として透明継続実行');
+                return true;
+            }
+            console.log('🚫 エラー状態 - 透明継続なし');
+            return false;
         }
         
-        // 🔧 自動復旧機能
-        if (this.autoRecovery.enabled) {
-            console.log('🔄 自動復旧を試行');
-            this.attemptAutoRecovery();
-        } else {
-            this.updateState({ recognitionState: 'idle' });
+        // 手動一時停止確認（一時停止ボタンが押された場合）
+        if (this.state.recognitionState === 'paused') {
+            console.log('⏸️ 手動一時停止中 - 透明継続なし');
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * 透明継続の実行
+     * ユーザーに見えない形で音声認識を自動再開
+     * 注意: 既存のstartRecognition()をバイパスして直接再開
+     */
+    async performTransparentContinuation() {
+        try {
+            // 短時間待機してからシームレス再開
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            console.log('🎤 透明継続実行: 音声認識自動再開');
+            
+            // 🔧 透明継続専用: 状態チェックをバイパスして直接再開
+            await this.forceRestartRecognition();
+            
+        } catch (error) {
+            console.error('❌ 透明継続エラー:', error);
+            
+            // 透明継続に失敗した場合は手動復旧モードに
+            this.updateState({ 
+                recognitionState: 'error',
+                errorMessage: '音声認識の継続に失敗しました。再開ボタンを押してください。'
+            });
+        }
+    }
+
+    /**
+     * 強制的な音声認識再開（透明継続専用）
+     * 既存の状態チェックをバイパスして新しいrecognitionインスタンスを作成
+     */
+    async forceRestartRecognition() {
+        try {
+            console.log('🔄 強制再開: 新しい音声認識インスタンス作成');
+            
+            // 既存のrecognitionインスタンスを完全にクリーンアップ
+            if (this.recognition) {
+                this.recognition.onstart = null;
+                this.recognition.onend = null;
+                this.recognition.onerror = null;
+                this.recognition.onresult = null;
+                this.recognition.onspeechstart = null;
+                this.recognition.onspeechend = null;
+                this.recognition = null;
+            }
+            
+            // マイク許可の確認
+            if (!this.state.microphonePermissionGranted) {
+                const permitted = await this.checkMicrophonePermission();
+                if (!permitted) {
+                    throw new Error('マイク許可が必要です');
+                }
+            }
+            
+            // 新しいrecognitionインスタンスを作成
+            this.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            this.recognition.continuous = true;
+            this.recognition.interimResults = true;
+            this.recognition.lang = 'ja-JP';
+            this.recognition.maxAlternatives = 1;
+            
+            // 🔧 既存のsetupEventHandlers()メソッドを再利用（安全な方法）
+            this.setupEventHandlers();
+            
+            // 音声認識開始
+            console.log('🎤 強制再開: 音声認識開始');
+            this.recognition.start();
+            
+            // 状態更新（activeのまま維持して透明性を保つ）
+            this.updateState({ 
+                isListening: true,
+                sessionStartTime: Date.now(),
+                lastActivity: Date.now()
+            });
+            
+            return true;
+            
+        } catch (error) {
+            console.error('❌ 強制再開エラー:', error);
+            throw error;
         }
     }
     
@@ -401,8 +521,8 @@ class VoiceModule {
                 return;
             }
             
-            // ユーザーが手動で一時停止した場合は自動復旧しない
-            if (window.VoiceUIManager && window.VoiceUIManager.isUserPausedManually()) {
+            // 🔧 手動一時停止の確認（統一状態管理システム使用）
+            if (this.state.recognitionState === 'paused') {
                 console.log('⏸️ 手動一時停止中のため自動復旧をスキップ');
                 return;
             }

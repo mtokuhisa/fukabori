@@ -1,20 +1,35 @@
 // 深堀くん - Service Worker
 // PWA対応：オフライン機能、キャッシュ管理、バックグラウンド同期
 
-const CACHE_NAME = 'fukabori-v0.8.0-voice-system';
+const CACHE_NAME = 'fukabori-v0.7.5-emergency-fix';
 const OFFLINE_URL = '/深堀くん.html';
 
-// キャッシュするリソース
+// キャッシュするリソース（v0.7.5対応）
 const urlsToCache = [
   '/深堀くん.html',
   '/app/style.css',
   '/app/script.js',
   '/app/utils.js',
+  // 🔧 統一状態管理システム（モジュール化版）
+  '/app/unified-state-manager/voice-module.js',
+  '/app/unified-state-manager/ui-module.js', 
+  '/app/unified-state-manager/core.js',
+  '/app/unified-state-manager.js',
+  '/app/unified-state-manager/styles.css',
+  // 🔧 状態統合アダプター
+  '/app/state-integration-adapter.js',
+  '/app/ui-state-display.js',
+  // 音声システム
   '/app/voice-core.js',
+  '/app/voice-phase2-manager.js',
+  '/app/voice-error-handler.js',
+  '/app/voice-processing-manager.js',
+  // UI/DOM操作管理
   '/app/ui-manager.js',
   '/app/ui-screens.js',
   '/app/ui-basic.js',
   '/app/ui-advanced.js',
+  // システム管理
   '/app/storage-manager.js',
   '/app/file-processing.js',
   '/app/knowledge-system.js',
@@ -25,18 +40,16 @@ const urlsToCache = [
   '/app/knowledge-file-manager-interface.js',
   '/app/api-key-setup.js',
   '/app/session-manager.js',
-  '/app/phase-manager.js',
   '/app/session-start-manager.js',
-  '/app/voice-phase2-manager.js',
-  '/app/voice-error-handler.js',
-  '/app/voice-ui-manager.js',
-  '/app/unified-state-manager/voice-module.js',
+  '/app/phase-manager.js',
+  // 設定ファイル
   '/config/app_config_loader.js',
   '/config/app_settings.js',
   '/config/voice_config.js',
   '/config/prompts.js',
   '/config/categories.csv',
   '/config/user_names.csv',
+  // アセット
   '/assets/fukabori_logo.png',
   '/assets/fukabori_logo_main.png',
   '/assets/nehori_avatar.png',

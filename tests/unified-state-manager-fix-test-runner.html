@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>統一状態管理システム修正効果確認テスト</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: #333;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .status {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border-left: 5px solid;
+            font-weight: bold;
+        }
+        
+        .status.info {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            color: #1976d2;
+        }
+        
+        .status.success {
+            background: #e8f5e8;
+            border-color: #4caf50;
+            color: #388e3c;
+        }
+        
+        .status.warning {
+            background: #fff3e0;
+            border-color: #ff9800;
+            color: #f57c00;
+        }
+        
+        .status.error {
+            background: #ffebee;
+            border-color: #f44336;
+            color: #d32f2f;
+        }
+        
+        .test-results {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .test-item {
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border-left: 4px solid;
+            background: white;
+        }
+        
+        .test-item.success {
+            border-color: #28a745;
+        }
+        
+        .test-item.error {
+            border-color: #dc3545;
+        }
+        
+        .test-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .test-message {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        .analysis-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+        }
+        
+        .analysis-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #4facfe;
+        }
+        
+        .log-container {
+            background: #1e1e1e;
+            color: #f0f0f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            height: 300px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+            word-wrap: break-word;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 統一状態管理システム修正効果確認テスト</h1>
+            <p>window.unifiedStateManager初期化とアクセス方法修正の効果確認</p>
+        </div>
+        
+        <div class="content">
+            <div class="status info" id="status">
+                <div id="statusText">テスト準備完了 - 実行ボタンを押してください</div>
+            </div>
+            
+            <div class="test-controls">
+                <button class="btn btn-primary" onclick="runTest()" id="runBtn">
+                    🚀 テスト実行
+                </button>
+                <button class="btn btn-secondary" onclick="showAnalysis()" id="analysisBtn" disabled>
+                    🔍 詳細分析
+                </button>
+                <button class="btn btn-danger" onclick="clearResults()">
+                    🧹 結果クリア
+                </button>
+                <a href="/深堀くん.html" class="btn btn-secondary">
+                    📱 メインアプリ
+                </a>
+            </div>
+            
+            <div class="progress-bar hidden" id="progressContainer">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            
+            <div class="test-results hidden" id="resultsContainer">
+                <h3>📊 テスト結果</h3>
+                <div id="testResults"></div>
+            </div>
+            
+            <div class="analysis-section hidden" id="analysisContainer">
+                <h3>🔍 詳細分析</h3>
+                <div id="analysisResults"></div>
+            </div>
+            
+            <div class="log-container" id="logContainer">
+                <div id="logContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 深堀くんのメインシステムを読み込む -->
+    <script src="/config/app_config_loader.js"></script>
+    <script src="/config/app_settings.js"></script>
+    <script src="/config/prompts.js"></script>
+    <script src="/config/voice_config.js"></script>
+    <script src="/app/utils.js?v=0.8.0"></script>
+    <script src="/app/unified-state-manager/voice-module.js?v=0.8.4"></script>
+    <script src="/app/unified-state-manager/core.js?v=0.8.0"></script>
+    <script src="/app/unified-state-manager.js?v=0.8.0"></script>
+    <script src="/app/unified-state-manager/ui-module.js?v=0.8.0"></script>
+    <script src="/app/state-integration-adapter.js?v=0.8.0"></script>
+    <script src="/app/voice-core.js?v=0.8.0"></script>
+    <script src="/app/ui-state-display.js?v=0.8.0"></script>
+    <script src="/app/ui-manager.js?v=0.8.0"></script>
+    <script src="/app/ui-screens.js?v=0.8.0"></script>
+    <script src="/app/file-processing.js?v=0.8.0"></script>
+    <script src="/app/ui-basic.js?v=0.8.4"></script>
+    <script src="/app/storage-manager.js?v=0.8.0"></script>
+    <script src="/app/ui-advanced.js?v=0.8.0"></script>
+    <script src="/app/knowledge-system.js?v=0.8.0"></script>
+    <script src="/app/session-controller.js?v=0.8.0"></script>
+    <script src="/app/data-manager.js?v=0.8.0"></script>
+    <script src="/app/file-manager.js?v=0.8.0"></script>
+    <script src="/app/ai-manager.js?v=0.8.0"></script>
+    <script src="/app/knowledge-file-manager-interface.js?v=0.8.0"></script>
+    <script src="/app/session-manager.js?v=0.8.0"></script>
+    <script src="/app/api-key-setup.js?v=0.8.0"></script>
+    <script src="/app/session-start-manager.js?v=0.8.0"></script>
+    <script src="/app/phase-manager.js?v=0.8.0"></script>
+    <script src="/app/voice-phase2-manager.js?v=0.8.0"></script>
+    <script src="/app/voice-error-handler.js?v=0.8.0"></script>
+    <script src="/app/voice-processing-manager.js?v=1.0"></script>
+    <script src="/app/script.js?v=0.8.0"></script>
+    
+    <!-- テストスクリプト -->
+    <script src="/unified-state-manager-fix-test.js"></script>
+    
+    <script>
+        let currentTestResults = null;
+        let currentAnalysis = null;
+        
+        // ログ表示用
+        const originalConsoleLog = console.log;
+        const logContent = document.getElementById('logContent');
+        
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.textContent = args.join(' ');
+            logContent.appendChild(logEntry);
+            logContent.scrollTop = logContent.scrollHeight;
+        };
+        
+        async function runTest() {
+            const runBtn = document.getElementById('runBtn');
+            const analysisBtn = document.getElementById('analysisBtn');
+            const status = document.getElementById('status');
+            const statusText = document.getElementById('statusText');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const resultsContainer = document.getElementById('resultsContainer');
+            
+            try {
+                // UI状態をテスト実行中に変更
+                runBtn.disabled = true;
+                runBtn.textContent = '🔄 テスト実行中...';
+                analysisBtn.disabled = true;
+                status.className = 'status info';
+                statusText.textContent = 'テスト実行中...';
+                progressContainer.classList.remove('hidden');
+                
+                // ログをクリア
+                logContent.innerHTML = '';
+                
+                // 少し待ってからテスト実行
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                console.log('🚀 統一状態管理システム修正効果確認テスト開始');
+                
+                // テスト実行
+                const results = await runUnifiedStateManagerFixTest();
+                currentTestResults = results.testResults;
+                currentAnalysis = results.detailedAnalysis;
+                
+                // プログレスバー更新
+                progressFill.style.width = '100%';
+                
+                // 結果表示
+                displayResults(results.testResults);
+                
+                // UI状態を完了状態に変更
+                if (results.testResults.success) {
+                    status.className = 'status success';
+                    statusText.textContent = `✅ テスト完了！成功率: ${results.testResults.successRate}%`;
+                } else {
+                    status.className = 'status warning';
+                    statusText.textContent = `⚠️ テスト完了（一部失敗）成功率: ${results.testResults.successRate}%`;
+                }
+                
+                analysisBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('❌ テスト実行エラー:', error);
+                status.className = 'status error';
+                statusText.textContent = '❌ テスト実行中にエラーが発生しました';
+            } finally {
+                runBtn.disabled = false;
+                runBtn.textContent = '🚀 テスト実行';
+                setTimeout(() => {
+                    progressContainer.classList.add('hidden');
+                    progressFill.style.width = '0%';
+                }, 1000);
+            }
+        }
+        
+        function displayResults(results) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            const testResults = document.getElementById('testResults');
+            
+            let html = `
+                <div class="test-item ${results.success ? 'success' : 'error'}">
+                    <div class="test-name">📊 総合結果: ${results.successRate}% (${results.results.filter(r => r.status === 'success').length}/${results.results.length})</div>
+                </div>
+            `;
+            
+            for (const result of results.results) {
+                html += `
+                    <div class="test-item ${result.status}">
+                        <div class="test-name">${result.status === 'success' ? '✅' : '❌'} ${result.name}</div>
+                        <div class="test-message">${result.message}</div>
+                    </div>
+                `;
+            }
+            
+            testResults.innerHTML = html;
+            resultsContainer.classList.remove('hidden');
+        }
+        
+        function showAnalysis() {
+            if (!currentAnalysis) {
+                console.warn('⚠️ 詳細分析データがありません。先にテストを実行してください。');
+                return;
+            }
+            
+            const analysisContainer = document.getElementById('analysisContainer');
+            const analysisResults = document.getElementById('analysisResults');
+            
+            let html = `
+                <div class="analysis-item">
+                    <strong>🏗️ 初期化状況:</strong><br>
+                    • unifiedStateManager存在: ${currentAnalysis.initialization.unifiedStateManagerExists ? '✅' : '❌'}<br>
+                    • modulesプロパティ存在: ${currentAnalysis.initialization.modulesExists ? '✅' : '❌'}<br>
+                    • VoiceModule存在: ${currentAnalysis.initialization.voiceModuleExists ? '✅' : '❌'}
+                </div>
+                
+                <div class="analysis-item">
+                    <strong>🎤 音声モジュール状態:</strong><br>
+                    <pre>${JSON.stringify(currentAnalysis.voiceState, null, 2)}</pre>
+                </div>
+                
+                <div class="analysis-item">
+                    <strong>🔄 セッション状態:</strong><br>
+                    • AppState存在: ${currentAnalysis.session.appStateExists ? '✅' : '❌'}<br>
+                    • sessionActive: ${currentAnalysis.session.sessionActive}
+                </div>
+                
+                <div class="analysis-item">
+                    <strong>⏰ 分析時刻:</strong> ${new Date(currentAnalysis.timestamp).toLocaleString()}
+                </div>
+            `;
+            
+            analysisResults.innerHTML = html;
+            analysisContainer.classList.remove('hidden');
+        }
+        
+        function clearResults() {
+            document.getElementById('resultsContainer').classList.add('hidden');
+            document.getElementById('analysisContainer').classList.add('hidden');
+            document.getElementById('logContent').innerHTML = '';
+            document.getElementById('status').className = 'status info';
+            document.getElementById('statusText').textContent = 'テスト準備完了 - 実行ボタンを押してください';
+            document.getElementById('analysisBtn').disabled = true;
+            currentTestResults = null;
+            currentAnalysis = null;
+        }
+        
+        // ページ読み込み完了時の処理
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 統一状態管理システム修正効果確認テストページ読み込み完了');
+            console.log('🚀 テスト実行準備完了');
+        });
+    </script>
+</body>
+</html> 

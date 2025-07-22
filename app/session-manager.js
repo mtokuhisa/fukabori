@@ -61,24 +61,42 @@ const SessionEndManager = {
     },
     
     /**
-     * 全活動停止処理
-     * 音声認識・音声再生の完全停止
+     * 全活動停止処理 - 安全実装
+     * 統一状態管理システム優先の音声認識・音声再生停止
      */
     stopAllActivities() {
-        console.log('🛑 全活動停止処理開始');
+        console.log('🛑 全活動停止処理開始 - 安全実装');
         
         try {
-            // 全活動強制停止
-            if (typeof forceStopAllActivity === 'function') {
-                forceStopAllActivity();
+            // 🎤 統一状態管理システム経由で音声認識停止（正しい実装）
+            if (window.unifiedStateManager) {
+                const voiceModule = window.unifiedStateManager.modules.get('voice');
+                if (voiceModule) {
+                    voiceModule.stopRecognition();
+                    console.log('✅ 統一状態管理システム経由で音声認識停止');
+                }
             }
             
-            // 音声制御管理システムによる音声停止
+            // 🔊 音声制御管理システムによる音声再生停止
             if (window.AudioControlManager) {
-                window.AudioControlManager.forceStopAllAudio('session_end');
+                const stoppedCount = window.AudioControlManager.forceStopAllAudio('session_end');
+                console.log(`✅ 音声再生停止: ${stoppedCount}件`);
             }
             
-            console.log('✅ 全活動停止完了');
+            // 🎯 アプリ状態の安全な更新
+            if (window.AppState) {
+                window.AppState.currentSpeaker = window.SPEAKERS.NULL;
+                if (window.AppState.voiceRecognitionStability) {
+                    window.AppState.voiceRecognitionStability.isRecognitionActive = false;
+                }
+            }
+            
+            // 🔄 マイクボタンUI更新
+            if (typeof window.updateMicrophoneButton === 'function') {
+                window.updateMicrophoneButton();
+            }
+            
+            console.log('✅ 全活動停止完了 - 安全実装');
         } catch (error) {
             console.error('❌ 活動停止エラー:', error);
         }

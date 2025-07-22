@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深堀くん - システム大掃除統合テスト</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            min-height: 200px;
+        }
+        .log-output {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 600px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .success { color: #27ae60; }
+        .error { color: #e74c3c; }
+        .warning { color: #f39c12; }
+        .info { color: #3498db; }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 5px;
+        }
+        .status-success { background: #27ae60; }
+        .status-error { background: #e74c3c; }
+        .status-running { background: #3498db; }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .test-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .test-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        .test-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 深堀くん システム大掃除統合テスト</h1>
+            <p>VoiceUIManager削除、音声制御統一化、システム単純化後の検証</p>
+            <div class="status-badge status-running" id="serverStatus">サーバー接続確認中...</div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 テスト実行</h2>
+            <button class="button" onclick="runFullIntegrationTest()" id="testButton">
+                🚀 完全統合テスト実行
+            </button>
+            <button class="button" onclick="runMainAppTest()" id="mainAppButton">
+                🎯 メインアプリ動作確認
+            </button>
+            <button class="button" onclick="clearResults()">
+                🗑️ 結果クリア
+            </button>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+            <div id="currentTest">テスト準備完了</div>
+        </div>
+
+        <div class="test-summary" id="testSummary" style="display:none;">
+            <div class="test-card">
+                <div class="test-number success" id="passedCount">0</div>
+                <div>成功</div>
+            </div>
+            <div class="test-card">
+                <div class="test-number error" id="failedCount">0</div>
+                <div>失敗</div>
+            </div>
+            <div class="test-card">
+                <div class="test-number info" id="totalCount">0</div>
+                <div>総テスト数</div>
+            </div>
+            <div class="test-card">
+                <div class="test-number" id="successRate">0%</div>
+                <div>成功率</div>
+            </div>
+        </div>
+
+        <div class="results">
+            <h3>🔍 テスト結果</h3>
+            <div class="log-output" id="testOutput">
+テスト実行をお待ちください...
+
+利用可能なテスト:
+• 完全統合テスト - システム大掃除の全修正項目を検証
+• メインアプリ動作確認 - 深堀くん.htmlの基本動作確認
+
+【テスト項目】
+✅ Phase 1: ファイル削除確認（VoiceUIManager等）
+✅ Phase 2: 統合コード削除確認
+✅ Phase 3: 音声制御統一化確認  
+✅ Phase 4: VoiceProcessingManager単純化確認
+✅ Phase 5: 一時停止ボタン機能確認
+✅ Phase 6: システム依存関係確認
+✅ Phase 7: エラーハンドリング確認
+            </div>
+        </div>
+    </div>
+
+    <!-- テストスクリプト読み込み -->
+    <script src="cleanup-integration-test.js"></script>
+    
+    <script>
+        // グローバル変数
+        let currentTestResults = null;
+        
+        // ログ出力関数の上書き
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            logToOutput(args.join(' '));
+        };
+
+        // 結果表示用ログ関数
+        function logToOutput(message) {
+            const output = document.getElementById('testOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // 進行状況更新
+        function updateProgress(percentage, message) {
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('currentTest').textContent = message;
+        }
+
+        // テスト結果サマリー更新
+        function updateTestSummary(results) {
+            document.getElementById('testSummary').style.display = 'grid';
+            document.getElementById('passedCount').textContent = results.passed;
+            document.getElementById('failedCount').textContent = results.failed;
+            document.getElementById('totalCount').textContent = results.passed + results.failed;
+            const successRate = Math.round((results.passed / (results.passed + results.failed)) * 100) || 0;
+            document.getElementById('successRate').textContent = successRate + '%';
+        }
+
+        // サーバー状態確認
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('app/script.js?t=' + Date.now());
+                if (response.ok) {
+                    document.getElementById('serverStatus').textContent = 'サーバー接続OK';
+                    document.getElementById('serverStatus').className = 'status-badge status-success';
+                } else {
+                    throw new Error('ファイルアクセス失敗');
+                }
+            } catch (error) {
+                document.getElementById('serverStatus').textContent = 'サーバー接続エラー';
+                document.getElementById('serverStatus').className = 'status-badge status-error';
+                logToOutput('⚠️ サーバー接続エラー: http://localhost:8000 でサーバーが動作しているか確認してください');
+            }
+        }
+
+        // 完全統合テスト実行
+        async function runFullIntegrationTest() {
+            const button = document.getElementById('testButton');
+            button.disabled = true;
+            button.textContent = '🔄 テスト実行中...';
+            
+            try {
+                updateProgress(10, 'テスト初期化中...');
+                logToOutput('🧪 システム大掃除統合テスト開始');
+                
+                updateProgress(20, 'テストスイート準備中...');
+                const results = await runCleanupIntegrationTest();
+                
+                updateProgress(100, 'テスト完了');
+                currentTestResults = results;
+                updateTestSummary(results);
+                
+                // 最終結果表示
+                if (results.failed === 0) {
+                    logToOutput('\n🎉 【テスト完了】全テスト成功！システム大掃除が完璧に完了しました！');
+                } else {
+                    logToOutput(`\n⚠️ 【テスト完了】${results.failed}件の問題が検出されました。修正が必要です。`);
+                }
+                
+            } catch (error) {
+                logToOutput(`❌ テスト実行エラー: ${error.message}`);
+                updateProgress(0, 'テストエラー');
+            } finally {
+                button.disabled = false;
+                button.textContent = '🚀 完全統合テスト実行';
+            }
+        }
+
+        // メインアプリ動作確認
+        function runMainAppTest() {
+            logToOutput('🎯 メインアプリ動作確認を開始します');
+            logToOutput('深堀くん.htmlをテスト用に別タブで開きます...');
+            
+            window.open('深堀くん.html', '_blank');
+            
+            logToOutput('✅ 別タブでメインアプリを開きました');
+            logToOutput('手動で以下を確認してください:');
+            logToOutput('1. ページが正常に読み込まれるか');
+            logToOutput('2. 一時停止ボタンが「⏸️ 一時停止」と表示されているか');
+            logToOutput('3. コンソールにVoiceUIManager関連のエラーがないか');
+            logToOutput('4. 統一状態管理システムが正常に初期化されているか');
+        }
+
+        // 結果クリア
+        function clearResults() {
+            document.getElementById('testOutput').textContent = 'テスト結果がクリアされました。\n\n';
+            document.getElementById('testSummary').style.display = 'none';
+            updateProgress(0, 'テスト準備完了');
+            currentTestResults = null;
+        }
+
+        // ページ読み込み時の初期化
+        window.addEventListener('load', () => {
+            checkServerStatus();
+            logToOutput('🔧 テスト環境初期化完了');
+            logToOutput('📍 テスト対象: システム大掃除後の深堀くんv2.0');
+            logToOutput('🎯 目的: VoiceUIManager削除・音声制御統一化・システム単純化の検証\n');
+        });
+
+        // エラーハンドリング
+        window.addEventListener('error', (event) => {
+            logToOutput(`❌ JavaScript エラー: ${event.error.message}`);
+        });
+    </script>
+</body>
+</html> 

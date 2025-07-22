@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音声削除コマンド統合テスト</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .test-controls {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .test-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .info-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .feature-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧪 音声削除コマンド統合テストシステム</h1>
+        <p>実装された音声削除機能の包括的テストを実行します</p>
+        <small>Version 1.0 - 自動化統合テスト対応</small>
+    </div>
+
+    <div class="info-panel">
+        <h3>📋 テスト対象機能</h3>
+        <div class="feature-list">
+            <div class="feature-item">
+                <strong>🎯 音声コマンド除去</strong><br>
+                「3文字削除して」等のコマンドテキストを除去
+            </div>
+            <div class="feature-item">
+                <strong>✂️ 統一削除処理</strong><br>
+                3文字・5文字削除の処理パス統一
+            </div>
+            <div class="feature-item">
+                <strong>⚙️ 状態管理</strong><br>
+                waitingForPermissionフラグの適切な管理
+            </div>
+            <div class="feature-item">
+                <strong>🔄 統合フロー</strong><br>
+                音声認識→コマンド除去→削除実行の連携
+            </div>
+            <div class="feature-item">
+                <strong>⚡ パフォーマンス</strong><br>
+                処理時間100ms以内の要件達成
+            </div>
+            <div class="feature-item">
+                <strong>🧪 エッジケース</strong><br>
+                特殊文字・空文字列等の境界値テスト
+            </div>
+        </div>
+    </div>
+
+    <div class="test-controls">
+        <h3>🚀 テスト実行</h3>
+        <button id="runFullTest" class="test-button">📊 完全テスト実行</button>
+        <button id="runQuickTest" class="test-button">⚡ クイックテスト</button>
+        <button id="clearResults" class="test-button">🗑️ 結果クリア</button>
+        
+        <div id="status" class="status info" style="display: none;"></div>
+    </div>
+
+    <div class="info-panel">
+        <h3>📊 テスト結果・ログ</h3>
+        <div id="consoleOutput" class="console-output">
+テストシステム準備中...<br>
+ページ読み込み完了後、「完全テスト実行」をクリックしてください。<br>
+<br>
+🔧 必要なコンポーネント確認:<br>
+- ✅ removeVoiceCommand関数<br>
+- ✅ VoiceProcessingManager<br>
+- ✅ AppState管理システム<br>
+- ✅ SpeechCorrectionSystem<br>
+<br>
+準備完了次第、自動でテスト開始可能になります。
+        </div>
+    </div>
+
+    <!-- 必要なスクリプトを読み込み -->
+    <script src="app/script.js"></script>
+    <script src="app/voice-processing-manager.js"></script>
+    <script src="voice-delete-integration-test.js"></script>
+
+    <script>
+        // テストランナー制御
+        let consoleOutput = document.getElementById('consoleOutput');
+        let statusDiv = document.getElementById('status');
+        
+        // コンソールログをキャプチャ
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            consoleOutput.innerHTML += message + '<br>';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+
+        // エラーログもキャプチャ
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            consoleOutput.innerHTML += '<span style="color: #ff6b6b;">❌ ' + message + '</span><br>';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+
+        function showStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function disableButtons(disabled = true) {
+            document.querySelectorAll('.test-button').forEach(btn => {
+                btn.disabled = disabled;
+            });
+        }
+
+        // 完全テスト実行
+        document.getElementById('runFullTest').addEventListener('click', async () => {
+            consoleOutput.innerHTML = '';
+            showStatus('📊 完全テスト実行中...', 'info');
+            disableButtons(true);
+            
+            try {
+                console.log('🚀 音声削除コマンド統合テスト開始');
+                console.log('='.repeat(60));
+                
+                if (typeof window.runVoiceDeleteTest === 'function') {
+                    await window.runVoiceDeleteTest();
+                    showStatus('✅ テスト完了！結果を確認してください', 'success');
+                } else {
+                    console.error('❌ テスト関数が見つかりません');
+                    showStatus('❌ テストシステムの初期化に失敗', 'error');
+                }
+                
+            } catch (error) {
+                console.error('❌ テスト実行エラー:', error);
+                showStatus('❌ テスト実行中にエラーが発生しました', 'error');
+            } finally {
+                disableButtons(false);
+            }
+        });
+
+        // クイックテスト（基本機能のみ）
+        document.getElementById('runQuickTest').addEventListener('click', async () => {
+            consoleOutput.innerHTML = '';
+            showStatus('⚡ クイックテスト実行中...', 'info');
+            disableButtons(true);
+            
+            try {
+                console.log('⚡ クイックテスト開始 - 基本機能確認');
+                console.log('-'.repeat(40));
+                
+                // removeVoiceCommand機能テスト
+                if (typeof window.removeVoiceCommand === 'function') {
+                    const testResult = window.removeVoiceCommand('テストです 3文字削除して', 3);
+                    console.log(`✅ removeVoiceCommand: "${testResult}" (期待値: "テストです")`);
+                    
+                    if (testResult === 'テストです') {
+                        console.log('🎉 クイックテスト成功！');
+                        showStatus('✅ クイックテスト成功', 'success');
+                    } else {
+                        console.log('⚠️ クイックテストで問題検出');
+                        showStatus('⚠️ クイックテストで問題を検出', 'error');
+                    }
+                } else {
+                    console.error('❌ removeVoiceCommand関数が見つかりません');
+                    showStatus('❌ 基本機能が利用できません', 'error');
+                }
+                
+            } catch (error) {
+                console.error('❌ クイックテストエラー:', error);
+                showStatus('❌ クイックテスト実行エラー', 'error');
+            } finally {
+                disableButtons(false);
+            }
+        });
+
+        // 結果クリア
+        document.getElementById('clearResults').addEventListener('click', () => {
+            consoleOutput.innerHTML = 'テスト結果をクリアしました。<br>新しいテストを実行できます。<br>';
+            statusDiv.style.display = 'none';
+        });
+
+        // 初期化確認
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                console.log('🔧 システム初期化確認開始');
+                
+                const checks = [
+                    { name: 'removeVoiceCommand', exists: typeof window.removeVoiceCommand === 'function' },
+                    { name: 'VoiceProcessingManager', exists: typeof window.VoiceProcessingManager === 'function' },
+                    { name: 'AppState', exists: typeof window.AppState === 'object' },
+                    { name: 'SpeechCorrectionSystem', exists: typeof window.SpeechCorrectionSystem === 'object' }
+                ];
+                
+                let allOk = true;
+                checks.forEach(check => {
+                    if (check.exists) {
+                        console.log(`✅ ${check.name}: 利用可能`);
+                    } else {
+                        console.log(`❌ ${check.name}: 利用不可`);
+                        allOk = false;
+                    }
+                });
+                
+                if (allOk) {
+                    console.log('🎉 全システム初期化完了！テスト実行可能です');
+                    showStatus('🎉 システム準備完了 - テスト実行可能', 'success');
+                } else {
+                    console.log('⚠️ 一部システムが利用できません');
+                    showStatus('⚠️ 一部システムの初期化に問題があります', 'error');
+                }
+                
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

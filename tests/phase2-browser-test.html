@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 2: AI会話継続機能テスト - 深堀くんv2.0</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #4a5568;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .test-section {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+            border-left: 5px solid #4299e1;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 10px 10px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(66, 153, 225, 0.4);
+        }
+        
+        .test-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            margin: 10px 0;
+            transition: border-color 0.3s ease;
+        }
+        
+        .test-input:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+        
+        .results {
+            background: #1a202c;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .status {
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        
+        .status.success { background: #c6f6d5; color: #22543d; }
+        .status.warning { background: #fefcbf; color: #744210; }
+        .status.error { background: #fed7d7; color: #742a2a; }
+        
+        .phase-info {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .footer {
+            text-align: center;
+            color: #718096;
+            margin-top: 40px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Phase 2: AI会話継続機能テスト</h1>
+        <p class="subtitle">深堀くんv2.0 - 音声認識システム改善プロジェクト</p>
+        
+        <div class="phase-info">
+            <h3>📋 Phase 2実装内容</h3>
+            <p><strong>✅ テーマ変更要望検出・伝達システム</strong><br>
+            「テーマ変更、もっと技術的に」等の要望をAI promptに組み込み</p>
+            <p><strong>✅ 質問変更要望検出・伝達システム</strong><br>
+            「質問変更、もっと具体的に」等の要望をAI promptに組み込み</p>
+            <p><strong>✅ AI prompt組み込み機能</strong><br>
+            既存のhandleThemeChange(), handleQuestionChange()との安全な統合</p>
+        </div>
+        
+        <!-- Phase 2機能テスト -->
+        <div class="test-section">
+            <h3>🧪 Phase 2機能テスト</h3>
+            <p>Phase 2で実装された要望検出システムのテストを実行します。</p>
+            <button class="test-button" onclick="runPhase2Test()">🎯 Phase 2テスト実行</button>
+            <div id="phase2Results" class="results" style="display: none;"></div>
+        </div>
+        
+        <!-- 統合テスト -->
+        <div class="test-section">
+            <h3>🔗 統合テスト</h3>
+            <p>実際の音声処理パイプラインでのテストを実行します。</p>
+            <button class="test-button" onclick="runIntegrationTest()">🚀 統合テスト実行</button>
+            <div id="integrationResults" class="results" style="display: none;"></div>
+        </div>
+        
+        <!-- カスタムテスト -->
+        <div class="test-section">
+            <h3>🎨 カスタムテスト</h3>
+            <p>任意の音声入力でテストできます。</p>
+            <input type="text" id="customInput" class="test-input" placeholder="例: テーマ変更、もっと実践的に" />
+            <button class="test-button" onclick="runCustomTest()">🧪 カスタムテスト実行</button>
+            <div id="customResults" class="results" style="display: none;"></div>
+        </div>
+        
+        <!-- 全体統計 -->
+        <div class="test-section">
+            <h3>📊 システム統計</h3>
+            <button class="test-button" onclick="showSystemStats()">📈 統計情報表示</button>
+            <button class="test-button" onclick="resetStats()">🔄 統計リセット</button>
+            <div id="statsResults" class="results" style="display: none;"></div>
+        </div>
+        
+        <div id="status" class="status" style="display: none;"></div>
+        
+        <div class="footer">
+            <p><strong>⚠️ 注意</strong>: このテストはローカル環境（http://localhost:8000）で実行してください。</p>
+            <p>Phase 1の成果を完全保護しながら、Phase 2機能を安全にテストします。</p>
+        </div>
+    </div>
+
+    <!-- VoiceProcessingManager読み込み -->
+    <script src="app/voice-processing-manager.js"></script>
+    
+    <script>
+        let voiceManager = null;
+        
+        // 初期化
+        document.addEventListener('DOMContentLoaded', async function() {
+            showStatus('info', '🚀 Phase 2テスト環境初期化中...');
+            
+            try {
+                // VoiceProcessingManagerインスタンス作成
+                voiceManager = new window.VoiceProcessingManager();
+                await voiceManager.initialize();
+                
+                // グローバル変数に設定（テスト用）
+                window.voiceProcessingManagerInstance = voiceManager;
+                
+                showStatus('success', '✅ Phase 2テスト環境初期化完了！テストを開始できます。');
+                
+            } catch (error) {
+                showStatus('error', `❌ 初期化エラー: ${error.message}`);
+                console.error('初期化エラー:', error);
+            }
+        });
+        
+        // Phase 2機能テスト
+        async function runPhase2Test() {
+            if (!voiceManager) {
+                showStatus('error', '❌ VoiceProcessingManagerが初期化されていません');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('phase2Results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.textContent = '🧪 Phase 2機能テスト実行中...\n\n';
+            
+            try {
+                const debug = window.VoiceProcessingManagerDebug;
+                if (debug && debug.runPhase2Test) {
+                    const results = await debug.runPhase2Test();
+                    
+                    if (results) {
+                        resultsDiv.textContent += `📊 テスト結果:\n`;
+                        resultsDiv.textContent += `成功率: ${results.successCount}/${results.totalCount} (${results.successRate}%)\n\n`;
+                        
+                        if (results.successRate >= 90) {
+                            showStatus('success', `🎉 Phase 2テスト合格！成功率: ${results.successRate}%`);
+                        } else if (results.successRate >= 70) {
+                            showStatus('warning', `⚠️ Phase 2テスト部分合格: ${results.successRate}%`);
+                        } else {
+                            showStatus('error', `❌ Phase 2テスト不合格: ${results.successRate}%`);
+                        }
+                        
+                        // 詳細結果表示
+                        resultsDiv.textContent += '詳細結果:\n';
+                        results.results.forEach((result, index) => {
+                            resultsDiv.textContent += `${index + 1}. ${result.description}\n`;
+                            resultsDiv.textContent += `   入力: "${result.input}"\n`;
+                            resultsDiv.textContent += `   期待: ${result.expected}\n`;
+                            resultsDiv.textContent += `   実際: ${result.actual}\n`;
+                            if (result.request) {
+                                resultsDiv.textContent += `   要望: "${result.request}"\n`;
+                            }
+                            resultsDiv.textContent += `   結果: ${result.success ? '✅ 成功' : '❌ 失敗'}\n\n`;
+                        });
+                    }
+                } else {
+                    showStatus('error', '❌ Phase 2テスト関数が見つかりません');
+                }
+            } catch (error) {
+                resultsDiv.textContent += `❌ エラー: ${error.message}\n`;
+                showStatus('error', `❌ テスト実行エラー: ${error.message}`);
+            }
+        }
+        
+        // 統合テスト
+        async function runIntegrationTest() {
+            if (!voiceManager) {
+                showStatus('error', '❌ VoiceProcessingManagerが初期化されていません');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('integrationResults');
+            resultsDiv.style.display = 'block';
+            resultsDiv.textContent = '🔗 統合テスト実行中...\n\n';
+            
+            try {
+                const debug = window.VoiceProcessingManagerDebug;
+                if (debug && debug.runPhase2IntegrationTest) {
+                    const results = await debug.runPhase2IntegrationTest();
+                    
+                    if (results) {
+                        const successCount = results.filter(r => r.success).length;
+                        const totalCount = results.length;
+                        const successRate = Math.round((successCount / totalCount) * 100);
+                        
+                        resultsDiv.textContent += `📊 統合テスト結果:\n`;
+                        resultsDiv.textContent += `成功率: ${successCount}/${totalCount} (${successRate}%)\n\n`;
+                        
+                        results.forEach((result, index) => {
+                            resultsDiv.textContent += `${index + 1}. "${result.input}"\n`;
+                            resultsDiv.textContent += `   結果: ${result.success ? '✅ 成功' : '❌ 失敗'}\n`;
+                            resultsDiv.textContent += `   実行時間: ${result.duration || 'N/A'}\n`;
+                            if (result.error) {
+                                resultsDiv.textContent += `   エラー: ${result.error}\n`;
+                            }
+                            resultsDiv.textContent += '\n';
+                        });
+                        
+                        if (successRate >= 90) {
+                            showStatus('success', `🎉 統合テスト合格！成功率: ${successRate}%`);
+                        } else {
+                            showStatus('warning', `⚠️ 統合テスト: ${successRate}%`);
+                        }
+                    }
+                }
+            } catch (error) {
+                resultsDiv.textContent += `❌ エラー: ${error.message}\n`;
+                showStatus('error', `❌ 統合テスト実行エラー: ${error.message}`);
+            }
+        }
+        
+        // カスタムテスト
+        async function runCustomTest() {
+            const input = document.getElementById('customInput').value.trim();
+            if (!input) {
+                showStatus('warning', '⚠️ テスト用の音声入力を入力してください');
+                return;
+            }
+            
+            if (!voiceManager) {
+                showStatus('error', '❌ VoiceProcessingManagerが初期化されていません');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('customResults');
+            resultsDiv.style.display = 'block';
+            resultsDiv.textContent = `🎨 カスタムテスト実行中: "${input}"\n\n`;
+            
+            try {
+                const startTime = performance.now();
+                
+                // 要望検出テスト
+                const themeRequest = voiceManager.detectThemeChangeRequest(input);
+                const questionRequest = voiceManager.detectQuestionChangeRequest(input);
+                
+                const duration = performance.now() - startTime;
+                
+                resultsDiv.textContent += `📊 検出結果 (${duration.toFixed(2)}ms):\n\n`;
+                
+                if (themeRequest) {
+                    resultsDiv.textContent += `🎯 テーマ変更要望検出:\n`;
+                    resultsDiv.textContent += `   タイプ: ${themeRequest.type}\n`;
+                    resultsDiv.textContent += `   要望内容: ${themeRequest.request || '（なし）'}\n\n`;
+                } else if (questionRequest) {
+                    resultsDiv.textContent += `❓ 質問変更要望検出:\n`;
+                    resultsDiv.textContent += `   タイプ: ${questionRequest.type}\n`;
+                    resultsDiv.textContent += `   要望内容: ${questionRequest.request || '（なし）'}\n\n`;
+                } else {
+                    resultsDiv.textContent += `📝 通常の音声入力として処理\n`;
+                    resultsDiv.textContent += `   従来のprocessFinalTranscriptにフォールバック\n\n`;
+                }
+                
+                // 統計情報更新
+                const stats = voiceManager.getStats();
+                resultsDiv.textContent += `📈 現在の統計:\n`;
+                resultsDiv.textContent += `   総処理数: ${stats.totalProcessed}\n`;
+                resultsDiv.textContent += `   テーマ変更要望: ${stats.themeChangeRequests}\n`;
+                resultsDiv.textContent += `   質問変更要望: ${stats.questionChangeRequests}\n`;
+                
+                showStatus('success', '✅ カスタムテスト完了');
+                
+            } catch (error) {
+                resultsDiv.textContent += `❌ エラー: ${error.message}\n`;
+                showStatus('error', `❌ カスタムテスト実行エラー: ${error.message}`);
+            }
+        }
+        
+        // システム統計表示
+        function showSystemStats() {
+            if (!voiceManager) {
+                showStatus('error', '❌ VoiceProcessingManagerが初期化されていません');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('statsResults');
+            resultsDiv.style.display = 'block';
+            
+            try {
+                const debug = window.VoiceProcessingManagerDebug;
+                if (debug && debug.showDebugInfo) {
+                    const info = debug.showDebugInfo();
+                    if (info) {
+                        resultsDiv.textContent = `📊 VoiceProcessingManager システム統計:\n\n`;
+                        resultsDiv.textContent += `バージョン: ${info.version}\n`;
+                        resultsDiv.textContent += `初期化状態: ${info.initialized ? '✅' : '❌'}\n`;
+                        resultsDiv.textContent += `デバッグモード: ${info.debugMode ? '✅' : '❌'}\n\n`;
+                        
+                        resultsDiv.textContent += `📈 処理統計:\n`;
+                        resultsDiv.textContent += `   総処理数: ${info.stats.totalProcessed}\n`;
+                        resultsDiv.textContent += `   テーマ変更要望: ${info.stats.themeChangeRequests}\n`;
+                        resultsDiv.textContent += `   質問変更要望: ${info.stats.questionChangeRequests}\n`;
+                        resultsDiv.textContent += `   フォールバック呼び出し: ${info.stats.fallbackCalls}\n`;
+                        resultsDiv.textContent += `   エラー数: ${info.stats.errorCount}\n`;
+                        resultsDiv.textContent += `   稼働時間: ${Math.round(info.stats.runtime / 1000)}秒\n`;
+                        resultsDiv.textContent += `   平均処理時間: ${info.stats.averageProcessingTime.toFixed(2)}ms\n\n`;
+                        
+                        if (info.recentLogs && info.recentLogs.length > 0) {
+                            resultsDiv.textContent += `📝 最新ログ (直近${info.recentLogs.length}件):\n`;
+                            info.recentLogs.forEach((log, index) => {
+                                const time = new Date(log.timestamp).toLocaleTimeString();
+                                resultsDiv.textContent += `   ${time} [${log.level.toUpperCase()}] ${log.message}\n`;
+                            });
+                        }
+                    }
+                }
+                
+                showStatus('success', '✅ システム統計表示完了');
+                
+            } catch (error) {
+                resultsDiv.textContent = `❌ 統計取得エラー: ${error.message}\n`;
+                showStatus('error', `❌ 統計取得エラー: ${error.message}`);
+            }
+        }
+        
+        // 統計リセット
+        function resetStats() {
+            try {
+                const debug = window.VoiceProcessingManagerDebug;
+                if (debug && debug.resetStats) {
+                    const result = debug.resetStats();
+                    if (result) {
+                        showStatus('success', '✅ システム統計をリセットしました');
+                        
+                        // 統計表示を更新
+                        showSystemStats();
+                    } else {
+                        showStatus('error', '❌ 統計リセットに失敗しました');
+                    }
+                } else {
+                    showStatus('error', '❌ 統計リセット関数が見つかりません');
+                }
+            } catch (error) {
+                showStatus('error', `❌ 統計リセットエラー: ${error.message}`);
+            }
+        }
+        
+        // ステータス表示
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+            
+            // 5秒後に非表示
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html> 
