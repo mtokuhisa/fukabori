@@ -157,6 +157,72 @@ function initializeMigrationSystem() {
     console.log('✅ 段階的移行システム初期化完了');
 }
 
+// 📝 リアルタイム文字起こし編集システム初期化
+async function initializeTranscriptEditSystem() {
+    try {
+        console.log('📝 TranscriptEditManager初期化開始...');
+        
+        // TranscriptEditManagerクラスの存在確認
+        if (typeof window.TranscriptEditManager !== 'function') {
+            console.warn('⚠️ TranscriptEditManagerクラスが見つかりません');
+            return false;
+        }
+        
+        // EditableTranscriptUIクラスの存在確認
+        if (typeof window.EditableTranscriptUI !== 'function') {
+            console.warn('⚠️ EditableTranscriptUIクラスが見つかりません');
+            return false;
+        }
+        
+        // TranscriptEditManagerインスタンス作成
+        window.transcriptEditManager = new window.TranscriptEditManager();
+        
+        // 初期化実行
+        const initialized = await window.transcriptEditManager.initialize();
+        if (!initialized) {
+            console.error('❌ TranscriptEditManager初期化失敗');
+            return false;
+        }
+        
+        // EditableTranscriptUIとの連携設定
+        if (window.transcriptEditManager.transcriptDisplay) {
+            window.transcriptEditManager.editableUI = new window.EditableTranscriptUI(
+                window.transcriptEditManager.transcriptDisplay
+            );
+            
+            // カスタムイベントリスナー設定
+            window.transcriptEditManager.transcriptDisplay.addEventListener('transcriptEditComplete', async (event) => {
+                const newText = event.detail.text;
+                await window.transcriptEditManager.finishEditing(newText);
+            });
+            
+            window.transcriptEditManager.transcriptDisplay.addEventListener('transcriptEditCancel', async () => {
+                await window.transcriptEditManager.cancelEditing();
+            });
+            
+            console.log('✅ EditableTranscriptUIとの連携設定完了');
+        }
+        
+        // グローバル状態更新
+        if (window.AppState) {
+            window.AppState.transcriptEditEnabled = true;
+        }
+        
+        console.log('✅ transcript編集システム初期化完了');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ transcript編集システム初期化エラー:', error);
+        
+        // 緊急フォールバック: システム無効化
+        if (window.transcriptEditManager) {
+            window.transcriptEditManager.emergencyDisable();
+        }
+        
+        return false;
+    }
+}
+
 // 🧪 開発者向けテスト機能
 window.testMigrationSystem = function() {
     console.log('🧪 段階的移行システムテスト開始');
@@ -3478,6 +3544,12 @@ function handleModalBackgroundClick(event) {
 function toggleMicrophone() {
     console.log('💡 toggleMicrophone が実行されました');
     
+    // 📝 編集システムに手動操作を通知
+    if (window.transcriptEditManager) {
+        window.transcriptEditManager.lastManualActionTime = Date.now();
+        console.log('📝 編集システムに手動操作を通知');
+    }
+    
     try {
         // 🔧 統一状態管理システム - 正しいアクセス方法
         if (!window.unifiedStateManager) {
@@ -4384,6 +4456,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.log('🔄 段階的移行システム初期化開始...');
         initializeMigrationSystem();
         console.log('✅ 段階的移行システム初期化完了');
+        
+        // 📝 リアルタイム文字起こし編集システムの初期化
+        console.log('✏️ transcript編集システム初期化開始...');
+        await initializeTranscriptEditSystem();
+        console.log('✅ transcript編集システム初期化完了');
         
     } catch (error) {
         console.error('❌ 初期化エラー:', error);

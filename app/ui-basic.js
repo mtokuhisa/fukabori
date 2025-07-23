@@ -273,6 +273,12 @@ function updateTranscriptDisplay() {
         return;
     }
     
+    // 🎯 編集中判定: 編集中は音声認識からの更新をスキップ
+    if (window.transcriptEditManager && window.transcriptEditManager.isEditing) {
+        console.log('✏️ transcript編集中のため音声認識更新をスキップ');
+        return;
+    }
+    
     // 🔍 デバッグ情報を詳細に表示
     console.log('🔍 updateTranscriptDisplay() 実行中:', {
         currentSpeaker: AppState.currentSpeaker,
