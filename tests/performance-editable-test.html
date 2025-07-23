@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Performance Editable Test</title>
+</head>
+<body>
+    <h1>Performance Test (contenteditable)</h1>
+    <div id="display" style="width:90%;height:120px;border:1px solid #ccc;overflow:auto;"></div>
+    <pre id="log"></pre>
+
+    <script>
+    (async function(){
+        const params = new URLSearchParams(location.search);
+        const mode = params.get('mode') || 'baseline';
+        const display = document.getElementById('display');
+        const logEl = document.getElementById('log');
+        const isEditable = (mode === 'ce' || mode === 'ce_edit');
+
+        if(isEditable){
+            display.contentEditable = "true";
+        }
+
+        const iterations = 1000;
+        const durations = [];
+        const simulateUserEdit = (mode === 'ce_edit');
+
+        function log(msg){
+            logEl.textContent += msg + "\n";
+        }
+
+        // Focus once if editable
+        if(isEditable){
+            display.focus();
+        }
+
+        for(let i=0;i<iterations;i++){
+            const start = performance.now();
+            display.textContent = 'Update #' + i + ' ' + Math.random();
+            const end = performance.now();
+            durations.push(end - start);
+
+            if(simulateUserEdit && i % 10 === 0){
+                // Simulate simple user typing by appending a character
+                const userStart = performance.now();
+                display.textContent += 'x';
+                durations.push(performance.now() - userStart);
+            }
+        }
+
+        const avg = durations.reduce((a,b)=>a+b,0)/durations.length;
+        const max = Math.max(...durations);
+
+        const results = {mode, avg, max, iterations: durations.length};
+        window.results = results;
+        log(JSON.stringify(results, null, 2));
+        console.log('PERF_RESULTS', JSON.stringify(results));
+    })();
+    </script>
+</body>
+</html> 
