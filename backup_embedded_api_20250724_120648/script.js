@@ -808,7 +808,6 @@ const MIC_STATES = {
 // State: アプリケーション状態管理
 const AppState = {
     apiKey: null,
-    apiKeySource: null,         // 🔐 新機能: 'user' | 'embedded' | null
     currentTheme: '',
     sessionActive: false,
     currentSpeaker: SPEAKERS.NULL,
@@ -3305,20 +3304,7 @@ async function setupApiKey() {
 async function testApiConnection() {
     console.log('🔍 testApiConnection が実行されました');
     
-    // 🔐 埋め込みAPI Key統合: 優先順位制御でAPI Key取得
-    let apiKeyToTest = AppState.apiKey;
-    
-    if (!apiKeyToTest && window.StorageManager && window.StorageManager.apiKey.getWithPriority) {
-        apiKeyToTest = window.StorageManager.apiKey.getWithPriority();
-        if (apiKeyToTest) {
-            console.log('🏢 埋め込みAPI Keyでテスト実行');
-            // AppStateも更新
-            AppState.apiKey = apiKeyToTest;
-            AppState.apiKeySource = 'embedded';
-        }
-    }
-    
-    if (!apiKeyToTest) {
+    if (!AppState.apiKey) {
         console.log('APIキーが設定されていません');
         return false;
     }
@@ -3329,7 +3315,7 @@ async function testApiConnection() {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${apiKeyToTest}`,
+                'Authorization': `Bearer ${AppState.apiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({

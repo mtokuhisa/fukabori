@@ -12,8 +12,5 @@
   "devDependencies": {
     "dependency-cruiser": "^16.10.4",
     "puppeteer": "^21.11.0"
-  },
-  "dependencies": {
-    "crypto-js": "^4.2.0"
   }
 }

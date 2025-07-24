@@ -19,345 +19,6 @@ window.KnowledgeState = {
 window.stateManager = null;
 
 // =================================================================================
-// STEP 1: 段階的復元 - 切り替え設定
-// =================================================================================
-
-// 🎯 Step 1: 段階的切り替え設定
-const MIGRATION_CONFIG = {
-    USE_NEW_TRANSCRIPT: true,           // transcript-display システム使用
-    ENABLE_FALLBACK: true,              // フォールバック機能有効
-    GRADUAL_MIGRATION: true,            // 段階的移行有効
-    PRESERVE_EXISTING_FUNCTIONS: true,  // 既存機能の保持
-    DEBUG_MODE: true                    // デバッグモード（開発時のみ）
-};
-
-// 🛡️ 緊急ロールバック機能
-window.emergencyRollback = function() {
-    console.log('🚨 緊急ロールバック開始');
-    
-    // transcript-display システムを使用
-    MIGRATION_CONFIG.USE_NEW_TRANSCRIPT = true;
-    
-    const transcriptDisplay = document.getElementById('transcriptDisplay');
-    
-    if (transcriptDisplay) {
-        transcriptDisplay.style.display = 'block';
-        console.log('✅ transcript-display 有効化完了');
-    }
-    
-    // 既存の更新関数を使用
-    if (typeof updateRealtimeTranscript === 'function') {
-        updateRealtimeTranscript('緊急ロールバック完了');
-    }
-    
-    console.log('🚨 緊急ロールバック完了');
-    return true;
-};
-
-// 🔄 段階的切り替え機能
-window.switchToNewTranscript = function() {
-    console.log('🔄 新しいtranscript表示に切り替え開始');
-    
-    if (!MIGRATION_CONFIG.GRADUAL_MIGRATION) {
-        console.warn('⚠️ 段階的移行が無効化されています');
-        return false;
-    }
-    
-    try {
-        // transcript-display システムを有効化
-        MIGRATION_CONFIG.USE_NEW_TRANSCRIPT = true;
-        
-        // 表示を確認
-        const transcriptDisplay = document.getElementById('transcriptDisplay');
-        
-        if (transcriptDisplay) {
-            transcriptDisplay.style.display = 'block';
-            console.log('✅ transcript-display 有効化完了');
-        }
-        
-        // 新システムのテスト
-        const testResult = testNewTranscriptSystem();
-        if (!testResult) {
-            console.error('❌ 新システムのテストに失敗、ロールバック実行');
-            window.emergencyRollback();
-            return false;
-        }
-        
-        console.log('✅ 新しいtranscript表示に切り替え完了');
-        return true;
-        
-    } catch (error) {
-        console.error('❌ 切り替え中にエラー発生:', error);
-        window.emergencyRollback();
-        return false;
-    }
-};
-
-// 🧪 新システムのテスト機能
-function testNewTranscriptSystem() {
-    console.log('🧪 新システムのテスト開始');
-    
-    try {
-        const transcriptDisplay = document.getElementById('transcriptDisplay');
-        
-        // 要素の存在確認
-        if (!transcriptDisplay) {
-            console.error('❌ transcript-display要素が見つかりません');
-            return false;
-        }
-        
-        // 表示状態の確認
-        const isVisible = transcriptDisplay.style.display !== 'none';
-        if (!isVisible) {
-            console.error('❌ transcript-display が表示されていません');
-            return false;
-        }
-        
-        // 更新機能のテスト
-        const testMessage = 'テストメッセージ - ' + Date.now();
-        transcriptDisplay.textContent = testMessage;
-        
-        // 確認
-        if (transcriptDisplay.textContent.includes('テストメッセージ')) {
-            console.log('✅ 新システムのテスト完了');
-            return true;
-        } else {
-            console.error('❌ 新システムの更新機能テストに失敗');
-            return false;
-        }
-        
-    } catch (error) {
-        console.error('❌ 新システムのテスト中にエラー:', error);
-        return false;
-    }
-}
-
-// 🔧 段階的初期化関数
-function initializeMigrationSystem() {
-    console.log('🔧 段階的移行システム初期化');
-    
-    // 設定の確認
-    console.log('📋 移行設定:', MIGRATION_CONFIG);
-    
-    // 両システムの確認
-    const transcriptCompact = document.getElementById('transcriptCompact');
-    const transcriptDisplay = document.getElementById('transcriptDisplay');
-    
-    console.log('🔍 システム確認:');
-    console.log('  - transcript-compact:', !!transcriptCompact);
-    console.log('  - transcript-display:', !!transcriptDisplay);
-    
-    // transcript-displayシステムを使用
-    console.log('🎯 transcript-displayシステムを使用開始');
-    if (transcriptDisplay) {
-        transcriptDisplay.style.display = 'block';
-        console.log('✅ transcript-display 有効化完了');
-    }
-    
-    console.log('✅ 段階的移行システム初期化完了');
-}
-
-// 📝 リアルタイム文字起こし編集システム初期化
-async function initializeTranscriptEditSystem() {
-    try {
-        console.log('📝 TranscriptEditManager初期化開始...');
-        
-        // TranscriptEditManagerクラスの存在確認
-        if (typeof window.TranscriptEditManager !== 'function') {
-            console.warn('⚠️ TranscriptEditManagerクラスが見つかりません');
-            return false;
-        }
-        
-        // EditableTranscriptUIクラスの存在確認
-        if (typeof window.EditableTranscriptUI !== 'function') {
-            console.warn('⚠️ EditableTranscriptUIクラスが見つかりません');
-            return false;
-        }
-        
-        // TranscriptEditManagerインスタンス作成
-        window.transcriptEditManager = new window.TranscriptEditManager();
-        
-        // 初期化実行
-        const initialized = await window.transcriptEditManager.initialize();
-        if (!initialized) {
-            console.error('❌ TranscriptEditManager初期化失敗');
-            return false;
-        }
-        
-        // EditableTranscriptUIとの連携設定
-        if (window.transcriptEditManager.transcriptDisplay) {
-            window.transcriptEditManager.editableUI = new window.EditableTranscriptUI(
-                window.transcriptEditManager.transcriptDisplay
-            );
-            
-            // カスタムイベントリスナー設定
-            window.transcriptEditManager.transcriptDisplay.addEventListener('transcriptEditComplete', async (event) => {
-                const newText = event.detail.text;
-                await window.transcriptEditManager.finishEditing(newText);
-            });
-            
-            window.transcriptEditManager.transcriptDisplay.addEventListener('transcriptEditCancel', async () => {
-                await window.transcriptEditManager.cancelEditing();
-            });
-            
-            console.log('✅ EditableTranscriptUIとの連携設定完了');
-        }
-        
-        // グローバル状態更新
-        if (window.AppState) {
-            window.AppState.transcriptEditEnabled = true;
-        }
-        
-        console.log('✅ transcript編集システム初期化完了');
-        return true;
-        
-    } catch (error) {
-        console.error('❌ transcript編集システム初期化エラー:', error);
-        
-        // 緊急フォールバック: システム無効化
-        if (window.transcriptEditManager) {
-            window.transcriptEditManager.emergencyDisable();
-        }
-        
-        return false;
-    }
-}
-
-// 🧪 開発者向けテスト機能
-window.testMigrationSystem = function() {
-    console.log('🧪 段階的移行システムテスト開始');
-    
-    const results = {
-        configTest: false,
-        elementsTest: false,
-        switchTest: false,
-        rollbackTest: false,
-        overallSuccess: false
-    };
-    
-    try {
-        // 1. 設定テスト
-        console.log('📋 1. 設定テスト');
-        if (typeof MIGRATION_CONFIG === 'object' && MIGRATION_CONFIG.GRADUAL_MIGRATION) {
-            results.configTest = true;
-            console.log('  ✅ 設定テスト成功');
-        } else {
-            console.log('  ❌ 設定テスト失敗');
-        }
-        
-        // 2. 要素存在テスト
-        console.log('📋 2. 要素存在テスト');
-        const transcriptCompact = document.getElementById('transcriptCompact');
-        const transcriptDisplay = document.getElementById('transcriptDisplay');
-        
-        if (transcriptCompact && transcriptDisplay) {
-            results.elementsTest = true;
-            console.log('  ✅ 要素存在テスト成功');
-            console.log('    - transcript-compact:', !!transcriptCompact);
-            console.log('    - transcript-display:', !!transcriptDisplay);
-        } else {
-            console.log('  ❌ 要素存在テスト失敗');
-            console.log('    - transcript-compact:', !!transcriptCompact);
-            console.log('    - transcript-display:', !!transcriptDisplay);
-        }
-        
-        // 3. 切り替えテスト
-        console.log('📋 3. 切り替えテスト');
-        try {
-            const originalState = MIGRATION_CONFIG.USE_NEW_TRANSCRIPT;
-            const switchResult = window.switchToNewTranscript();
-            
-            if (switchResult) {
-                results.switchTest = true;
-                console.log('  ✅ 切り替えテスト成功');
-                
-                // 元の状態に戻す
-                if (!originalState) {
-                    window.emergencyRollback();
-                }
-            } else {
-                console.log('  ❌ 切り替えテスト失敗');
-            }
-        } catch (error) {
-            console.log('  ❌ 切り替えテスト中にエラー:', error);
-        }
-        
-        // 4. ロールバックテスト
-        console.log('📋 4. ロールバックテスト');
-        try {
-            const rollbackResult = window.emergencyRollback();
-            if (rollbackResult) {
-                results.rollbackTest = true;
-                console.log('  ✅ ロールバックテスト成功');
-            } else {
-                console.log('  ❌ ロールバックテスト失敗');
-            }
-        } catch (error) {
-            console.log('  ❌ ロールバックテスト中にエラー:', error);
-        }
-        
-        // 総合判定
-        results.overallSuccess = results.configTest && results.elementsTest && results.switchTest && results.rollbackTest;
-        
-        console.log('📊 テスト結果:', results);
-        
-        if (results.overallSuccess) {
-            console.log('🎉 段階的移行システムテスト完全成功！');
-            if (typeof window.showMessage === 'function') {
-                window.showMessage('success', '段階的移行システムテスト完全成功！');
-            }
-        } else {
-            console.log('⚠️ 段階的移行システムテストで問題が検出されました');
-            if (typeof window.showMessage === 'function') {
-                window.showMessage('warning', '段階的移行システムテストで問題が検出されました。詳細はコンソールを確認してください。');
-            }
-        }
-        
-    } catch (error) {
-        console.error('❌ テスト実行中にエラー:', error);
-        if (typeof window.showMessage === 'function') {
-            window.showMessage('error', 'テスト実行中にエラーが発生しました: ' + error.message);
-        }
-    }
-    
-    return results;
-};
-
-// 🔧 簡易テスト機能（ユーザー向け）
-window.quickTestTranscript = function() {
-    console.log('🧪 簡易transcript表示テスト');
-    
-    const transcriptCompact = document.getElementById('transcriptCompact');
-    const transcriptDisplay = document.getElementById('transcriptDisplay');
-    
-    if (transcriptCompact && transcriptDisplay) {
-        // 現在の状態を確認
-        const compactVisible = transcriptCompact.style.display !== 'none';
-        const displayVisible = transcriptDisplay.style.display !== 'none';
-        
-        console.log('📋 現在の状態:');
-        console.log('  - transcript-compact 表示:', compactVisible);
-        console.log('  - transcript-display 表示:', displayVisible);
-        
-        if (typeof window.showMessage === 'function') {
-            window.showMessage('info', `現在の状態 - Compact: ${compactVisible ? '表示' : '非表示'}, Display: ${displayVisible ? '表示' : '非表示'}`);
-        }
-        
-        return {
-            compactVisible,
-            displayVisible,
-            systemReady: true
-        };
-    } else {
-        console.log('❌ 要素が見つかりません');
-        if (typeof window.showMessage === 'function') {
-            window.showMessage('error', '要素が見つかりません');
-        }
-        return { systemReady: false };
-    }
-};
-
-// =================================================================================
 // 音声認識システム - 抜本解決版
 // =================================================================================
 
@@ -375,137 +36,449 @@ window.CURRENT_MICROPHONE_STRATEGY = MICROPHONE_STRATEGY.CONTINUOUS; // Chrome�
 // 🔧 PermissionManager: voice-core.jsに移動済み
 // 新しい音声コアシステムを使用: window.VoiceCore.permission
 
-// 🔧 新しい統一状態管理システムを使用
-// 既存のContinuousRecognitionManagerは削除済み - 新システムに完全移行
-    
-// 🔧 統一状態管理システムの初期化
-async function initializeUnifiedStateManager() {
-    try {
-        console.log('🔄 統一状態管理システム初期化開始');
+// 🔧 継続的音声認識: start()を一度だけ呼び、絶対に停止しない戦略
+class ContinuousRecognitionManager {
+    constructor(permissionManager) {
+        this.permissionManager = permissionManager;
+        this.state = 'idle'; // idle, starting, active, error
+        this.recognition = null;
+        this.listeners = new Set();
+        this.isStarting = false;
         
-        // 統一状態管理システムのコアを初期化
-        if (window.UnifiedStateManagerCore) {
-            window.unifiedStateManager = new window.UnifiedStateManagerCore();
-            await window.unifiedStateManager.initialize();
-            console.log('✅ 統一状態管理システム初期化完了');
-            return true;
-            } else {
-            console.warn('⚠️ 統一状態管理システムが見つかりません - フォールバック使用');
-            return false;
-            }
-        } catch (error) {
-        console.error('❌ 統一状態管理システム初期化エラー:', error);
-        return false;
+        // 結果処理制御
+        this.processResults = true;  // 結果を処理するかどうか
+        this.pauseReason = null;     // 一時停止理由
+        
+        // 統計情報
+        this.stats = {
+            startCount: 0,              // start()呼び出し回数（1回のみが理想）
+            microphonePermissionRequests: 0,
+            resultProcessedCount: 0,    // 処理された結果数
+            resultIgnoredCount: 0,      // 無視された結果数
+            pauseCount: 0,              // 一時停止回数
+            resumeCount: 0,             // 再開回数
+            startTime: Date.now(),
+            sessionDuration: 0
+        };
+        
+        // 継続性管理
+        this.continuity = {
+            neverStopped: false,        // 一度も停止していない
+            startedOnce: false,         // 一度開始済み
+            forceStop: false            // 強制停止フラグ
+        };
+        
+        // 継続性監視
+        this.continuityMonitor = null;  // 監視タイマー
+        this.lastResultTime = Date.now(); // 最後の結果処理時刻
+        
     }
-}
-
-// =================================================================================
-// 新しい音声認識システム - 統一状態管理システム統合
-// =================================================================================
-
-// 🎤 グローバル音声認識制御
-window.voiceRecognitionController = {
-    isInitialized: false,
-    voiceModule: null,
     
-    // 初期化
-    async initialize() {
-        if (this.isInitialized) return true;
+    // 🔧 継続的音声認識開始（一度だけ）
+    async start() {
+        
+        if (this.continuity.startedOnce) {
+            return this.resumeProcessing();
+        }
+        
+        if (this.isStarting) {
+            return false;
+        }
+        
+        this.isStarting = true;
         
         try {
-            console.log('🎤 音声認識制御システム初期化開始');
+            // セッション状態確認
+            if (!window.AppState?.sessionActive) {
+                console.log('🚫 セッション非アクティブ');
+                this.isStarting = false;
+                return false;
+            }
             
-            // 統一状態管理システムから音声モジュールを取得
-            if (window.unifiedStateManager) {
-                this.voiceModule = window.unifiedStateManager.getModule('voice');
-                if (this.voiceModule) {
-                    this.isInitialized = true;
-                    console.log('✅ 音声認識制御システム初期化完了');
-                    return true;
+            // インスタンス作成（一度だけ）
+            if (!this.recognition) {
+                this.recognition = this.createRecognition();
+                this.setupEventHandlers();
+            }
+            
+            // マイク許可確認（一度だけ）
+            if (this.stats.microphonePermissionRequests === 0) {
+                const hasPermission = await this.permissionManager.getPermission();
+                this.stats.microphonePermissionRequests++;
+                
+                if (!hasPermission) {
+                    console.log('🚫 マイク許可なし');
+                    this.isStarting = false;
+                    return false;
                 }
             }
             
-            console.warn('⚠️ 統一状態管理システムが利用できません');
-                return false;
+            // 状態更新
+            this.state = 'starting';
+            this.notifyListeners();
+            
+            // 継続的音声認識開始（一度だけ）
+            this.recognition.start();
+            
+            this.stats.startCount++;
+            this.continuity.startedOnce = true;
+            this.continuity.neverStopped = true;
+            this.processResults = true;
+            
+            this.state = 'active';
+            this.notifyListeners();
+            
+            // 🔧 継続性監視開始
+            this.startContinuityMonitor();
+            
+            console.log(`✅ 継続的音声認識開始成功 - start()呼び出し: ${this.stats.startCount}回`);
+            return true;
             
         } catch (error) {
-            console.error('❌ 音声認識制御システム初期化エラー:', error);
-                    return false;
+            console.error('❌ 継続的音声認識開始エラー:', error);
+            this.state = 'error';
+            this.notifyListeners();
+            return false;
+        } finally {
+            this.isStarting = false;
+        }
+    }
+    
+    // 🔧 結果処理一時停止（音声認識は継続）
+    pauseProcessing(reason = 'unknown') {
+        console.log(`⏸️ 結果処理一時停止: ${reason}`);
+        this.processResults = false;
+        this.pauseReason = reason;
+        this.stats.pauseCount++;
+        
+        // 音声認識は継続するが、結果は無視
+    }
+    
+    // 🔧 結果処理再開（音声認識は継続していた）
+    resumeProcessing(reason = 'unknown') {
+        console.log(`▶️ 結果処理再開: ${reason}`);
+        this.processResults = true;
+        this.pauseReason = null;
+        this.stats.resumeCount++;
+        
+        return true;
+    }
+    
+    // 🔧 強制停止（セッション終了時のみ）
+    async forceStop() {
+        
+        if (!this.recognition || this.state !== 'active') {
+            return true;
+        }
+        
+        try {
+            this.continuity.forceStop = true;
+            this.processResults = false;
+            
+            // 🔧 継続性監視停止
+            this.stopContinuityMonitor();
+            
+            // 強制停止（セッション終了時のみ）
+            this.recognition.abort();
+            this.recognition = null;
+            
+            this.state = 'idle';
+            this.continuity.neverStopped = false;
+            this.notifyListeners();
+            
+            return true;
+            
+        } catch (error) {
+            console.error('❌ 継続的音声認識強制停止エラー:', error);
+            return false;
+        }
+    }
+    
+    // 🔧 stop()メソッド（結果処理停止のみ）
+    async stop() {
+        console.log('⏸️ 継続的音声認識 - 結果処理停止のみ');
+        return this.pauseProcessing('stop_request');
+    }
+    
+    // SpeechRecognition作成
+    createRecognition() {
+        let recognition;
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+        } else if ('SpeechRecognition' in window) {
+            recognition = new SpeechRecognition();
+        } else {
+            throw new Error('このブラウザは音声認識に対応していません');
+        }
+        
+        // 🔧 継続的音声認識最適化設定
+        recognition.continuous = true;           // 継続的音声認識
+        recognition.interimResults = true;       // 中間結果を取得
+        recognition.lang = 'ja-JP';             // 日本語
+        recognition.maxAlternatives = 1;         // 最大候補数
+        
+        // 🔧 Chrome専用の継続性強化設定
+        if (navigator.userAgent.includes('Chrome')) {
+            // Chrome固有の設定があれば追加
+        }
+        
+        return recognition;
+    }
+    
+    // 🔧 継続性監視システム
+    startContinuityMonitor() {
+        
+        // 30秒ごとに継続性をチェック（より頻繁に）
+        this.continuityMonitor = setInterval(() => {
+            if (this.state === 'active' && window.AppState?.sessionActive && !this.continuity.forceStop) {
+                const timeSinceLastResult = Date.now() - this.lastResultTime;
+                
+                // 最後の結果処理から一定時間経過した場合の予防的再開
+                if (timeSinceLastResult > 45000) { // 45秒（Chrome の60秒制限より前）
+                    this.preemptiveRestart();
                 }
-    },
+            }
+        }, 30000); // 30秒間隔
+    }
     
-    // 音声認識開始
-    async startRecognition() {
-        if (!this.isInitialized || !this.voiceModule) {
-            console.warn('⚠️ 音声認識制御システムが初期化されていません');
-            return false;
+    // 🔧 継続性監視停止
+    stopContinuityMonitor() {
+        if (this.continuityMonitor) {
+            console.log('🛑 継続性監視システム停止');
+            clearInterval(this.continuityMonitor);
+            this.continuityMonitor = null;
+        }
+    }
+    
+    // 🔧 予防的再開
+    preemptiveRestart() {
+        
+        if (this.recognition && this.state === 'active') {
+            // 🔧 重要：stop()もstart()も呼ばない - マイク許可アラートの原因
+            console.log('🔧 真の継続的音声認識: 予防的再開を防止（マイク許可アラート解決）');
+            console.log('💡 継続的音声認識は継続中 - 無理に再開しない');
+            
+            // stop()とstart()を呼ばないため、統計情報も更新しない
+            // this.stats.startCount++; // ← 削除
+        }
+    }
+    
+    // イベントハンドラ設定
+    setupEventHandlers() {
+        if (!this.recognition) return;
+        
+        // 結果処理（制御可能）
+        this.recognition.onresult = (event) => {
+            if (this.processResults) {
+                // 🔧 継続性監視: 最後の結果時刻を更新
+                this.lastResultTime = Date.now();
+                this.handleResult(event);
+                this.stats.resultProcessedCount++;
+            } else {
+                this.stats.resultIgnoredCount++;
+                console.log(`⏭️ 結果無視 (理由: ${this.pauseReason})`);
+            }
+        };
+        
+        // エラー処理
+        this.recognition.onerror = (event) => {
+            this.handleRecognitionError(event);
+        };
+        
+        // 終了処理（自動再開）
+        this.recognition.onend = () => {
+            this.handleEnd();
+        };
+        
+        // 開始処理
+        this.recognition.onstart = () => {
+            this.state = 'active';
+            this.notifyListeners();
+        };
+    }
+    
+    // 結果処理（既存ロジック再利用）
+    handleResult(event) {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const result = event.results[i];
+            if (result.isFinal) {
+                finalTranscript += result[0].transcript;
+            } else {
+                interimTranscript += result[0].transcript;
+            }
+        }
+
+        // 現在の入力中テキストを更新
+        const allConfirmedText = AppState.transcriptHistory.join(' ');
+        AppState.currentTranscript = allConfirmedText + (allConfirmedText ? ' ' : '') + interimTranscript;
+        window.updateTranscriptDisplay();
+
+        if (finalTranscript.trim()) {
+            AppState.transcriptHistory.push(finalTranscript.trim());
+            const updatedAllText = AppState.transcriptHistory.join(' ');
+            AppState.currentTranscript = updatedAllText;
+            window.updateTranscriptDisplay();
+            processFinalTranscript(finalTranscript.trim());
+        }
+    }
+    
+    // 継続的音声認識エラーハンドリング
+    handleRecognitionError(event) {
+        console.error('😨 継続的音声認識エラー:', event.error);
+        
+        switch (event.error) {
+            case 'not-allowed':
+            case 'service-not-allowed':
+                console.error('🚫 マイク許可エラー - 継続的音声認識停止');
+                this.permissionManager.state = 'denied';
+                this.state = 'error';
+                this.continuity.neverStopped = false;
+                this.notifyListeners();
+                return;
+                
+            case 'aborted':
+                if (this.continuity.forceStop) {
+                    return;
+                }
+                console.warn('⚠️ 継続的音声認識が意図せず停止 - 再開は行わない（マイク許可アラート防止）');
+                console.log('🔧 真の継続的音声認識: abortedエラー時も再開しない');
+                return;
+                
+            case 'no-speech':
+                console.log('😶 no-speech - 継続的音声認識では正常動作');
+                // 継続的音声認識では、no-speechは正常動作として扱う
+                return;
+                
+            case 'network':
+                console.warn('🌐 ネットワークエラー - 再開は行わない（マイク許可アラート防止）');
+                console.log('🔧 真の継続的音声認識: ネットワークエラー時も再開しない');
+                return;
+                
+            case 'audio-capture':
+                console.warn('🎤 オーディオキャプチャエラー - 再開は行わない（マイク許可アラート防止）');
+                console.log('🔧 真の継続的音声認識: オーディオキャプチャエラー時も再開しない');
+                return;
+                
+            default:
+                console.warn(`⁉️ 継続的音声認識未知エラー: ${event.error} - 再開は行わない（マイク許可アラート防止）`);
+                console.log('🔧 真の継続的音声認識: 未知エラー時も再開しない');
+                break;
+        }
+    }
+    
+    // 🔧 即座再開メソッド
+    immediateRestart() {
+        if (this.recognition && window.AppState?.sessionActive && !this.continuity.forceStop) {
+            console.log('🚀 継続的音声認識即座再開要求');
+            
+            // 🔧 重要：start()を呼ばない - マイク許可アラートの原因
+            console.log('🔧 真の継続的音声認識: start()再呼び出しを防止（マイク許可アラート解決）');
+            
+            // start()を呼ばないため、統計情報も更新しない
+            // this.stats.startCount++; // ← 削除
+            // this.continuity.neverStopped = true; // ← 削除
+        }
+    }
+    
+    // 終了イベント処理（真の継続的音声認識）
+    handleEnd() {
+        
+        if (this.continuity.forceStop) {
+            console.log('🛑 強制停止中 - 自動再開なし');
+            return;
         }
         
-        return await this.voiceModule.startRecognition();
-    },
-    
-    // 音声認識停止
-    async stopRecognition() {
-        if (!this.isInitialized || !this.voiceModule) {
-            console.warn('⚠️ 音声認識制御システムが初期化されていません');
-            return false;
+        if (!window.AppState?.sessionActive) {
+            console.log('🚫 セッション非アクティブ - 自動再開なし');
+            return;
         }
         
-        return this.voiceModule.stopRecognition();
-    },
-    
-    // 状態取得
-    getState() {
-        if (!this.isInitialized || !this.voiceModule) {
-            return { recognitionState: 'unavailable' };
-        }
+        // 🔧 重要：真の継続的音声認識では一度も再開しない
+        console.log('⚠️ 継続的音声認識が終了 - しかし再開は行わない（マイク許可アラート防止）');
+        this.continuity.neverStopped = false; // 一度停止した
         
-        return this.voiceModule.getState();
+        // 🚨 重要：start()を呼ばない - これがマイク許可アラートの原因
+        console.log('🔧 真の継続的音声認識: start()再呼び出しを防止（マイク許可アラート解決）');
+        
+        // 代替案：音声認識が終了した場合は、継続性を諦める
+        // ユーザーが次回発話時に新しいセッションを開始する
+    }
+    
+    // 継続的音声認識統計情報
+    getMicrophonePermissionStats() {
+        const sessionDuration = Math.floor((Date.now() - this.stats.startTime) / 1000);
+        const efficiency = this.stats.startCount === 1 ? 100 : 
+                          Math.round((1 / this.stats.startCount) * 100);
+        
+        // 🔧 修正：実際のマイク許可要求回数は start() 呼び出し回数と同じ
+        const actualMicrophonePermissionRequests = this.stats.startCount;
+        
+        return {
+            strategy: 'continuous',
+            startCount: this.stats.startCount,
+            microphonePermissionRequests: actualMicrophonePermissionRequests, // 🔧 修正
+            resultProcessedCount: this.stats.resultProcessedCount,
+            resultIgnoredCount: this.stats.resultIgnoredCount,
+            pauseCount: this.stats.pauseCount,
+            resumeCount: this.stats.resumeCount,
+            sessionDuration: sessionDuration,
+            efficiency: efficiency,
+            neverStopped: this.continuity.neverStopped,
+            continuousRecognition: this.continuity.startedOnce && this.state === 'active',
+            // 🔧 追加：デバッグ情報
+            debugInfo: {
+                originalPermissionRequests: this.stats.microphonePermissionRequests,
+                correctedPermissionRequests: actualMicrophonePermissionRequests,
+                理由: 'start()呼び出しごとにブラウザがマイク許可確認を実行'
+            }
+        };
+    }
+
+    // 🔧 新機能：統計情報リセット（テスト用）
+    resetStats() {
+        this.stats = {
+            startCount: 0,
+            microphonePermissionRequests: 0,
+            resultProcessedCount: 0,
+            resultIgnoredCount: 0,
+            pauseCount: 0,
+            resumeCount: 0,
+            startTime: Date.now(),
+            sessionDuration: 0
+        };
+        
+        this.continuity = {
+            neverStopped: false,
+            startedOnce: false,
+            forceStop: false
+        };
+        
+        // 現在のセッションはそのまま維持し、統計情報のみリセット
+        return true;
+    }
+    
+    // リスナー管理
+    addListener(callback) {
+        this.listeners.add(callback);
+    }
+    
+    removeListener(callback) {
+        this.listeners.delete(callback);
+    }
+    
+    notifyListeners() {
+        this.listeners.forEach(callback => {
+            try {
+                callback(this.state);
+            } catch (error) {
+                console.error('継続的音声認識リスナー実行エラー:', error);
+            }
+        });
     }
 }
-
-// =================================================================================
-// 削除されたレガシーコード - 新しい音声システムに移行済み
-// =================================================================================
-
-// 🔧 レガシー関数は削除 - 新しい統一状態管理システムに移行済み
-// 以下の関数は app/unified-state-manager/voice-module.js に移動済み:
-// - resumeProcessing()
-// - forceStop()
-// - stop()
-// - createRecognition()
-
-// =================================================================================
-// 削除されたレガシーコード（続き）
-// =================================================================================
-
-// 🔧 以下のレガシー関数は削除 - 新しい統一状態管理システムに移行済み:
-// - startContinuityMonitor()
-// - performAutoRecovery()
-// - stopContinuityMonitor()
-// - preemptiveRestart()
-// - setupEventHandlers()
-// - handleResult()
-// - handleRecognitionError()
-// - handleEnd()
-// - notifyListeners()
-// - getState()
-// - addListener()
-// - removeListener()
-
-// 🔧 新しい音声システムは以下を使用:
-// - window.VoiceModule (app/unified-state-manager/voice-module.js)
-// - window.VoiceSystemInitializer (app/voice-error-handler.js)
-
-// =================================================================================
-// 既存のメインシステム（継続使用）
-// =================================================================================
-
-// 🔧 レガシー関数は削除済み - 新しい統一状態管理システムに移行済み
-// これらの機能は以下のファイルで提供されています:
-// - app/unified-state-manager/voice-module.js
-// - app/voice-ui-manager.js  
-// - app/voice-error-handler.js
 
 // 🔧 AudioManager: voice-core.jsに移動済み
 // 新しい音声コアシステムを使用: window.VoiceCore.audio
@@ -523,35 +496,18 @@ class StateManager {
         
         // 🔧 許可状態の同期強化
         if (window.VoiceCore?.permission) {
-            console.log('🔄 VoiceCore許可マネージャーを使用');
         } else {
-            console.log('⚠️ VoiceCore未読み込み - フォールバック使用');
         }
         
         this.setupStateSync();
-        console.log(`✅ StateManager初期化完了（戦略: ${window.CURRENT_MICROPHONE_STRATEGY}）`);
     }
     
     // 🔧 A/Bテスト: RecognitionManager作成
     createRecognitionManager() {
         const strategy = window.CURRENT_MICROPHONE_STRATEGY || MICROPHONE_STRATEGY.CONTINUOUS;
         
-        // 🔧 新しい統一状態管理システムを使用
-        console.log(`🔄 統一状態管理システム使用（戦略: ${strategy}）`);
-        
-        // 統一状態管理システムから音声モジュールを取得
-        if (window.unifiedStateManager) {
-            return window.unifiedStateManager.getModule('voice');
-        }
-        
-        // フォールバック: 基本的な音声認識オブジェクトを返す
-        return {
-            state: 'idle',
-            start: () => console.log('🔄 フォールバック音声認識開始'),
-            stop: () => console.log('🔄 フォールバック音声認識停止'),
-            addListener: () => {},
-            removeListener: () => {}
-        };
+        // 🔧 現在は継続的音声認識のみサポート（未使用クラス削除済み）
+        return new ContinuousRecognitionManager(this.permissionManager);
     }
     
     // 🔧 A/Bテスト: 戦略切り替え機能
@@ -575,52 +531,29 @@ class StateManager {
         this.recognitionManager = this.createRecognitionManager();
         
         // 状態同期を再設定
-        if (this.recognitionManager && typeof this.recognitionManager.addEventListener === 'function') {
-            this.recognitionManager.addEventListener((state) => {
-                console.log('🔄 音声認識状態変更:', state);
-                this.updateUI();
-            });
-        } else if (this.recognitionManager && typeof this.recognitionManager.addListener === 'function') {
         this.recognitionManager.addListener((state) => {
-            console.log('🔄 音声認識状態変更:', state);
             this.updateUI();
         });
-        }
         
-        console.log(`✅ 戦略切り替え完了: ${newStrategy}`);
         return true;
     }
     
     // 状態同期の設定
     setupStateSync() {
         // 許可状態変更時の処理
-        if (this.permissionManager && typeof this.permissionManager.addListener === 'function') {
         this.permissionManager.addListener((state) => {
-            console.log('🔄 許可状態変更:', state);
             this.updateUI();
         });
-        }
         
         // 音声認識状態変更時の処理
-        if (this.recognitionManager && typeof this.recognitionManager.addEventListener === 'function') {
-            this.recognitionManager.addEventListener((state) => {
-                console.log('🔄 音声認識状態変更:', state);
-                this.updateUI();
-            });
-        } else if (this.recognitionManager && typeof this.recognitionManager.addListener === 'function') {
         this.recognitionManager.addListener((state) => {
-            console.log('🔄 音声認識状態変更:', state);
             this.updateUI();
         });
-        }
         
         // 音声再生状態変更時の処理
-        if (this.audioManager && typeof this.audioManager.addListener === 'function') {
         this.audioManager.addListener((audioInfo) => {
-            console.log('🔄 音声再生状態変更:', audioInfo.length, '件');
             this.updateUI();
         });
-        }
     }
     
     // UI更新（状態に応じた表示制御）
@@ -729,26 +662,13 @@ class StateManager {
     
     // 音声認識開始
     async startRecognition() {
-        console.log('🎤 音声認識開始要求');
-        if (this.recognitionManager && typeof this.recognitionManager.startRecognition === 'function') {
-            return await this.recognitionManager.startRecognition();
-        } else if (this.recognitionManager && typeof this.recognitionManager.start === 'function') {
         return await this.recognitionManager.start();
-        } else {
-            throw new Error('音声認識マネージャーが利用できません');
-        }
     }
     
     // 音声認識停止
     async stopRecognition() {
         console.log('🛑 音声認識停止要求');
-        if (this.recognitionManager && typeof this.recognitionManager.stopRecognition === 'function') {
-            return await this.recognitionManager.stopRecognition();
-        } else if (this.recognitionManager && typeof this.recognitionManager.stop === 'function') {
         return await this.recognitionManager.stop();
-        } else {
-            throw new Error('音声認識マネージャーが利用できません');
-        }
     }
     
     // 音声再生
@@ -808,7 +728,6 @@ const MIC_STATES = {
 // State: アプリケーション状態管理
 const AppState = {
     apiKey: null,
-    apiKeySource: null,         // 🔐 新機能: 'user' | 'embedded' | null
     currentTheme: '',
     sessionActive: false,
     currentSpeaker: SPEAKERS.NULL,
@@ -951,13 +870,11 @@ const ConversationGatekeeper = {
         
         // 🔄 知見確認モード終了プロセス中の重複防止
         if (control.isExitingKnowledgeConfirmationMode || control.isResumeInProgress) {
-            console.log(`🚫 知見確認モード終了処理中のためブロック (${context})`);
             return false;
         }
         
         // 🔄 質問生成スケジュール済みの重複防止
         if (control.questionGenerationScheduled) {
-            console.log(`🚫 質問生成スケジュール中のためブロック (${context})`);
             return false;
         }
         
@@ -967,7 +884,6 @@ const ConversationGatekeeper = {
             return false;
         }
         
-        console.log(`✅ ねほりーの発話許可 (${context})`);
         return true;
     },
     
@@ -993,13 +909,11 @@ const ConversationGatekeeper = {
             return true; // 知見評価のため許可
         }
         
-        console.log(`✅ はほりーの発話許可 (${context})`);
         return true;
     },
     
     // 発話開始を登録（Phase C強化版）
     registerSpeechStart(speaker, context = 'unknown') {
-        console.log(`🎤 ${speaker}発話開始を登録 (${context})`);
         
         const control = AppState.conversationControl;
         control.speakingInProgress = true;
@@ -1045,7 +959,6 @@ const ConversationGatekeeper = {
     
     // 発話終了を登録
     registerSpeechEnd(speaker, context = 'unknown') {
-        console.log(`🏁 ${speaker}発話終了を登録 (${context})`);
         
         const control = AppState.conversationControl;
         control.speakingInProgress = false;
@@ -1061,7 +974,6 @@ const ConversationGatekeeper = {
     
     // 知見確認モードの開始
     enterKnowledgeConfirmationMode(context = 'unknown') {
-        console.log(`📝 知見確認モード開始 (${context})`);
         
         const state = AppState.voiceRecognitionState;
         const control = AppState.conversationControl;
@@ -1071,20 +983,17 @@ const ConversationGatekeeper = {
         
         // 進行中のネほりーの生成を停止
         if (VoiceOptimization.phase3.isGeneratingNehori) {
-            console.log('🛑 進行中のネほりーの生成を停止');
             VoiceOptimization.phase3.shouldPlayNehoriImmediately = false;
         }
         
         // 🔧 Phase C: 進行中のはほりーの生成も停止
         if (window.DualPreemptiveOptimization?.phase1.isGeneratingHahori) {
-            console.log('🛑 進行中のはほりーの生成を停止');
             window.DualPreemptiveOptimization.phase1.shouldPlayHahoriImmediately = false;
         }
     },
     
     // 知見確認モードの終了（強化版）
     exitKnowledgeConfirmationMode(context = 'unknown') {
-        console.log(`🏁 知見確認モード終了開始 (${context})`);
         
         const state = AppState.voiceRecognitionState;
         const control = AppState.conversationControl;
@@ -1109,7 +1018,6 @@ const ConversationGatekeeper = {
             }, 100);
         }, 300);
         
-        console.log(`🏁 知見確認モード終了処理完了 (${context})`);
     },
     
     // 🔧 最適化版: Pending統一管理システム（強化版）
@@ -1118,7 +1026,6 @@ const ConversationGatekeeper = {
         
         // 重複実行防止
         if (control.isResumeInProgress) {
-            console.log('🔄 resumePendingNehoriIfNeeded 実行中のためスキップ');
             return;
         }
         
@@ -1134,12 +1041,10 @@ const ConversationGatekeeper = {
             const pendingSources = this.collectAllPendingData();
             
             if (pendingSources.hasPending) {
-                console.log(`🔄 Pendingネほりーを統一管理で再生 (${context}): ${pendingSources.source}`);
                 
                 // 安全な再生
                 this.playUnifiedPendingNehori(pendingSources, context);
             } else {
-                console.log('📝 Pendingデータがないため新しい質問を生成');
                 
                 // 質問生成スケジュールフラグをセット
                 if (!control.questionGenerationScheduled) {
@@ -1264,7 +1169,6 @@ const ConversationGatekeeper = {
                 control.justPlayedPendingNehori = false; 
             }, 100);
             
-            console.log(`✅ 統一Pendingネほりーの再生が完了: ${pendingData.source}`);
             
         } catch (error) {
             console.error('❌ 統一Pendingネほりーの再生エラー:', error);
@@ -1325,7 +1229,6 @@ const ConversationGatekeeper = {
             window.DualPreemptiveOptimization.phase1.pendingHahoriAudio = null;
             window.DualPreemptiveOptimization.phase1.shouldPlayHahoriImmediately = false;
         
-        console.log('✅ 全Pendingデータのクリアが完了');
     },
     
     // 🔧 新機能: Pendingデータの状態確認（Phase C強化版）
@@ -1345,9 +1248,6 @@ const ConversationGatekeeper = {
     }
 };
 
-// 🔧 ConversationGatekeeperをグローバルに公開
-window.ConversationGatekeeper = ConversationGatekeeper;
-
 // 🔧 グローバルユーティリティ関数: Pendingシステムの緊急クリア
 // デバッグや緊急時に使用
 function emergencyClearAllPending(reason = 'emergency') {
@@ -1363,12 +1263,10 @@ window.playPendingHahoriIfNeeded = playPendingHahoriIfNeeded;
 
 // 🔧 Phase C: 双方向先読みテスト機能
 window.testDualPreemptiveSystem = async function() {
-    console.log('🧪 双方向先読みシステムテスト開始');
     
     try {
         // 1. 状況分析テスト
         const situation = window.DualPreemptiveOptimization?.phase1.situationAnalyzer.analyzeConversationSituation(SPEAKERS.NEHORI, null);
-        console.log('📊 状況分析結果:', situation);
         
         // 2. 戦略決定テスト
         const strategy = window.DualPreemptiveOptimization?.phase1.situationAnalyzer.determinePreemptiveStrategy(situation);
@@ -1376,17 +1274,13 @@ window.testDualPreemptiveSystem = async function() {
         
         // 3. Pending状態確認
         const pendingStatus = ConversationGatekeeper.getPendingStatus();
-        console.log('📋 Pending状態:', pendingStatus);
         
         // 4. はほりーの先読み生成テスト（条件が満たされている場合のみ）
         if (AppState.phase === 'deepdive' && ConversationGatekeeper.canHahoriSpeak('test')) {
-            console.log('🔄 はほりーの先読み生成テスト実行');
             await startHahoriGenerationDuringNehori();
         } else {
-            console.log('⏸️ はほりーの先読み生成テストスキップ（条件未満）');
         }
         
-        console.log('✅ 双方向先読みシステムテスト完了');
         return { success: true, situation, strategy, pendingStatus };
         
     } catch (error) {
@@ -1397,7 +1291,6 @@ window.testDualPreemptiveSystem = async function() {
 
 // 🔧 Phase C: 状況適応システムテスト機能
 window.testAdaptiveStrategy = function() {
-    console.log('🧪 状況適応システムテスト開始');
     
     const testCases = [
         { speaker: SPEAKERS.NEHORI, input: null, expected: 'nehori_speaking' },
@@ -1422,14 +1315,12 @@ window.testAdaptiveStrategy = function() {
         };
     });
     
-    console.log('📊 状況適応システムテスト結果:', results);
     return results;
 };
 
 // 🔧 グローバルユーティリティ関数: Pending状態のデバッグ情報表示
 function debugPendingStatus() {
     const status = ConversationGatekeeper.getPendingStatus();
-    console.log('🔍 Pendingシステムデバッグ情報:', status);
     return status;
 }
 
@@ -1495,7 +1386,6 @@ function debugStateFlags() {
         }
     };
     
-    console.log('🔍 統一状態管理デバッグ情報:', flags);
     return flags;
 }
 
@@ -1523,24 +1413,20 @@ function checkLegacyFlagMigration() {
         console.warn('⚠️ レガシーフラグ移行の問題が発見されました:', issues);
         return { success: false, issues };
     } else {
-        console.log('✅ レガシーフラグの移行が正常に完了しています');
         return { success: true, issues: [] };
     }
 }
 
 // 🔧 新機能: マイク許可保持統計情報デバッグ
 function debugMicrophonePermissionStats() {
-    console.log('🔍 マイク許可統計情報:');
     
     const stateManager = window.AppState?.stateManager || window.stateManager;
     if (!stateManager?.recognitionManager) {
-        console.log('❌ 統合システム未初期化');
         return;
     }
     
     const stats = stateManager.recognitionManager.getMicrophonePermissionStats();
     
-    console.log('📊 マイク許可統計:');
     
     // 戦略別の統計表示
     if (stats.strategy === 'continuous') {
@@ -1553,17 +1439,13 @@ function debugMicrophonePermissionStats() {
         console.log(`  - 処理再開: ${stats.resumeCount}回`);
         console.log(`  - セッション時間: ${stats.sessionDuration}秒`);
         console.log(`  - 効率性: ${stats.efficiency}%`);
-        console.log(`  - 継続性保持: ${stats.neverStopped ? '✅' : '❌'}`);
-        console.log(`  - 継続的音声認識: ${stats.continuousRecognition ? '✅' : '❌'}`);
     } else if (stats.strategy === 'persistent') {
         console.log(`  - 戦略: Chrome専用インスタンス不変`);
         console.log(`  - インスタンス作成: ${stats.instanceCreationCount}回`);
         console.log(`  - マイク許可要求: ${stats.microphonePermissionRequests}回`);
         console.log(`  - 音声認識再開: ${stats.restartCount}回`);
-        console.log(`  - abort()実行: ${stats.abortCount}回`);
         console.log(`  - セッション時間: ${stats.sessionDuration}秒`);
         console.log(`  - 効率性: ${stats.efficiency}%`);
-        console.log(`  - インスタンス永続化: ${stats.instancePersistent ? '✅' : '❌'}`);
     } else {
         console.log(`  - 戦略: ${stats.strategy || 'lightweight'}`);
         console.log(`  - 完全クリーンアップ: ${stats.completeBefore || 0}回`);
@@ -1579,24 +1461,19 @@ function debugMicrophonePermissionStats() {
             console.log('🎯 完璧: 継続的音声認識が理想的に動作しています');
             console.log('✨ マイク許可アラートは完全に解消されました');
         } else if (stats.startCount <= 3) {
-            console.log('✅ 良好: 継続的音声認識がほぼ正常に動作しています');
         } else {
             console.log('⚠️ 注意: 継続的音声認識で予期しない再開が発生しています');
             console.log('💡 継続的音声認識トラブルシューティング:');
-            console.log('  - ブラウザまたはタブを再読み込み');
             console.log('  - 他のタブでマイクを使用していないか確認');
         }
     } else if (stats.efficiency >= 95) {
         console.log('🎯 完璧: マイク許可が完全に保持されています');
     } else if (stats.efficiency >= 80) {
-        console.log('✅ 優秀: マイク許可が効率的に保持されています');
     } else if (stats.efficiency >= 60) {
         console.log('⚠️ 良好: マイク許可保持に若干の改善余地があります');
     } else {
         console.log('❌ 要改善: マイク許可アラートが頻発しています');
         console.log('💡 推奨事項:');
-        console.log('  1. ブラウザの設定でマイク許可を確認');
-        console.log('  2. ページの再読み込みを試行');
         console.log('  3. 他のタブでマイクを使用していないか確認');
         
         // 継続的音声認識戦略の推奨
@@ -1632,7 +1509,6 @@ const ErrorHandler = {
         window.showMessage('error', message);
     },
     success: (message) => {
-        console.log(`✅ ${message}`);
         window.showMessage('success', message);
     }
 };
@@ -1681,12 +1557,10 @@ function initializeVoiceSettings() {
         if (window.VoicePresets && window.VoicePresets.default) {
             Object.assign(VoiceSettings[SPEAKERS.NEHORI], window.VoicePresets.default.settings[SPEAKERS.NEHORI]);
             Object.assign(VoiceSettings[SPEAKERS.HAHORI], window.VoicePresets.default.settings[SPEAKERS.HAHORI]);
-            console.log('✅ prompts.jsから音声設定を読み込みました');
         }
         
         // 次にカスタム設定ファイルがあれば読み込み
         if (window.CUSTOM_VOICE_CONFIG) {
-            console.log('📄 カスタム音声設定ファイルを検出:', window.CUSTOM_VOICE_CONFIG);
             
             if (window.CUSTOM_VOICE_CONFIG.nehori) {
                 Object.assign(VoiceSettings[SPEAKERS.NEHORI], window.CUSTOM_VOICE_CONFIG.nehori);
@@ -1695,14 +1569,12 @@ function initializeVoiceSettings() {
                 Object.assign(VoiceSettings[SPEAKERS.HAHORI], window.CUSTOM_VOICE_CONFIG.hahori);
             }
             
-            console.log('✅ カスタム音声設定ファイルを適用しました');
         }
         
         // 最後にローカルストレージの設定があれば上書き
         const savedConfig = localStorage.getItem('fukabori_voice_config');
         if (savedConfig) {
             const config = JSON.parse(savedConfig);
-            console.log('📄 ローカルストレージの音声設定を検出:', config);
             
             if (config.nehori) {
                 Object.assign(VoiceSettings[SPEAKERS.NEHORI], config.nehori);
@@ -1711,10 +1583,8 @@ function initializeVoiceSettings() {
                 Object.assign(VoiceSettings[SPEAKERS.HAHORI], config.hahori);
             }
             
-            console.log('✅ ローカルストレージの音声設定を適用しました');
         }
         
-        console.log('🎵 最終的な音声設定:', VoiceSettings);
         
         // 🆕 UIに設定を反映
         window.updateVoiceSettingsUI();
@@ -1735,7 +1605,6 @@ function updateVoiceSettingsUI() {
         if (window.VoicePresets && window.VoicePresets.default) {
             nehoriSettings = { ...nehoriSettings, ...window.VoicePresets.default.settings[SPEAKERS.NEHORI] };
             hahoriSettings = { ...hahoriSettings, ...window.VoicePresets.default.settings[SPEAKERS.HAHORI] };
-            console.log('🔄 prompts.jsから音声設定を再読み込み');
         }
         
         // ねほりーの設定
@@ -1768,7 +1637,6 @@ function updateVoiceSettingsUI() {
         VoiceSettings[SPEAKERS.NEHORI] = nehoriSettings;
         VoiceSettings[SPEAKERS.HAHORI] = hahoriSettings;
         
-        console.log('✅ 音声設定UIを更新しました', { nehoriSettings, hahoriSettings });
         
     } catch (error) {
         console.error('❌ 音声設定UI更新エラー:', error);
@@ -1780,7 +1648,6 @@ function updateVoiceSettingsUI() {
 // =================================================================================
 
 function loginWithPassword() {
-    console.log('💡 loginWithPassword が実行されました');
     
     const passwordInput = window.UIManager.DOMUtils.get('passwordInput');
     if (!passwordInput) {
@@ -1803,7 +1670,6 @@ function loginWithPassword() {
         
         // 🔧 マイク許可拒否状態のリセット（ログイン成功時に再試行を許可）
         localStorage.removeItem('microphonePermissionDenied');
-        console.log('🎤 マイク許可拒否状態をリセットしました（再試行可能）');
         
         // 🔄 新機能: パスワード入力欄をクリア
         passwordInput.value = '';
@@ -1812,17 +1678,14 @@ function loginWithPassword() {
         update2StepUI();
         
         window.showMessage('success', 'ログインに成功しました');
-        console.log('✅ ログイン完了 - 状態を保存しました');
         
     } catch (error) {
         console.error('❌ ログインエラー:', error);
         
         // 🔧 データ復旧を試行
-        console.log('🔄 データ復旧を試行します...');
         const recoverySuccess = window.attemptDataRecovery(password);
         
         if (recoverySuccess) {
-            console.log('✅ データ復旧成功 - 再度ログインを試行します');
             try {
                 const decryptedKey = window.StorageManager.apiKey.load(password);
                 AppState.apiKey = decryptedKey;
@@ -1833,7 +1696,6 @@ function loginWithPassword() {
                 update2StepUI();
                 
                 window.showMessage('success', 'データ復旧完了！ログインに成功しました');
-                console.log('✅ 復旧後ログイン完了');
                 return;
             } catch (retryError) {
                 console.error('❌ 復旧後ログイン失敗:', retryError);
@@ -1906,8 +1768,6 @@ async function addMessageToChatWithSpeech(speaker, displayText, speechText = nul
     // 短縮が発生した場合のログ
     if (displayText.length > textForSpeech.length) {
         const reductionRate = Math.round((1 - textForSpeech.length / displayText.length) * 100);
-        console.log(`🎤 音声短縮実行: ${displayText.length}文字 → ${textForSpeech.length}文字 (${reductionRate}%短縮)`);
-        console.log(`📝 表示: ${displayText.substring(0, 100)}${displayText.length > 100 ? '...' : ''}`);
         console.log(`🔊 発声: ${textForSpeech}`);
     } else {
         console.log('📝 音声短縮なし（元テキストをそのまま使用）');
@@ -2044,7 +1904,6 @@ async function gptMessagesToCharacterResponse(messages, character) {
 
 // 🔧 改善版: 安定したマイク初期化関数（マイク許可は一回だけルール遵守）
 async function initializeMicrophoneRecording(forceRecheck = false) {
-    console.log('🎤 マイク初期化開始', { forceRecheck });
     
     // 🛡️ 重複リクエスト防止（絶対ルール）
     if (AppState.voiceRecognitionStability.permissionRequestInProgress) {
@@ -2054,7 +1913,6 @@ async function initializeMicrophoneRecording(forceRecheck = false) {
     
     // 🛡️ 既に許可取得済みの場合は絶対に再取得しない
     if (AppState.voiceRecognitionStability.micPermissionGranted && !forceRecheck) {
-        console.log('✅ マイク許可は既に取得済み - 再取得はしません');
         await initializeSpeechRecognition();
         return true;
     }
@@ -2067,16 +1925,13 @@ async function initializeMicrophoneRecording(forceRecheck = false) {
         const hasStoredPermission = storedPermission === 'true';
         
         if (hasStoredPermission && !forceRecheck) {
-            console.log('✅ 保存されたマイク許可を使用 - 新たな許可要求はしません');
             AppState.voiceRecognitionStability.micPermissionGranted = true;
         } else {
             // 🛡️ マイク許可は一回だけ - 絶対ルール
-            console.log('🔄 マイク許可を一回だけ取得します（絶対ルール遵守）');
             
             // 🛡️ 許可状態を事前チェック
             const permissionStatus = await navigator.permissions.query({ name: 'microphone' }).catch(() => null);
             if (permissionStatus && permissionStatus.state === 'granted') {
-                console.log('✅ ブラウザレベルでマイク許可済み');
                 localStorage.setItem('microphonePermissionGranted', 'true');
                 AppState.voiceRecognitionStability.micPermissionGranted = true;
             } else {
@@ -2095,7 +1950,6 @@ async function initializeMicrophoneRecording(forceRecheck = false) {
                     
                     localStorage.setItem('microphonePermissionGranted', 'true');
                     AppState.voiceRecognitionStability.micPermissionGranted = true;
-                    console.log('✅ マイク許可を一回だけ取得し、永続保存しました');
                 }
             }
         }
@@ -2142,11 +1996,9 @@ async function initializeMicrophoneRecording(forceRecheck = false) {
 
 // 🔧 統合版: 音声認識開始関数（新旧システム統合）
 function safeStartSpeechRecognition(reason = 'unknown') {
-    console.log(`🔍 統合音声認識開始試行: ${reason}`);
     
     // 🛡️ 統合システムを使用
     if (window.stateManager && window.stateManager.recognitionManager) {
-        console.log('✅ 統合システムで開始');
         return window.stateManager.startRecognition();
     }
     
@@ -2161,14 +2013,12 @@ function safeStopSpeechRecognition(reason = 'unknown') {
     const stability = AppState.voiceRecognitionStability;
     
     if (!AppState.speechRecognition || !stability.isRecognitionActive) {
-        console.log('✅ 音声認識は既に停止しています');
         return true;
     }
     
     try {
         AppState.speechRecognition.abort();
         stability.isRecognitionActive = false;
-        console.log('✅ 音声認識を停止しました');
         return true;
         
     } catch (error) {
@@ -2179,7 +2029,6 @@ function safeStopSpeechRecognition(reason = 'unknown') {
 }
 
 function restartSpeechRecognition() {
-    console.log('🔄 音声認識再開処理開始（戦略別対応）');
     
     // AI発言終了後に音声認識を確実に再開する関数
     const stability = AppState.voiceRecognitionStability;
@@ -2194,7 +2043,6 @@ function restartSpeechRecognition() {
     }
     
     if (newSystemPermission && !legacyPermission) {
-        console.log('🔄 新システムの許可状態を旧システムに同期');
         stability.micPermissionGranted = true;
     }
     
@@ -2204,30 +2052,22 @@ function restartSpeechRecognition() {
         const currentState = recognitionManager.state;
         const strategy = window.CURRENT_MICROPHONE_STRATEGY;
         
-        console.log(`🔍 現在の音声認識状態: ${currentState}, 戦略: ${strategy}`);
         
         // 🔄 継続的音声認識戦略: 結果処理再開のみ
         if (strategy === MICROPHONE_STRATEGY.CONTINUOUS) {
-            console.log('🔄 継続的音声認識 - 結果処理再開（音声認識は継続中）');
             
             if (recognitionManager.resumeProcessing) {
                 recognitionManager.resumeProcessing('AI応答終了');
-                console.log('✅ 継続的音声認識の結果処理再開完了');
             } else {
                 console.warn('⚠️ 継続的音声認識Manager未対応 - フォールバック');
-                // フォールバックとして通常の開始処理（マイク許可確認付き）
-                if (stability.micPermissionGranted) {
+                // フォールバックとして通常の開始処理
                 recognitionManager.start();
-                } else {
-                    console.log('🚫 マイク許可がないため音声認識開始をスキップ');
-                }
             }
             return;
         }
         
         // 🔧 その他の戦略: 軽量リスタート優先（マイク許可保持）
         if (recognitionManager.microphonePermissionManager?.canPerformLightweightRestart) {
-            console.log('🔄 軽量リスタート実行（マイク許可保持）');
             
             // 現在の状態に応じて処理
             if (currentState === 'active') {
@@ -2256,7 +2096,6 @@ function restartSpeechRecognition() {
             
             // 停止完了を待機してから再開
             setTimeout(() => {
-                console.log('✨ 音声認識再開実行');
                 if (stability.micPermissionGranted) {
                     safeStartSpeechRecognition('restartSpeechRecognition');
                 } else {
@@ -2310,34 +2149,9 @@ function updateTranscriptDisplay() {
     }
 }
 
-// =================================================================================
-// Phase 1: VoiceProcessingManager 統合
-// =================================================================================
-
-// 元のprocessFinalTranscript関数をバックアップ
-async function processFinalTranscriptOriginal(text) {
+async function processFinalTranscript(text) {
     if (AppState.currentSpeaker !== SPEAKERS.NULL) {
         return;
-    }
-
-    // 🎨 新機能: ユーザー発話時の話者変化イベントを発行
-    if (window.dispatchEvent) {
-        const speakerChangeEvent = new CustomEvent('speaker-change', {
-            detail: { speaker: SPEAKERS.USER }
-        });
-        window.dispatchEvent(speakerChangeEvent);
-        console.log(`🎨 話者変化イベント発行: ${SPEAKERS.USER} (ユーザー発話開始)`);
-    }
-
-    // 🔧 確認応答の除去
-    if (AppState.waitingForClearConfirmation && (text.includes("はい") || text.includes("うん"))) {
-        // "はい"も文字起こしから除去
-        if (AppState.transcriptHistory.length > 0) {
-            AppState.transcriptHistory.pop(); // 最新の"はい"エントリを削除
-        }
-        AppState.currentTranscript = AppState.transcriptHistory.join(" ");
-        window.updateTranscriptDisplay();
-        console.log("🎯 確認応答「はい」を文字起こしから除去");
     }
 
     // 🔧 Phase B: 音声認識訂正機能（「どうぞ」は除外）
@@ -2355,20 +2169,8 @@ async function processFinalTranscriptOriginal(text) {
         if (correctionCommand.type === 'deletion' || correctionCommand.type === 'replacement') {
             console.log('🔧 音声訂正コマンド検出:', correctionCommand);
             
-            // 🎯 シンプル修正：音声コマンド除去
-            if (correctionCommand.type === "deletion" && correctionCommand.action === "delete_characters") {
-                // 音声コマンドパターンを除去
-                const cleanedText = removeVoiceCommand(text, correctionCommand.count);
-                
-                // transcriptHistoryの最新エントリを置き換え
-                if (AppState.transcriptHistory.length > 0) {
-                    AppState.transcriptHistory[AppState.transcriptHistory.length - 1] = cleanedText;
-                }
-                console.log(`🎯 音声コマンド除去: "${text}" → "${cleanedText}"`);
-            }
-            
-            // 現在の入力を設定（音声コマンド除去済み）
-            const currentInput = AppState.transcriptHistory.join(" ");
+            // 現在の入力を設定（累積された文字起こし）
+            const currentInput = AppState.transcriptHistory.join(' ');
             SpeechCorrectionSystem.setCurrentInput(currentInput);
             
             // 訂正コマンドを実行
@@ -2392,7 +2194,15 @@ async function processFinalTranscriptOriginal(text) {
         }
     }
 
-    // 🔧 従来の削除コマンド処理は SpeechCorrectionSystem に統一されました
+    // 従来の文字削除コマンド（下位互換性のため維持）
+    if (text.includes('文字消して') || text.includes('もじけして') || text.includes('クリアして')) {
+        AppState.transcriptHistory = [];
+        AppState.currentTranscript = '';
+        SpeechCorrectionSystem.setCurrentInput('');
+        window.updateTranscriptDisplay();
+        await provideCorrectionFeedback('文字を削除しました');
+        return;
+    }
 
     if (text.includes('テーマ変更') || text.includes('テーマを変え')) {
         await handleThemeChange();
@@ -2425,36 +2235,6 @@ async function processFinalTranscriptOriginal(text) {
     } else {
         console.log('「どうぞ」を待機中 - 文字起こし蓄積:', text);
         console.log('現在の累積文字起こし:', AppState.transcriptHistory.join(' '));
-    }
-}
-
-// =================================================================================
-// Phase 1: 新しいprocessFinalTranscript関数（VoiceProcessingManager経由）
-// =================================================================================
-
-async function processFinalTranscript(text) {
-    try {
-        // VoiceProcessingManagerが利用可能か確認
-        if (window.VoiceProcessingManager) {
-            // VoiceProcessingManagerインスタンスを作成（初回のみ）
-            if (!window.voiceProcessingManagerInstance) {
-                window.voiceProcessingManagerInstance = new window.VoiceProcessingManager();
-                const initialized = await window.voiceProcessingManagerInstance.initialize();
-                if (!initialized) {
-                    console.warn('[VoiceProcessingManager] 初期化失敗 - フォールバックを使用');
-                }
-            }
-            
-            // VoiceProcessingManagerを経由して処理
-            return await window.voiceProcessingManagerInstance.processFinalTranscript(text);
-        } else {
-            console.warn('[VoiceProcessingManager] 利用不可 - 従来処理を直接実行');
-            return await processFinalTranscriptOriginal(text);
-        }
-    } catch (error) {
-        console.error('[VoiceProcessingManager] エラー:', error);
-        // エラー時は従来処理にフォールバック
-        return await processFinalTranscriptOriginal(text);
     }
 }
 
@@ -2571,7 +2351,6 @@ async function processDeepdiveUserResponse(text) {
                 .map(msg => `${msg.speaker}: ${msg.content}`)
                 .join('\n');
             
-            console.log('🔍 音声ベース知見評価システム開始...');
             const voiceResult = await VoiceKnowledgeSystem.processKnowledgeWithVoiceEvaluation(text, conversationContext);
             
             // voiceResultがnullの場合は手動確認待機中（音声応答待ち）
@@ -2581,7 +2360,6 @@ async function processDeepdiveUserResponse(text) {
                 // 右ペインの統計表示を更新
                 updateKnowledgeSettingsDisplay();
                 // 🚫 重要: 知見確認待機中はねほりーのの次の質問を生成しない
-                console.log('🔄 知見確認待機中 - ねほりーのの質問生成を停止');
                 AppState.waitingForPermission = true;
                 return;
             }
@@ -2612,7 +2390,6 @@ async function processDeepdiveUserResponse(text) {
                         },
                         voiceResult.evaluation
                     );
-                    console.log('✅ 知見ファイルシステムに保存完了');
                 }
                 
                 window.updateKnowledgeDisplay();
@@ -2723,7 +2500,6 @@ async function processSummaryUserResponse(text) {
 }
 
 async function processKnowledgeConfirmation(text) {
-    console.log('🎤 音声ベース知見確認:', text);
     
     if (!AppState.voiceRecognitionState.pendingKnowledgeEvaluation) {
         console.warn('⚠️ 保留中の知見評価がありません');
@@ -2818,7 +2594,6 @@ async function addMessageToChat(speaker, message) {
             timestamp: new Date()
         });
         
-        console.log(`✅ メッセージ追加: ${speakerName} - ${message.substring(0, 50)}...`);
     }
     // メッセージ追加後にAI応答中表示を制御
     if (speaker === SPEAKERS.NEHORI || speaker === SPEAKERS.HAHORI) {
@@ -2845,7 +2620,6 @@ const AudioControlManager = {
         };
         
         this.activeAudioSources.add(audioData);
-        console.log(`🎵 音声登録: ${speaker} (ID: ${audioData.id})`);
         
         // 音声終了時の自動削除
         audioElement.addEventListener('ended', () => {
@@ -2862,12 +2636,10 @@ const AudioControlManager = {
     // 音声登録解除
     unregisterAudio(audioData) {
         this.activeAudioSources.delete(audioData);
-        console.log(`🔇 音声登録解除: ${audioData.speaker} (ID: ${audioData.id})`);
     },
     
     // 全音声強制停止
     forceStopAllAudio(reason = 'user_request') {
-        console.log(`🛑 全音声強制停止開始: ${reason} (対象: ${this.activeAudioSources.size}件)`);
         
         let stoppedCount = 0;
         this.activeAudioSources.forEach(audioData => {
@@ -2885,7 +2657,6 @@ const AudioControlManager = {
         this.activeAudioSources.clear();
         AppState.currentSpeaker = SPEAKERS.NULL;
         
-        console.log(`✅ 全音声停止完了: ${stoppedCount}件停止 (理由: ${reason})`);
         
         // ユーザー向けメッセージ
         if (stoppedCount > 0 && reason === 'user_request') {
@@ -2917,7 +2688,6 @@ const AudioControlManager = {
             AppState.currentSpeaker = SPEAKERS.NULL;
         }
         
-        console.log(`✅ ${speaker}音声停止完了: ${stoppedCount}件 (理由: ${reason})`);
         return stoppedCount;
     },
     
@@ -2950,15 +2720,6 @@ async function playPreGeneratedAudio(audioBlob, speaker) {
         
         AppState.currentSpeaker = speaker;
         
-        // 🎨 新機能: 話者変化イベントを発行（右パネル背景変化のため）
-        if (window.dispatchEvent) {
-            const speakerChangeEvent = new CustomEvent('speaker-change', {
-                detail: { speaker: speaker }
-            });
-            window.dispatchEvent(speakerChangeEvent);
-            console.log(`🎨 話者変化イベント発行: ${speaker}`);
-        }
-        
         // Phase 3: はほりーの発声開始時にねほりーの生成を開始
         if (speaker === SPEAKERS.HAHORI && VoiceOptimization.phase3.isActive) {
             VoiceOptimization.phase3.hahoriSpeechStartTime = Date.now();
@@ -2968,15 +2729,6 @@ async function playPreGeneratedAudio(audioBlob, speaker) {
         audio.onended = async () => {
             AppState.currentSpeaker = SPEAKERS.NULL;
             URL.revokeObjectURL(audio.src);
-            
-            // 🎨 新機能: 話者変化イベントを発行（発話終了時）
-            if (window.dispatchEvent) {
-                const speakerChangeEvent = new CustomEvent('speaker-change', {
-                    detail: { speaker: null }
-                });
-                window.dispatchEvent(speakerChangeEvent);
-                console.log('🎨 話者変化イベント発行: null (発話終了)');
-            }
             
             // Phase 3: はほりーの発声終了後、ねほりーのを即座に再生
             if (speaker === SPEAKERS.HAHORI && VoiceOptimization.phase3.shouldPlayNehoriImmediately) {
@@ -2992,16 +2744,6 @@ async function playPreGeneratedAudio(audioBlob, speaker) {
         audio.onerror = (error) => {
             AppState.currentSpeaker = SPEAKERS.NULL;
             URL.revokeObjectURL(audio.src);
-            
-            // 🎨 新機能: 話者変化イベントを発行（エラー時）
-            if (window.dispatchEvent) {
-                const speakerChangeEvent = new CustomEvent('speaker-change', {
-                    detail: { speaker: null }
-                });
-                window.dispatchEvent(speakerChangeEvent);
-                console.log('🎨 話者変化イベント発行: null (エラー)');
-            }
-            
             reject(error);
         };
         
@@ -3035,7 +2777,6 @@ async function playPreGeneratedAudio(audioBlob, speaker) {
 // =================================================================================
 
 function downloadMarkdownReport() {
-    console.log('💡 downloadMarkdownReport が実行されました');
     
     try {
         const markdown = generateMarkdownReport();
@@ -3045,7 +2786,6 @@ function downloadMarkdownReport() {
         downloadTextFile(markdown, filename);
         
         window.showMessage('success', 'レポートをダウンロードしました');
-        console.log('✅ レポートダウンロード完了');
         
     } catch (error) {
         console.error('❌ レポートダウンロードエラー:', error);
@@ -3066,7 +2806,6 @@ function downloadMarkdownReport() {
 
 // 🔄 互換性のためのラッパー関数（exportAllData → downloadAllKnowledge）
 async function exportAllData() {
-    console.log('💡 exportAllData が実行されました（downloadAllKnowledgeへリダイレクト）');
     await downloadAllKnowledge();
 }
 
@@ -3135,22 +2874,18 @@ function generateMarkdownReport() {
 // 🔄 アプリケーション状態復元機能
 async function restoreApplicationState() {
     try {
-        console.log('📋 アプリケーション状態復元開始...');
         
         // 1. ログイン状態の復元
         const isLoggedIn = loadLoginState();
         if (isLoggedIn) {
-            console.log('🔐 ログイン状態を復元中...');
             // 保存されたAPIキーがあるかチェック
             const savedHashes = getPasswordHashList();
             if (savedHashes.length > 0) {
                 // APIキーは既に暗号化されているので、ここでは状態のみ設定
-                console.log('✅ ログイン状態復元: APIキーが保存されています');
                 // 注意: AppState.apiKeyは実際のパスワード入力時に設定される
             } else {
                 // 保存されたAPIキーがない場合はログイン状態をクリア
                 clearLoginState();
-                console.log('⚠️ APIキーが見つからないため、ログイン状態をクリア');
             }
         }
         
@@ -3160,14 +2895,12 @@ async function restoreApplicationState() {
             const themeInput = window.UIManager.DOMUtils.get('themeInput');
             if (themeInput) {
                 themeInput.value = savedTheme;
-                console.log(`🎨 テーマ入力状態復元: "${savedTheme}"`);
             }
         }
         
         // 3. 音声ベース知見評価設定の復元
         loadKnowledgeSettings();
         updateKnowledgeSettingsDisplay();
-        console.log('🎯 音声ベース知見評価設定復元完了');
         
         // 4. 2ステップUIの初期更新
         update2StepUI();
@@ -3177,7 +2910,6 @@ async function restoreApplicationState() {
             updateFileInputDisplay();
         }, 100);
         
-        console.log('✅ アプリケーション状態復元完了');
         
     } catch (error) {
         console.error('❌ 状態復元エラー:', error);
@@ -3193,7 +2925,6 @@ async function restoreApplicationState() {
 // =================================================================================
 
 async function setupApiKey() {
-    console.log('💡 setupApiKey が実行されました');
     
     const elements = window.UIManager.DOMUtils.getAll(['apiKeyInput', 'apiPasswordInput', 'testApiButton', 'startButton']);
     
@@ -3217,7 +2948,6 @@ async function setupApiKey() {
     
     try {
         if (apiKey) {
-            console.log('🔍 新しいAPIキーの接続テストを実行中...');
             
             if (hasApiKeyForPassword(password)) {
                 const overwrite = confirm(`このパスワードには既にAPIキーが保存されています。\n上書きしますか？`);
@@ -3241,7 +2971,6 @@ async function setupApiKey() {
                 
                 if (elements.startButton) {
                     elements.startButton.disabled = false;
-                    console.log('✅ セッション開始ボタンを有効化しました');
                 }
             } else {
                 AppState.apiKey = null;
@@ -3253,7 +2982,6 @@ async function setupApiKey() {
                 return;
             }
         } else {
-            console.log('🔍 保存済みAPIキーの読み込みと接続テスト中...');
             window.showMessage('info', '保存済みAPIキーの接続テスト中...');
             
             const decryptedKey = loadEncryptedApiKey(password);
@@ -3266,7 +2994,6 @@ async function setupApiKey() {
                 
                 if (elements.startButton) {
                     elements.startButton.disabled = false;
-                    console.log('✅ セッション開始ボタンを有効化しました');
                 }
             } else {
                 AppState.apiKey = null;
@@ -3288,7 +3015,6 @@ async function setupApiKey() {
             elements.testApiButton.disabled = false;
         }
         
-        console.log('✅ APIキー設定完了');
         
     } catch (error) {
         AppState.apiKey = null;
@@ -3303,33 +3029,17 @@ async function setupApiKey() {
 }
 
 async function testApiConnection() {
-    console.log('🔍 testApiConnection が実行されました');
     
-    // 🔐 埋め込みAPI Key統合: 優先順位制御でAPI Key取得
-    let apiKeyToTest = AppState.apiKey;
-    
-    if (!apiKeyToTest && window.StorageManager && window.StorageManager.apiKey.getWithPriority) {
-        apiKeyToTest = window.StorageManager.apiKey.getWithPriority();
-        if (apiKeyToTest) {
-            console.log('🏢 埋め込みAPI Keyでテスト実行');
-            // AppStateも更新
-            AppState.apiKey = apiKeyToTest;
-            AppState.apiKeySource = 'embedded';
-        }
-    }
-    
-    if (!apiKeyToTest) {
-        console.log('APIキーが設定されていません');
+    if (!AppState.apiKey) {
         return false;
     }
     
     try {
-        console.log('API接続テストを開始します');
         
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${apiKeyToTest}`,
+                'Authorization': `Bearer ${AppState.apiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -3340,7 +3050,6 @@ async function testApiConnection() {
         });
         
         if (response.ok) {
-            console.log('✅ API接続テスト成功');
             return true;
         } else {
             const errorData = await response.json();
@@ -3354,7 +3063,6 @@ async function testApiConnection() {
 }
 
 async function testApiKey() {
-    console.log('💡 testApiKey が実行されました');
     
     if (!AppState.apiKey) {
         window.showMessage('error', 'APIキーが設定されていません');
@@ -3370,7 +3078,6 @@ async function testApiKey() {
         const startButton = document.getElementById('startButton');
         if (startButton) {
             startButton.disabled = false;
-            console.log('✅ セッション開始ボタンを有効化しました');
         }
     } else {
         window.showMessage('error', 'API接続失敗：キーが無効です');
@@ -3378,7 +3085,6 @@ async function testApiKey() {
         const startButton = document.getElementById('startButton');
         if (startButton) {
             startButton.disabled = true;
-            console.log('❌ セッション開始ボタンを無効化しました');
         }
     }
 }
@@ -3402,7 +3108,6 @@ function clearSavedApiKey(password = null) {
  */
 function clearApiKey() {
     try {
-        console.log('💡 clearApiKey が実行されました');
         
         const passwordInput = document.getElementById('apiPasswordInput');
         if (!passwordInput) {
@@ -3454,7 +3159,6 @@ function clearApiKey() {
             update2StepUI();
             
             window.showMessage('success', 'APIキーを削除しました');
-            console.log('✅ APIキー削除完了');
         }
         
     } catch (error) {
@@ -3468,7 +3172,6 @@ function clearApiKey() {
  */
 function changePassword() {
     try {
-        console.log('💡 changePassword が実行されました');
         
         const passwordInput = document.getElementById('apiPasswordInput');
         if (!passwordInput) {
@@ -3537,7 +3240,6 @@ function changePassword() {
         updateApiKeyStatusDisplay();
         
         window.showMessage('success', 'パスワードを変更しました');
-        console.log('🔐 パスワード変更完了');
         
     } catch (error) {
         console.error('❌ パスワード変更エラー:', error);
@@ -3556,134 +3258,72 @@ function handleModalBackgroundClick(event) {
 }
 
 function toggleMicrophone() {
-    console.log('💡 toggleMicrophone が実行されました');
     
-    // 📝 編集システムに手動操作を通知
-    if (window.transcriptEditManager) {
-        window.transcriptEditManager.lastManualActionTime = Date.now();
-        console.log('📝 編集システムに手動操作を通知');
+    if (!stateManager) {
+        console.error('❌ StateManagerが未初期化');
+        return;
     }
     
-    try {
-        // 🔧 統一状態管理システム - 正しいアクセス方法
-        if (!window.unifiedStateManager) {
-            throw new Error('統一状態管理システムが未初期化');
-        }
-        
-        const voiceModule = window.unifiedStateManager.modules.get('voice');
-        if (!voiceModule) {
-            throw new Error('音声モジュールが利用不可 - 統一状態管理システム未初期化');
-        }
-        
-        const state = voiceModule.getState();
-        console.log('🔄 統一状態管理システム使用:', state.recognitionState);
-        
-        if (state.recognitionState === 'active') {
-            console.log('⏸️ 手動一時停止（透明継続無効）');
-            voiceModule.pauseRecognition();
-        } else if (state.recognitionState === 'paused' || state.recognitionState === 'idle' || state.recognitionState === 'stopping') {
-            console.log('▶️ 手動再開');
-            voiceModule.resumeRecognition();
-        }
-        
-        // UI更新
-        updatePauseResumeButton();
-        
-    } catch (error) {
-        console.error('❌ 音声制御エラー:', error.message);
-        console.log('🔄 音声認識システム初期化中の可能性があります - 再試行してください');
-        
-        // フォールバック: 直接音声認識を試行
-        if (window.recognition) {
-            try {
-                window.recognition.stop();
-                console.log('🔄 フォールバック音声認識停止');
-            } catch (fallbackError) {
-                console.log('🎤 フォールバック音声認識開始試行');
-                // 通常は何もしない（システム初期化待ち）
-            }
-        }
+    const state = stateManager.getState();
+    
+    if (state.recognition === 'active') {
+        stateManager.stopRecognition();
+    } else {
+        stateManager.startRecognition();
     }
 }
 
-// 🔧 レガシー関数は削除 - toggleMicrophoneに統一
-
-// =================================================================================
-// VOICE CONTROL - シンプル音声制御システム
-// =================================================================================
-
-/**
- * 一時停止ボタンのシンプルUI更新
- * UnifiedStateManagerの状態のみに基づく軽量実装
- */
-function updatePauseResumeButton() {
-    const pauseBtn = document.getElementById('pauseResumeBtn');
-    if (!pauseBtn) return;
+function startRealtimeRecognition() {
     
-    try {
-        let isActive = false;
-        
-        // 🔧 統一状態管理システム - 正しいアクセス方法
-        if (window.unifiedStateManager) {
-            const voiceModule = window.unifiedStateManager.modules.get('voice');
-            if (voiceModule) {
-                const state = voiceModule.getState();
-                isActive = state && state.recognitionState === 'active';
-                
-                // paused状態の場合は明示的に再開表示
-                if (state && state.recognitionState === 'paused') {
-                    isActive = false; // 一時停止中は再開ボタンを表示
-                }
-            }
+    if (!stateManager) {
+        console.error('❌ StateManagerが未初期化');
+        return;
+    }
+    
+    stateManager.startRecognition();
+}
+
+function stopRealtimeRecognition() {
+    
+    if (!stateManager) {
+        console.error('❌ StateManagerが未初期化');
+        return;
+    }
+    
+    stateManager.stopRecognition();
+}
+
+
+function forceStopAllActivity() {
+    
+    // 音声認識停止
+    if (AppState.speechRecognition) {
+        try {
+            AppState.speechRecognition.stop();
+        } catch (error) {
+            console.log('音声認識停止エラー:', error);
         }
-        
-        // ボタンの表示とスタイルを更新
-        if (isActive) {
-            // 音声認識中 = 一時停止可能
-            pauseBtn.innerHTML = '⏸️ 一時停止';
-            pauseBtn.style.backgroundColor = ''; // 通常色（CSSデフォルト）
-            pauseBtn.style.color = '';
+    }
+    
+    // 🔧 Phase B: 音声再生強制停止
+    const stoppedAudioCount = AudioControlManager.forceStopAllAudio('force_stop_activity');
+    
+    AppState.currentSpeaker = SPEAKERS.NULL;
+    AppState.microphoneActive = false;
+    
+    window.updateMicrophoneButton();
+    window.showMessage('info', `全ての活動を強制停止しました（音声${stoppedAudioCount}件停止）`);
+    
+    // 少し待ってから音声認識を再開（許可状態をチェックしてから）
+    setTimeout(() => {
+        const permissionDenied = localStorage.getItem('microphonePermissionDenied') === 'true';
+        if (!permissionDenied && AppState.voiceRecognitionStability.micPermissionGranted) {
+            restartSpeechRecognition();
         } else {
-            // 音声認識停止中 = 再開可能
-            pauseBtn.innerHTML = '▶️ 再開';
-            pauseBtn.style.backgroundColor = '#4CAF50'; // 緑色
-            pauseBtn.style.color = 'white';
+            console.log('🚫 強制停止後の再開条件未満 - スキップ');
         }
-        
-    } catch (error) {
-        // エラーは静かにログのみ
-        console.debug('一時停止ボタン更新エラー:', error);
-    }
+    }, 2000);
 }
-
-/**
- * 一時停止ボタンの定期更新を開始
- * セッション開始時に呼び出される
- */
-function startPauseButtonMonitoring() {
-    if (window.pauseButtonMonitoringInterval) {
-        clearInterval(window.pauseButtonMonitoringInterval);
-    }
-    
-    window.pauseButtonMonitoringInterval = setInterval(() => {
-        updatePauseResumeButton();
-    }, 1000); // 1秒間隔で更新（軽量化）
-    
-    console.log('✅ 一時停止ボタン監視開始');
-}
-
-// 🔧 監視システム統合完了: VoiceUIManagerの既存500ms監視に統合済み
-// setupPauseResumeButtonMonitoring() - 削除（重複監視の除去）
-
-// 🔧 統一システム対応: AppState変化時の一時停止ボタン更新
-if (typeof window !== 'undefined') {
-    window.addEventListener('appStateChanged', () => {
-        setTimeout(() => updatePauseResumeButton(), 100);
-    });
-}
-
-
-// forceStopAllActivity関数を削除 - マッチポンプ設計の根本原因であったため完全除去
 
 // =================================================================================
 // SESSION MANAGEMENT - セッション管理システム
@@ -3706,17 +3346,13 @@ if (typeof window !== 'undefined') {
 // =================================================================================
 
 async function testCharacterVoice(character) {
-    console.log('💡 testCharacterVoice が実行されました:', character);
-    console.log('現在のAPIキー状態:', !!AppState.apiKey);
     
     if (!AppState.apiKey) {
-        console.log('APIキーが設定されていません');
         window.showMessage('error', 'まずAPIキーを設定してください');
         return;
     }
 
     try {
-        console.log('音声テストを開始します');
         
         let testMessage;
         if (window.AI_PROMPTS && window.AI_PROMPTS.TEST_MESSAGES) {
@@ -3733,7 +3369,6 @@ async function testCharacterVoice(character) {
         await playPreGeneratedAudio(audioBlob, character);
         
         window.showMessage('success', `${character}の音声テストが完了しました`);
-        console.log('音声テスト完了');
     } catch (error) {
         console.error('音声テストエラー:', error);
         window.showMessage('error', `音声テストに失敗しました: ${error.message}`);
@@ -3741,7 +3376,6 @@ async function testCharacterVoice(character) {
 }
 
 function changeTheme(newTheme) {
-    console.log('💡 changeTheme が実行されました:', newTheme);
     
     if (newTheme && newTheme !== currentTheme) {
         currentTheme = newTheme;
@@ -3752,7 +3386,6 @@ function changeTheme(newTheme) {
         // テーマ設定を保存
         localStorage.setItem('fukabori_theme', newTheme);
         
-        console.log(`✅ テーマを「${newTheme}」に変更しました`);
         window.showMessage('success', `テーマを「${newTheme}」に変更しました`);
     }
 }
@@ -3782,7 +3415,6 @@ async function handleQuestionChange() {
 }
 
 async function askNextQuestion() {
-    console.log('🎯 次の質問を生成します');
     
     if (window.AI_PROMPTS && window.AI_PROMPTS.DEEPDIVE_NEXT) {
         const conversationContext = AppState.conversationHistory.map(msg => msg.content).join(' ');
@@ -3811,7 +3443,6 @@ function loadSavedTheme() {
     if (savedTheme) {
         currentTheme = savedTheme;
         document.body.className = `theme-${savedTheme}`;
-        console.log(`✅ 保存されたテーマ「${savedTheme}」を読み込みました`);
     }
 }
 
@@ -3839,9 +3470,7 @@ window.testApiKey = testApiKey;
 window.handleModalBackgroundClick = handleModalBackgroundClick;
 window.startSession = startSession;
 window.toggleMicrophone = toggleMicrophone;
-// window.forceStopAllActivity = forceStopAllActivity; // マッチポンプ設計除去のため削除
-window.updatePauseResumeButton = updatePauseResumeButton;
-window.startPauseButtonMonitoring = startPauseButtonMonitoring;
+window.forceStopAllActivity = forceStopAllActivity;
 window.endConversationSession = endConversationSession;
 window.downloadMarkdownReport = downloadMarkdownReport;
 window.downloadKnowledgeFile = downloadKnowledgeFile;
@@ -3889,7 +3518,6 @@ const SmartVoicePanelManager = {
             if (toggleIcon) toggleIcon.textContent = '[▼]';
         }
         
-        console.log(`🎤 スマート音声パネル: ${this.isExpanded ? '展開' : '折りたたみ'}`);
     },
     
     // 利用可能コマンドの動的更新
@@ -3961,13 +3589,11 @@ const SmartVoicePanelManager = {
             this.autoUpdate();
         }, 5000);
         
-        console.log('🎤 スマート音声操作パネル初期化完了');
     }
 };
 
 // 🧪 音声コマンドテストモード
 async function testVoiceCommands() {
-    console.log('🧪 音声コマンドテストモード開始');
     
     const testCommands = [
         { command: 'どうぞ', description: '発話許可コマンド' },
@@ -4011,7 +3637,6 @@ async function testVoiceCommands() {
         `${test.result} ${test.command} (${test.description})`
     ).join('\n');
     
-    console.log('🧪 テスト結果:\n' + resultMessage);
     
     // ユーザーフィードバック
     window.showMessage('info', `音声コマンドテスト完了: ${testResults.length}件中${testResults.filter(t => t.result.includes('✅')).length}件成功`);
@@ -4065,21 +3690,11 @@ window.SmartVoicePanelManager = SmartVoicePanelManager;
 
 // 🔧 Phase B: 音声認識訂正システム
 const SpeechCorrectionSystem = {
-    // 削除コマンドパターン（通常会話での誤動作防止のため厳密化）
+    // 削除コマンドパターン
     deletionPatterns: [
-        /^削除$/,           // 「削除」単体
-        /^クリア$/,         // 「クリア」単体  
-        /^全削除$/,         // 「全削除」
-        /^全部削除$/,       // 「全部削除」
-        /^全て削除$/,       // 「全て削除」
-        /^リセット$/,       // 「リセット」単体
-        /^文字消して$/,     // 「文字消して」単体
-        /^もじけして$/,     // 「もじけして」単体
-        /^クリアして$/,     // 「クリアして」単体
-        /文字起こしを?削除/, // 「文字起こしを削除」
-        /文字起こしを?クリア/, // 「文字起こしをクリア」
-        /^間違い$/,         // 「間違い」単体
-        /^やり直し$/        // 「やり直し」単体
+        '削除', '消して', '文字消して', 'クリア',
+        '間違い', 'やり直し', 'リセット', '文字削除',
+        '消去', '文字消去', '全部削除', '全部消して'
     ],
     
     // 部分削除パターン（正規表現）
@@ -4126,40 +3741,30 @@ const SpeechCorrectionSystem = {
         return { type: 'normal', text: cleanText };
     },
     
-    // 削除コマンド検出（優先順位: 数値削除 > 全削除 > 文字列削除）
+    // 削除コマンド検出
     checkDeletionCommand(text) {
-        const cleanText = text.toLowerCase().trim();
+        // 完全削除
+        if (this.deletionPatterns.some(pattern => text.includes(pattern))) {
+            return { action: 'clear_all' };
+        }
         
-        // 🎯 優先度1: 数値指定削除（最優先）
+        // 部分削除
         for (const pattern of this.partialDeletionPatterns) {
             const match = text.match(pattern);
             if (match) {
                 if (match[1] && !isNaN(match[1])) {
                     // 数字指定削除
-                    const count = parseInt(match[1]);
                     return { 
                         action: 'delete_characters', 
-                        count: count,
-                        requiresConfirmation: count > 30  // 30文字以上は確認
+                        count: parseInt(match[1])
                     };
                 } else if (match[1]) {
                     // 指定文字列削除
                     return { 
                         action: 'delete_string', 
-                        target: match[1],
-                        requiresConfirmation: false
+                        target: match[1]
                     };
                 }
-            }
-        }
-        
-        // 🎯 優先度2: 全削除（確認付き）
-        for (const pattern of this.deletionPatterns) {
-            if (pattern.test(cleanText)) {
-                return { 
-                    action: 'clear_all',
-                    requiresConfirmation: true  // 全削除は必ず確認
-                };
             }
         }
         
@@ -4193,28 +3798,8 @@ const SpeechCorrectionSystem = {
         return null;
     },
     
-    // 訂正処理の実行（確認機能付き）
+    // 訂正処理の実行
     async executeCorrectionCommand(command) {
-        console.log('🔧 音声訂正コマンド実行:', command);
-        
-        // 確認が必要な場合の処理
-        if (command.requiresConfirmation) {
-            let confirmMessage = '';
-            if (command.action === 'clear_all') {
-                confirmMessage = '全ての文字起こしを削除します。よろしいですか？';
-            } else if (command.action === 'delete_characters') {
-                confirmMessage = `${command.count}文字を削除します。大きな数値ですが、よろしいですか？`;
-            }
-            
-            const confirmed = confirm(confirmMessage);
-            if (!confirmed) {
-                return { 
-                    success: true, 
-                    message: '削除をキャンセルしました',
-                    feedback: '削除をキャンセルしました' 
-                };
-            }
-        }
         
         switch (command.action) {
             case 'clear_all':
@@ -4245,9 +3830,9 @@ const SpeechCorrectionSystem = {
         };
     },
     
-    // 最後のN文字削除（置き換え処理版）
+    // 最後のN文字削除
     deleteLastCharacters(count) {
-        if (count <= 0) return { success: false, message: "削除する文字数が不正です" };
+        if (count <= 0) return { success: false, message: '削除する文字数が不正です' };
         
         const originalLength = this.currentInput.length;
         const deleteCount = Math.min(count, originalLength);
@@ -4261,6 +3846,7 @@ const SpeechCorrectionSystem = {
             feedback: `${deleteCount}文字削除しました`
         };
     },
+    
     // 指定文字列削除
     deleteSpecificString(target) {
         if (!this.currentInput.includes(target)) {
@@ -4334,30 +3920,6 @@ window.testCorrectionCommand = (text) => SpeechCorrectionSystem.detectCorrection
 window.executeCorrectionCommand = (command) => SpeechCorrectionSystem.executeCorrectionCommand(command);
 window.provideCorrectionFeedback = provideCorrectionFeedback;
 
-// 🎯 シンプル修正：音声コマンド除去関数
-window.removeVoiceCommand = function(text, expectedCount) {
-    // ✅ 改良：「してください」対応の音声コマンド除去パターン
-    const voiceCommandPatterns = [
-        new RegExp(`(.+?)\\s+(${expectedCount})文字削除(?:して(?:ください)?)?$`),        // "テキスト 3文字削除", "テキスト 3文字削除してください"
-        new RegExp(`(.+?)\\s+(${expectedCount})文字消して(?:ください)?$`),               // "テキスト 3文字消して", "テキスト 3文字消してください"  
-        new RegExp(`(.+?)\\s+(${expectedCount})文字\\s*削除(?:して(?:ください)?)?$`),     // "テキスト 3文字 削除してください"
-        new RegExp(`(.+?)\\s+(${expectedCount})文字\\s*消して(?:ください)?$`),           // "テキスト 3文字 消してください"
-        new RegExp(`(.+?)\\s+最後の(${expectedCount})文字\\s*削除(?:して(?:ください)?)?$`), // "テキスト 最後の3文字削除してください"
-        new RegExp(`(.+?)\\s+最後の(${expectedCount})文字\\s*消して(?:ください)?$`),     // "テキスト 最後の3文字消してください"
-        new RegExp(`(.+?)\\s+(${expectedCount})\\s*文字\\s*削除(?:して(?:ください)?)?$`), // "テキスト 3 文字 削除してください"
-        new RegExp(`(.+?)\\s+(${expectedCount})\\s*文字\\s*消して(?:ください)?$`)        // "テキスト 3 文字 消してください"
-    ];
-    
-    for (const pattern of voiceCommandPatterns) {
-        const match = text.match(pattern);
-        if (match) {
-            return match[1].trim(); // 音声コマンド前の部分のみ返す
-        }
-    }
-    
-    return text; // パターンが見つからない場合は元のまま
-}
-
 // ヘルプガイド切り替え関数
 // 🔧 UI最適化Phase1: ヘルプガイド管理機能をapp/ui-advanced.jsに移動
 // toggleVoiceGuide
@@ -4409,7 +3971,6 @@ function initializeVoiceSliders() {
         });
     }
     
-    console.log('✅ 音声設定スライダーのイベントリスナーを初期化しました');
 }
 
 // 現在の音声設定を取得する関数
@@ -4453,28 +4014,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     try {
         // 🔄 新機能: 知見データ管理システムの初期化（最初に実行）
-        console.log('📚 知見管理システム初期化開始...');
         await initializeKnowledgeManagement();
-        console.log('✅ 知見管理システム初期化完了');
         
         // 🎤 新システム: StateManager初期化
-        console.log('🎤 音声システム初期化開始...');
         if (!initializeVoiceSystem()) {
             console.error('❌ 音声システム初期化失敗');
             window.showMessage('error', '音声システムの初期化に失敗しました。ページを再読み込みしてください。');
             return;
         }
-        console.log('✅ 音声システム初期化完了');
-        
-        // 🎯 Step 1: 段階的移行システムの初期化
-        console.log('🔄 段階的移行システム初期化開始...');
-        initializeMigrationSystem();
-        console.log('✅ 段階的移行システム初期化完了');
-        
-        // 📝 リアルタイム文字起こし編集システムの初期化
-        console.log('✏️ transcript編集システム初期化開始...');
-        await initializeTranscriptEditSystem();
-        console.log('✅ transcript編集システム初期化完了');
         
     } catch (error) {
         console.error('❌ 初期化エラー:', error);
@@ -4487,27 +4034,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     loadSavedTheme();
     updateSessionStatus('準備中...', '未設定');
     window.updateKnowledgeDisplay();
-    
-    // 🔧 Step 3.1: 右ペインセッション状況表示の初期化
-    if (typeof window.initializeRightPaneSessionDisplay === 'function') {
-        try {
-            const rightPaneInitialized = window.initializeRightPaneSessionDisplay();
-            if (rightPaneInitialized) {
-                console.log('✅ 右ペインセッション状況表示初期化完了');
-                // 自動更新を開始
-                if (typeof window.startRightPaneSessionDisplayUpdates === 'function') {
-                    window.startRightPaneSessionDisplayUpdates();
-                    console.log('✅ 右ペインセッション状況表示自動更新開始');
-                }
-            } else {
-                console.warn('⚠️ 右ペインセッション状況表示初期化失敗');
-            }
-        } catch (error) {
-            console.error('❌ 右ペインセッション状況表示初期化エラー:', error);
-        }
-    } else {
-        console.warn('⚠️ 右ペインセッション状況表示関数が見つかりません');
-    }
     
     // 🎯 新機能: 音声ベース知見評価設定初期化
     loadKnowledgeSettings();
@@ -4569,7 +4095,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (typeof SessionController !== 'undefined') {
         try {
             SessionController.init();
-            console.log('✅ SessionController初期化完了');
         } catch (error) {
             console.error('❌ SessionController初期化エラー:', error);
         }
@@ -4579,7 +4104,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (typeof window.initializeDataManager === 'function') {
         try {
             await window.initializeDataManager();
-            console.log('✅ DataManager初期化完了');
         } catch (error) {
             console.error('❌ DataManager初期化エラー:', error);
         }
@@ -4591,7 +4115,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (typeof window.initializeFileManager === 'function') {
         try {
             await window.initializeFileManager();
-            console.log('✅ FileManager初期化完了');
         } catch (error) {
             console.error('❌ FileManager初期化エラー:', error);
         }
@@ -4603,7 +4126,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (typeof window.initializeAIManager === 'function') {
         try {
             await window.initializeAIManager();
-            console.log('✅ AIManager初期化完了');
         } catch (error) {
             console.error('❌ AIManager初期化エラー:', error);
         }
@@ -4616,9 +4138,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         SmartVoicePanelManager.init();
     }
     
-    // 🔧 VoiceUIManager削除完了 - 統一状態管理システムに完全移行
-    
-    console.log('✅ 初期化完了（状態管理・知見管理・SessionController・スマート音声パネル・新UI機能付き）');
 });
 
 // =================================================================================
@@ -4725,7 +4244,6 @@ const KnowledgeFileManager = {
             return false;
         }
         
-        console.log('✅ 知見を追加:', insight.substring(0, 50) + '...');
         
         return true;
     },
@@ -4768,7 +4286,6 @@ const KnowledgeFileManager = {
             return null;
         }
         
-        console.log('✅ 知見ファイル生成完了:', filename);
         return filename;
     },
 
@@ -5058,7 +4575,6 @@ const KnowledgeFileManager = {
                 return session;
             }
             
-            console.log('🤖 AI知見整理開始（フォールバック）...');
             
             if (showProgress && window.showMessage) {
                 window.showMessage('info', '🧬 Knowledge DNAシステムによる知見整理中...');
@@ -5075,7 +4591,6 @@ const KnowledgeFileManager = {
                 keywords: []
             }));
             
-            console.log('✅ AI知見整理完了（フォールバック）');
             if (showProgress && window.showMessage) {
                 window.showMessage('success', '基本的な知見整理が完了しました');
             }
@@ -5098,14 +4613,12 @@ window.KnowledgeFileManager = KnowledgeFileManager;
 // 🎯 知見管理システムの初期化
 async function initializeKnowledgeManagement() {
     try {
-        console.log('📚 知見データ管理システム初期化開始...');
         
         // CSV データの読み込み
         await CategoryManager.loadCategories();
         await UserManager.loadUsers();
         
         window.KnowledgeState.isInitialized = true;
-        console.log('✅ 知見データ管理システム初期化完了');
         
     } catch (error) {
         console.error('❌ 知見管理システム初期化エラー:', error);
@@ -5190,7 +4703,6 @@ const VoiceKnowledgeSystem = {
     // 🎯 メイン処理: 音声ベース知見評価
     async processKnowledgeWithVoiceEvaluation(insightText, conversationContext) {
         try {
-            console.log('🎯 音声ベース知見評価開始...');
             
             // 1. 前提条件の確認
             const prerequisites = await this._checkEvaluationPrerequisites();
@@ -5205,7 +4717,6 @@ const VoiceKnowledgeSystem = {
             // AIManagerによる統一評価処理
             if (window.AIManager) {
                 try {
-                    console.log('🎯 AIManager統一評価処理開始...');
                     
                     // 初期化完了を待機（タイムアウト付き）
                     await window.AIManager.waitForInitialization(10000);
@@ -5213,7 +4724,6 @@ const VoiceKnowledgeSystem = {
                     // 品質評価実行
                     qualityEvaluation = await window.AIManager.evaluateInsightQuality(insightText, conversationContext);
                     
-                    console.log('✅ AIManager統一評価完了');
                 } catch (error) {
                     console.error('❌ AIManager評価エラー:', error);
                     
@@ -5232,7 +4742,6 @@ const VoiceKnowledgeSystem = {
             
             // AI評価失敗時は手動評価
             if (!qualityEvaluation) {
-                console.log('🔄 手動評価フォールバック実行');
                 return await this._handleManualEvaluationFallback(insightText, conversationContext);
             }
             
@@ -5258,7 +4767,6 @@ const VoiceKnowledgeSystem = {
     
     // 🤖 自動記録処理
     async handleAutoRecord(evaluation, insightText, totalScore) {
-        console.log('✅ 高評価知見: 自動記録');
         
         // 統計更新
         AppState.sessionStats.autoRecorded++;
@@ -5442,7 +4950,6 @@ const VoiceKnowledgeSystem = {
     // 🔧 手動評価フォールバック処理（改善版）
     async _handleManualEvaluationFallback(insightText, conversationContext) {
         try {
-            console.log('🔄 手動評価フォールバック開始...');
             
             // はほりーのによる音声説明
             const explanationMessage = `AI評価システムが一時的に利用できません。手動で評価させていただきます。`;
@@ -5503,7 +5010,6 @@ const VoiceKnowledgeSystem = {
     
     // 🧪 Phase 4: システム健全性チェック機能
     async performSystemHealthCheck() {
-        console.log('🔍 知見評価システム健全性チェック開始...');
         
         const healthReport = {
             timestamp: new Date().toISOString(),
@@ -5522,7 +5028,6 @@ const VoiceKnowledgeSystem = {
                     await window.AIManager.waitForInitialization(5000);
                     if (window.AIManager.isInitialized) {
                         healthReport.aiManager = true;
-                        console.log('✅ AIManager: 正常');
                     } else {
                         healthReport.errors.push('AIManager初期化未完了');
                         healthReport.recommendations.push('ページを再読み込みしてください');
@@ -5539,7 +5044,6 @@ const VoiceKnowledgeSystem = {
             // 2. API接続チェック（軽量）
             if (window.AppState?.apiKey) {
                 healthReport.apiConnection = true;
-                console.log('✅ API設定: 正常');
             } else {
                 healthReport.errors.push('APIキーが未設定');
                 healthReport.recommendations.push('APIキーを設定してください');
@@ -5550,7 +5054,6 @@ const VoiceKnowledgeSystem = {
                 const voiceState = window.stateManager.recognitionManager.state;
                 if (voiceState === 'idle' || voiceState === 'active') {
                     healthReport.voiceSystem = true;
-                    console.log('✅ 音声認識: 正常');
                 } else {
                     healthReport.errors.push(`音声認識状態異常: ${voiceState}`);
                     healthReport.recommendations.push('音声認識を再開してください');
@@ -5586,7 +5089,6 @@ const VoiceKnowledgeSystem = {
     
     // 🔧 Phase 4: 自動回復処理
     async performAutoRecovery() {
-        console.log('🚑 知見評価システム自動回復開始...');
         
         const recoveryReport = {
             timestamp: new Date().toISOString(),
@@ -5604,7 +5106,6 @@ const VoiceKnowledgeSystem = {
                     if (typeof initializeAIManager === 'function') {
                         await initializeAIManager();
                         recoveryReport.successful.push('AIManager初期化成功');
-                        console.log('✅ AIManager回復成功');
                     } else {
                         recoveryReport.failed.push('initializeAIManager関数が見つからない');
                     }
@@ -5623,7 +5124,6 @@ const VoiceKnowledgeSystem = {
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         await window.stateManager.startRecognition();
                         recoveryReport.successful.push('音声認識システム回復成功');
-                        console.log('✅ 音声認識回復成功');
                     } else {
                         recoveryReport.failed.push('StateManagerが未初期化');
                     }
@@ -5653,7 +5153,6 @@ const VoiceKnowledgeSystem = {
     
     // 🧪 Phase 4: 知見評価テスト機能
     async testInsightEvaluation(testInsight = null) {
-        console.log('🧪 知見評価システムテスト開始...');
         
         const testData = testInsight || {
             text: 'これはテスト用の知見です。AIマネージャーの動作確認のために使用されます。',
@@ -5690,7 +5189,6 @@ const VoiceKnowledgeSystem = {
             
             // 2. 実際の知見評価テスト（非破壊的）
             if (testReport.healthCheck.overall) {
-                console.log('🔄 知見評価テスト実行中...');
                 
                 // テスト用に評価のみ実行（実際の保存はしない）
                 if (window.AIManager && window.AIManager.isInitialized) {
@@ -5706,7 +5204,6 @@ const VoiceKnowledgeSystem = {
                     testReport.success = false;
                 }
                 
-                console.log('✅ 知見評価テスト完了');
             } else {
                 throw new Error('システム健全性チェックに失敗');
             }
@@ -5755,7 +5252,6 @@ async function handleThresholdChangeCommand(userInput) {
                 // 知見確認モード終了
                 resetKnowledgeConfirmationMode();
                 
-                console.log(`✅ 閾値を${newThreshold}点に変更`);
                 return true;
             }
         }
@@ -5804,7 +5300,6 @@ async function handleDetailedExplanation(evaluation) {
 }
 
 async function handleKnowledgeApproval(evaluation) {
-    console.log('✅ ユーザー承認: 知見記録');
     
     // 統計更新
     AppState.sessionStats.manualConfirmed++;
@@ -5854,7 +5349,6 @@ async function handleUnrecognizedResponse() {
     
     // 🔧 修正: 統合音声認識システムで再開（知見確認モード対応）
     if (window.stateManager?.recognitionManager) {
-        console.log('🔄 統合システムで音声認識再開（知見確認モード）');
         // 短時間待機後に再開（はほりーの発話終了を待つ）
         setTimeout(() => {
             window.stateManager.recognitionManager.start();
@@ -5868,7 +5362,6 @@ async function handleUnrecognizedResponse() {
 // 🔧 ユーティリティ関数
 // 🔧 改善版: ゲートキーパー対応の知見確認モードリセット
 function resetKnowledgeConfirmationMode() {
-    console.log('🏁 知見確認モード終了処理開始');
     
     // ゲートキーパーシステムを通じて安全にモードを終了
     ConversationGatekeeper.exitKnowledgeConfirmationMode('resetFunction');
@@ -5876,7 +5369,6 @@ function resetKnowledgeConfirmationMode() {
     // レガシー状態もクリア（互換性のため）
     AppState.waitingForPermission = true;
     
-    console.log('✅ 知見確認モード終了処理完了');
 }
 
 // 知見設定保存（StorageManager経由）
@@ -5894,7 +5386,6 @@ function loadKnowledgeSettings() {
         const settings = window.StorageManager.knowledge.load();
         if (settings) {
             Object.assign(AppState.knowledgeSettings, settings);
-            console.log('✅ 知見設定を読み込みました');
         }
     } catch (error) {
         console.error('❌ 知見設定読み込みエラー:', error);
@@ -5924,7 +5415,6 @@ function updateKnowledgeSettingsDisplay() {
         rejectedCount.textContent = AppState.sessionStats.rejected;
     }
     
-    console.log('✅ 知見設定表示を更新しました');
 }
 
 // 🎯 HTML入力による閾値変更
@@ -5940,7 +5430,6 @@ function updateThresholdFromInput() {
             saveKnowledgeSettings();
         }
         
-        console.log(`✅ 閾値を${newThreshold}点に変更（HTML入力）`);
         
         // 音声通知（セッション中のみ）
         if (AppState.sessionActive) {
@@ -5963,14 +5452,12 @@ async function downloadKnowledgeFile() {
         const sessionInsights = window.KnowledgeState.currentSession ? window.KnowledgeState.currentSession.insights : [];
         const manualInsights = AppState.extractedKnowledge || [];
         
-        console.log(`📊 知見統合チェック: セッション${sessionInsights.length}件, 手動${manualInsights.length}件`);
         
         if (sessionInsights.length === 0 && manualInsights.length === 0) {
             window.showMessage('warning', '知見データがありません。セッション中に抽出された知見があるときにダウンロードできます。');
             return;
         }
 
-        console.log('📥 Knowledge DNA統合 知見ファイルダウンロード開始...');
         window.showMessage('info', '🧬 Knowledge DNAシステムによる知見ファイル生成中...');
 
         // 🔧 Phase A修正: 手動保存された知見をセッションに統合
@@ -6008,7 +5495,6 @@ async function downloadKnowledgeFile() {
         // セッション知見と手動知見の統合
         workingSession.insights = [...workingSession.insights, ...manualInsightsConverted];
         
-        console.log(`✅ 知見統合完了: 合計${workingSession.insights.length}件`);
 
         // Phase 1: Knowledge DNAによる知見整理（手動保存知見も通常処理を適用）
         const enhancedSession = await KnowledgeFileManager.enhanceKnowledgeWithAI(
@@ -6022,7 +5508,6 @@ async function downloadKnowledgeFile() {
         
         if (filename) {
             window.showMessage('success', `🎉 Knowledge DNA統合知見ファイル「${filename}」をダウンロードしました！`);
-            console.log('✅ Knowledge DNA統合 知見ファイルダウンロード完了:', filename);
             
             // 🔧 Phase A修正: 統計情報の改良
             const stats = {
@@ -6034,7 +5519,6 @@ async function downloadKnowledgeFile() {
                 has_relationships: enhancedSession.knowledge_graph?.relationships?.length > 0,
                 has_clusters: enhancedSession.knowledge_graph?.clusters?.length > 0
             };
-            console.log('📊 知見処理統計:', stats);
             
         } else {
             window.showMessage('error', '知見ファイルの生成に失敗しました。');
@@ -6108,7 +5592,6 @@ const SpeechShorteningManager = {
 
     // 初期化
     init() {
-        console.log('🔧 Phase 1: 発声短縮管理システム初期化中...');
         this.loadSettings();
         
         // UI更新はui-advanced.jsのUIAdvancedに委譲
@@ -6118,14 +5601,12 @@ const SpeechShorteningManager = {
             console.warn('⚠️ UIAdvanced.SpeechShorteningUIが利用できません - UI更新をスキップ');
         }
         
-        console.log('✅ Phase 1: 発声短縮管理システム初期化完了');
     },
 
     // 設定の保存
     saveSettings() {
         try {
             localStorage.setItem('speechShorteningSettings', JSON.stringify(this.settings));
-            console.log('💾 発声短縮設定を保存しました', this.settings);
         } catch (error) {
             console.error('❌ 発声短縮設定の保存に失敗:', error);
         }
@@ -6138,7 +5619,6 @@ const SpeechShorteningManager = {
             if (saved) {
                 const parsed = JSON.parse(saved);
                 this.settings = { ...this.settings, ...parsed };
-                console.log('📂 発声短縮設定を読み込みました', this.settings);
             }
         } catch (error) {
             console.error('❌ 発声短縮設定の読み込みに失敗:', error);
@@ -6194,7 +5674,6 @@ const SpeechShorteningManager = {
 
                 // ログ出力（常に表示）
                 const reductionRate = Math.round((1 - shortenedText.length / originalText.length) * 100);
-                console.log(`🎤 Phase 1 発声短縮実行:`);
                 console.log(`📝 元文字数: ${originalText.length}文字`);
                 console.log(`🔊 短縮後: ${shortenedText.length}文字`);
                 console.log(`📉 短縮率: ${reductionRate}%`);
@@ -6221,14 +5700,12 @@ const SpeechShorteningManager = {
         this.saveSettings();
         
         const status = this.settings.enabled ? '有効' : '無効';
-        console.log(`🔄 発声短縮機能: ${status}`);
         window.showMessage('success', `発声短縮機能を${status}にしました`);
     },
 
     updateLevel(level) {
         this.settings.level = parseInt(level);
         this.saveSettings();
-        console.log(`📊 発声短縮レベル: ${this.settings.level}`);
     },
 
     updateMaxCharacters(maxChars) {
@@ -6251,7 +5728,6 @@ const SpeechShorteningManager = {
         };
         this.saveSettings();
         window.showMessage('success', '発声短縮設定をリセットしました');
-        console.log('🔄 発声短縮設定をリセット');
     }
 };
 
@@ -6282,14 +5758,12 @@ async function addMessageToChatWithSmartShortening(speaker, displayText, speechT
         // 短縮統計の表示
         if (displayText.length > textForSpeech.length) {
             const reduction = Math.round((1 - textForSpeech.length / displayText.length) * 100);
-            console.log(`✂️ Phase 1: 発声短縮実行 ${displayText.length}→${textForSpeech.length}文字 (${reduction}%短縮)`);
         }
 
         // 音声生成・再生
         const audioBlob = await ttsTextToAudioBlob(textForSpeech, speaker);
         await playPreGeneratedAudio(audioBlob, speaker);
         
-        console.log('✅ Phase 1: 統合発話処理完了');
         
     } catch (error) {
         console.error('❌ Phase 1: 統合発話処理エラー:', error);
@@ -6297,7 +5771,6 @@ async function addMessageToChatWithSmartShortening(speaker, displayText, speechT
         
         // 緊急フォールバック: 安全システムを使用
         if (window.FukaboriSafetySystem) {
-            console.log('🛡️ 安全システムによるフォールバック実行');
             await window.FukaboriSafetySystem.fallbackTextToSpeech(displayText, speaker);
         }
     }
@@ -6324,13 +5797,10 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         if (typeof SpeechShorteningManager !== 'undefined') {
             SpeechShorteningManager.init();
-            console.log('🚀 Phase 1: 発声短縮統合システム初期化完了');
         }
     }, 100);
 });
 
-console.log('✅ グローバル関数をwindowオブジェクトに公開しました');
-console.log('🚀 Phase 1: 発声短縮統合システム読み込み完了');
 
 // =================================================================================
 // PHASE 1: デバッグ・修復UI機能
@@ -6401,7 +5871,6 @@ window.forceShorteningSync = function() {
             window.SpeechShorteningEngine.settings.features.characterLimit = true;
         }
         
-        console.log('🔧 強制同期実行完了');
         console.log('Phase 1 enabled:', SpeechShorteningManager.settings.enabled);
         console.log('Phase 0 enabled:', window.SpeechShorteningEngine.enabled);
         console.log('Phase 1 level:', SpeechShorteningManager.settings.level);
@@ -6528,8 +5997,6 @@ window.update2StepUI = update2StepUI;
 
 // LocalStorage操作関数はapp/storage-manager.jsに移動済み
 
-console.log('✅ Step0: APIキー設定システムの関数をwindowオブジェクトに公開しました');
-console.log('✅ LocalStorage操作関数をwindowオブジェクトに公開しました');
 
 // =================================================================================
 // 新音声システム初期化処理
@@ -6537,7 +6004,6 @@ console.log('✅ LocalStorage操作関数をwindowオブジェクトに公開し
 
 // StateManagerの初期化
 function initializeVoiceSystem() {
-    console.log('🚀 音声システム初期化開始');
     
     try {
         // StateManagerクラスが定義されているかチェック
@@ -6549,7 +6015,6 @@ function initializeVoiceSystem() {
         // グローバル変数として初期化
         window.stateManager = new StateManager();
         
-        console.log('✅ 音声システム初期化完了');
         return true;
     } catch (error) {
         console.error('❌ 音声システム初期化エラー:', error);
@@ -6560,7 +6025,6 @@ function initializeVoiceSystem() {
 
 // 既存の初期化関数を置き換え
 function initializeMicrophoneRecording(forceRecheck = false) {
-    console.log('🎤 マイク初期化要求（新システム）');
     
     // StateManagerが定義されているかチェック
     if (typeof window.stateManager === 'undefined') {
@@ -6572,7 +6036,6 @@ function initializeMicrophoneRecording(forceRecheck = false) {
         console.error('❌ StateManagerが未初期化');
         // 初期化を試行
         if (initializeVoiceSystem()) {
-            console.log('✅ StateManager初期化成功');
         } else {
             console.error('❌ StateManager初期化失敗');
             return Promise.resolve(false);
@@ -6583,7 +6046,6 @@ function initializeMicrophoneRecording(forceRecheck = false) {
 }
 
 function initializeSpeechRecognition() {
-    console.log('🔄 SpeechRecognition初期化要求（新システム）');
     
     // StateManagerが定義されているかチェック
     if (typeof window.stateManager === 'undefined') {
@@ -6611,7 +6073,6 @@ window.performAutoRecovery = () => VoiceKnowledgeSystem.performAutoRecovery();
 
 // 🛠️ デバッグ用コンソール機能
 window.debugInsightEvaluation = async function() {
-    console.log('🛠️ 知見評価システムデバッグ開始...');
     
     try {
         // 1. 健全性チェック
@@ -6626,7 +6087,6 @@ window.debugInsightEvaluation = async function() {
         }
         
         // 3. テスト実行
-        console.log('3. 知見評価テスト実行');
         const testReport = await VoiceKnowledgeSystem.testInsightEvaluation();
         
         // 4. 結果まとめ
@@ -6660,13 +6120,11 @@ window.debugInsightEvaluation = async function() {
 
 // DataManager初期化
 async function initializeDataManager() {
-    console.log('📊 DataManager 初期化開始...');
     
     try {
         if (window.DataManager) {
             const success = await window.DataManager.initialize();
             if (success) {
-                console.log('✅ DataManager 初期化完了');
             } else {
                 console.error('❌ DataManager 初期化に失敗しました');
             }
@@ -6680,13 +6138,11 @@ async function initializeDataManager() {
 
 // FileManager初期化
 async function initializeFileManager() {
-    console.log('📄 FileManager 初期化開始...');
     
     try {
         if (window.FileManager) {
             const success = await window.FileManager.initialize();
             if (success) {
-                console.log('✅ FileManager 初期化完了');
             } else {
                 console.error('❌ FileManager 初期化に失敗しました');
             }
@@ -6700,23 +6156,10 @@ async function initializeFileManager() {
 
 // 音声システムの自動初期化
 document.addEventListener('DOMContentLoaded', function() {
-    // 🔧 統一状態管理システムの初期化（音声システム前に実行）
-    setTimeout(async () => {
-        console.log('🏗️ 統一状態管理システム初期化開始');
-        try {
-            await initializeUnifiedStateManager();
-            console.log('✅ 統一状態管理システム初期化完了');
-        } catch (error) {
-            console.error('❌ 統一状態管理システム初期化エラー:', error);
-        }
-    }, 30);
-    
     // 少し遅延させて他のシステムの初期化を待つ
     setTimeout(() => {
-        console.log('🚀 音声システム自動初期化開始');
         const initialized = initializeVoiceSystem();
         if (initialized) {
-            console.log('✅ 音声システム自動初期化完了');
         } else {
             console.error('❌ 音声システム自動初期化失敗');
         }
@@ -6724,12 +6167,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // AIManagerの初期化
     setTimeout(async () => {
-        console.log('🤖 AIManager自動初期化開始');
         if (typeof initializeAIManager === 'function') {
             try {
                 const initialized = await initializeAIManager();
                 if (initialized) {
-                    console.log('✅ AIManager自動初期化完了');
                 } else {
                     console.error('❌ AIManager自動初期化失敗');
                 }
@@ -6742,7 +6183,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
 });
 
-console.log('✅ 新音声システム・知見管理システムの関数をwindowオブジェクトに公開しました');
 
 // =================================================================================
 // CHROME専用デバッグ機能 - A/Bテスト・マイク許可最適化
@@ -6756,11 +6196,6 @@ function detectBrowserAndOptimize() {
     const isFirefox = userAgent.includes('Firefox');
     const isEdge = userAgent.includes('Edge');
     
-    console.log('🔍 ブラウザ判定:');
-    console.log(`  - Chrome: ${isChrome ? '✅' : '❌'}`);
-    console.log(`  - Safari: ${isSafari ? '✅' : '❌'}`);
-    console.log(`  - Firefox: ${isFirefox ? '✅' : '❌'}`);
-    console.log(`  - Edge: ${isEdge ? '✅' : '❌'}`);
     
     // Chrome専用最適化の自動適用
     if (isChrome && window.CURRENT_MICROPHONE_STRATEGY !== MICROPHONE_STRATEGY.CONTINUOUS) {
@@ -6837,32 +6272,24 @@ function resetMicrophoneStats() {
         manager.stats.abortCount = 0;
         manager.stats.startTime = Date.now();
         manager.stats.lastRestartTime = 0;
-        console.log('🔄 Chrome専用統計リセット完了');
     }
     // 従来のRecognitionManagerの場合
     else if (manager.microphonePermissionManager) {
         manager.microphonePermissionManager.completeBefore = 0;
         manager.microphonePermissionManager.lightweightCount = 0;
         manager.microphonePermissionManager.sessionStartTime = Date.now();
-        console.log('🔄 軽量リスタート統計リセット完了');
     }
     
-    console.log('✅ 統計リセット完了 - 新しいセッションを開始');
     return true;
 }
 
 // 🔧 新機能：簡単テスト用統計リセット
 function quickResetStats() {
-    console.log('🚀 クイック統計リセット開始');
     
     // 継続的音声認識の場合
     if (window.stateManager?.recognitionManager?.resetStats) {
         const success = window.stateManager.recognitionManager.resetStats();
         if (success) {
-            console.log('🎯 継続的音声認識統計リセット完了');
-            console.log('💡 現在のセッションは継続中 - 次の発話から新しい統計開始');
-            console.log('📊 1-2回の短い発話で効果を確認してください');
-            console.log('🔍 確認方法: debugMicrophonePermissionStats()');
             return true;
         }
     }
@@ -6870,7 +6297,6 @@ function quickResetStats() {
     // 従来の方法もサポート
     const legacySuccess = resetMicrophoneStats();
     if (legacySuccess) {
-        console.log('🎯 従来統計リセット完了');
         return true;
     }
     
@@ -6901,10 +6327,8 @@ function debugChromeOptimization() {
     }
     if (stats && stats.efficiency < 80) {
         console.log('  2. 統計をリセット: resetMicrophoneStats()');
-        console.log('  3. ページを再読み込み');
     }
     if (browserInfo.isChrome && strategyInfo.strategy === 'persistent') {
-        console.log('  ✅ 既にChrome専用戦略で最適化済み');
     }
     
     return {
@@ -6923,7 +6347,6 @@ function autoOptimizeChromeStrategy() {
         const success = switchMicrophoneStrategy('continuous');
         
         if (success) {
-            console.log('✅ 継続的音声認識に自動切り替え完了');
             console.log('💡 効果を確認するには: debugMicrophonePermissionStats()');
             console.log('🎯 これでマイク許可アラートは完全に解消されます');
         }
@@ -6951,29 +6374,270 @@ console.log('🚀 簡単テスト: quickResetStats() | 統計確認: debugMicrop
 // Chrome自動最適化
 if (navigator.userAgent.includes('Chrome')) {
     console.log('🎯 Chrome検出 - 自動最適化を提案します');
-    console.log('💡 自動最適化を実行するには: autoOptimizeChromeStrategy()');
 }
-
-// =================================================================================
-// VoicePhase2Manager用の関数をグローバル公開
-// =================================================================================
-
-// 🔧 VoicePhase2Manager用の関数をグローバル公開
-window.gptMessagesToCharacterResponse = gptMessagesToCharacterResponse;
-window.ttsTextToAudioBlob = ttsTextToAudioBlob;
-window.addMessageToChat = addMessageToChat;
-window.playPreGeneratedAudio = playPreGeneratedAudio;
-
-console.log('✅ VoicePhase2Manager依存関数をグローバル公開完了');
 
 // =================================================================================
 // 🧪 自動テスト・監視システム - ユーザーテスト負荷軽減
 // =================================================================================
 
-
-
-
-
-
-
-
+// 🧪 継続的音声認識自動テストシステム
+class ContinuousRecognitionTester {
+    constructor() {
+        this.isRunning = false;
+        this.testResults = [];
+        this.testInterval = null;
+        this.startTime = null;
+        this.testDuration = 300000; // 5分間テスト
+        this.alertThreshold = {
+            startCount: 3,           // start()呼び出し3回以上で警告
+            efficiency: 70,          // 効率性70%未満で警告
+            permissionRequests: 2    // マイク許可要求2回以上で警告
+        };
+        
+    }
+    
+    // 🧪 自動テスト開始
+    startAutoTest(duration = 300000) {
+        if (this.isRunning) {
+            return false;
+        }
+        
+        this.isRunning = true;
+        this.startTime = Date.now();
+        this.testDuration = duration;
+        this.testResults = [];
+        
+        // 初期状態記録
+        this.recordTestResult('TEST_START', this.getCurrentStats());
+        
+        // 10秒間隔で監視
+        this.testInterval = setInterval(() => {
+            this.monitorSystem();
+        }, 10000);
+        
+        // テスト終了タイマー
+        setTimeout(() => {
+            this.stopAutoTest();
+        }, duration);
+        
+        // ユーザーへの通知
+        this.showTestNotification('テスト開始', `${duration/1000}秒間の自動監視を開始しました`);
+        return true;
+    }
+    
+    // 🧪 自動テスト停止
+    stopAutoTest() {
+        if (!this.isRunning) {
+            return false;
+        }
+        
+        this.isRunning = false;
+        
+        if (this.testInterval) {
+            clearInterval(this.testInterval);
+            this.testInterval = null;
+        }
+        
+        // 最終状態記録
+        this.recordTestResult('TEST_END', this.getCurrentStats());
+        
+        // テスト結果分析
+        const analysis = this.analyzeTestResults();
+        this.showTestReport(analysis);
+        
+        return true;
+    }
+    
+    // 🧪 システム監視
+    monitorSystem() {
+        if (!this.isRunning) return;
+        
+        const stats = this.getCurrentStats();
+        const alerts = this.checkAlerts(stats);
+        
+        this.recordTestResult('MONITOR', stats, alerts);
+        
+        if (alerts.length > 0) {
+            console.warn('🚨 自動テストアラート:', alerts);
+            this.showTestNotification('品質警告', `${alerts.length}件の問題を検出`);
+        }
+        
+        // 実行時間表示
+        const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+        const remaining = Math.floor((this.testDuration - (Date.now() - this.startTime)) / 1000);
+    }
+    
+    // 🧪 現在の統計取得
+    getCurrentStats() {
+        // セッション状態チェック
+        const sessionActive = window.AppState?.sessionActive;
+        const recognitionManager = window.stateManager?.recognitionManager;
+        
+        if (!sessionActive) {
+            return { 
+                error: 'Session not active',
+                sessionActive: false,
+                message: '会話セッションが開始されていません'
+            };
+        }
+        
+        if (!recognitionManager || !recognitionManager.getMicrophonePermissionStats) {
+            return { 
+                error: 'RecognitionManager unavailable',
+                sessionActive: sessionActive,
+                message: '音声認識システムが初期化されていません'
+            };
+        }
+        
+        const stats = recognitionManager.getMicrophonePermissionStats();
+        return {
+            ...stats,
+            sessionActive: sessionActive,
+            timestamp: Date.now(),
+            testElapsed: this.startTime ? Math.floor((Date.now() - this.startTime) / 1000) : 0
+        };
+    }
+    
+    // 🧪 アラートチェック
+    checkAlerts(stats) {
+        const alerts = [];
+        
+        // セッション未開始の場合は特別な警告
+        if (!stats.sessionActive) {
+            alerts.push({
+                type: 'SESSION_NOT_ACTIVE',
+                message: '会話セッションが開始されていません',
+                severity: 'CRITICAL'
+            });
+            return alerts; // セッション未開始の場合は他のチェックをスキップ
+        }
+        
+        // エラーがある場合は警告
+        if (stats.error) {
+            alerts.push({
+                type: 'SYSTEM_ERROR',
+                message: stats.message || stats.error,
+                severity: 'HIGH'
+            });
+            return alerts;
+        }
+        
+        if (stats.startCount > this.alertThreshold.startCount) {
+            alerts.push({
+                type: 'START_COUNT_HIGH',
+                message: `start()呼び出しが${stats.startCount}回 (閾値: ${this.alertThreshold.startCount})`,
+                severity: 'HIGH'
+            });
+        }
+        
+        if (stats.efficiency < this.alertThreshold.efficiency && stats.efficiency !== Infinity) {
+            alerts.push({
+                type: 'EFFICIENCY_LOW',
+                message: `効率性が${stats.efficiency}% (閾値: ${this.alertThreshold.efficiency}%)`,
+                severity: 'MEDIUM'
+            });
+        }
+        
+        if (stats.microphonePermissionRequests > this.alertThreshold.permissionRequests) {
+            alerts.push({
+                type: 'PERMISSION_REQUESTS_HIGH',
+                message: `マイク許可要求が${stats.microphonePermissionRequests}回 (閾値: ${this.alertThreshold.permissionRequests})`,
+                severity: 'HIGH'
+            });
+        }
+        
+        if (!stats.continuousRecognition && stats.strategy === 'continuous') {
+            alerts.push({
+                type: 'CONTINUITY_BROKEN',
+                message: '継続的音声認識が停止',
+                severity: 'CRITICAL'
+            });
+        }
+        
+        return alerts;
+    }
+    
+    // 🧪 テスト結果記録
+    recordTestResult(event, stats, alerts = []) {
+        this.testResults.push({
+            event,
+            stats,
+            alerts,
+            timestamp: Date.now()
+        });
+    }
+    
+    // 🧪 テスト結果分析
+    analyzeTestResults() {
+        if (this.testResults.length === 0) {
+            return { error: 'No test data available' };
+        }
+        
+        const startResult = this.testResults.find(r => r.event === 'TEST_START');
+        const endResult = this.testResults.find(r => r.event === 'TEST_END');
+        const monitorResults = this.testResults.filter(r => r.event === 'MONITOR');
+        
+        const allAlerts = this.testResults.flatMap(r => r.alerts || []);
+        const criticalAlerts = allAlerts.filter(a => a.severity === 'CRITICAL');
+        const highAlerts = allAlerts.filter(a => a.severity === 'HIGH');
+        const mediumAlerts = allAlerts.filter(a => a.severity === 'MEDIUM');
+        
+        const finalStats = endResult?.stats || monitorResults[monitorResults.length - 1]?.stats;
+        
+        return {
+            duration: Math.floor((Date.now() - this.startTime) / 1000),
+            totalAlerts: allAlerts.length,
+            criticalAlerts: criticalAlerts.length,
+            highAlerts: highAlerts.length,
+            mediumAlerts: mediumAlerts.length,
+            finalStats,
+            passed: criticalAlerts.length === 0 && highAlerts.length === 0,
+            grade: this.calculateGrade(finalStats, allAlerts)
+        };
+    }
+    
+    // 🧪 品質グレード計算
+    calculateGrade(stats, alerts) {
+        if (!stats) return 'N/A';
+        
+        let score = 100;
+        
+        // 効率性評価
+        if (stats.efficiency >= 95) score += 10;
+        else if (stats.efficiency >= 80) score += 5;
+        else if (stats.efficiency < 50) score -= 20;
+        
+        // start()回数評価
+        if (stats.startCount === 1) score += 15;
+        else if (stats.startCount <= 2) score += 10;
+        else if (stats.startCount >= 5) score -= 25;
+        
+        // アラート評価
+        score -= alerts.filter(a => a.severity === 'CRITICAL').length * 30;
+        score -= alerts.filter(a => a.severity === 'HIGH').length * 15;
+        score -= alerts.filter(a => a.severity === 'MEDIUM').length * 5;
+        
+        if (score >= 95) return 'A+ (優秀)';
+        if (score >= 85) return 'A (良好)';
+        if (score >= 70) return 'B (普通)';
+        if (score >= 50) return 'C (要改善)';
+        return 'D (問題あり)';
+    }
+    
+    // 🧪 テスト通知表示
+    showTestNotification(title, message) {
+        
+        // UI通知（利用可能な場合）
+        if (typeof showMessage === 'function') {
+            showMessage('info', `${title}: ${message}`);
+        }
+    }
+    
+    // 🧪 テストレポート表示
+    showTestReport(analysis) {
+        console.log(`🎯 品質グレード: ${analysis.grade}`);
+        console.log(`🚨 アラート総数: ${analysis.totalAlerts}件`);
+        
+        if (analysis.criticalAlerts > 0) {
+            console.log(`🔴 重大アラート: ${analysis.criticalAlerts}件`);
+        }

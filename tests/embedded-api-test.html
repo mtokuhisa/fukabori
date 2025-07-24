@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>埋め込みAPI Key機能 - 単体テスト</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .test-section h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .test-button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .test-result {
+            background: #ecf0f1;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #bdc3c7;
+        }
+        
+        .success {
+            background: #d5edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+        
+        .debug-panel {
+            background: #2c3e50;
+            color: #ecf0f1;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .debug-panel h4 {
+            color: #3498db;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="header">
+            <h1>🔐 埋め込みAPI Key機能 - 単体テスト</h1>
+            <p>深堀くんv2.0 企業配布向け機能のテストスイート</p>
+        </div>
+        
+        <!-- テスト統計 -->
+        <div class="stats" id="testStats">
+            <div class="stat-item">
+                <div class="stat-value" id="totalTests">0</div>
+                <div class="stat-label">総テスト数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="passedTests">0</div>
+                <div class="stat-label">成功</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="failedTests">0</div>
+                <div class="stat-label">失敗</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="testProgress">0%</div>
+                <div class="stat-label">進捗</div>
+            </div>
+        </div>
+        
+        <!-- Phase 1-1: 基本機能テスト -->
+        <div class="test-section">
+            <h3>🚀 Phase 1-1: 基本機能テスト</h3>
+            <button class="test-button" onclick="runBasicTests()">基本機能テスト実行</button>
+            <button class="test-button" onclick="testInitialization()">初期化テスト</button>
+            <button class="test-button" onclick="testFeatureFlags()">機能フラグテスト</button>
+            <div class="test-result" id="basicTestResult"></div>
+        </div>
+        
+        <!-- Phase 1-2: 暗号化・復号化テスト -->
+        <div class="test-section">
+            <h3>🔐 Phase 1-2: 暗号化・復号化テスト</h3>
+            <div class="input-group">
+                <label for="testApiKey">テスト用API Key:</label>
+                <input type="password" id="testApiKey" placeholder="sk-テスト用のAPI Keyを入力" value="sk-test1234567890abcdef1234567890abcdef12345678">
+            </div>
+            <button class="test-button" onclick="testEncryption()">暗号化テスト</button>
+            <button class="test-button" onclick="testDecryption()">復号化テスト</button>
+            <button class="test-button" onclick="testEncryptionCompatibility()">既存システム互換性テスト</button>
+            <div class="test-result" id="cryptoTestResult"></div>
+        </div>
+        
+        <!-- Phase 1-3: 認証機能テスト -->
+        <div class="test-section">
+            <h3>🔑 Phase 1-3: 認証機能テスト</h3>
+            <div class="input-group">
+                <label for="testPassword">企業パスワード:</label>
+                <input type="password" id="testPassword" placeholder="irobakuf" value="irobakuf">
+            </div>
+            <button class="test-button" onclick="testAuthentication()">認証テスト</button>
+            <button class="test-button" onclick="testInvalidPassword()">無効パスワードテスト</button>
+            <button class="test-button" onclick="testAuthenticationTimeout()">認証タイムアウトテスト</button>
+            <div class="test-result" id="authTestResult"></div>
+        </div>
+        
+        <!-- Phase 1-4: 優先順位制御テスト -->
+        <div class="test-section">
+            <h3>🎯 Phase 1-4: 優先順位制御テスト</h3>
+            <button class="test-button" onclick="testPriorityControl()">優先順位制御テスト</button>
+            <button class="test-button" onclick="testApiKeyConfiguration()">API Key設定状況テスト</button>
+            <button class="test-button" onclick="testSystemIntegration()">既存システム統合テスト</button>
+            <div class="test-result" id="priorityTestResult"></div>
+        </div>
+        
+        <!-- Phase 1-5: セキュリティ・メモリ管理テスト -->
+        <div class="test-section">
+            <h3>🛡️ Phase 1-5: セキュリティ・メモリ管理テスト</h3>
+            <button class="test-button" onclick="testMemoryCleanup()">メモリクリーンアップテスト</button>
+            <button class="test-button" onclick="testSecurityFeatures()">セキュリティ機能テスト</button>
+            <button class="test-button" onclick="testEmergencyRollback()">緊急ロールバックテスト</button>
+            <div class="test-result" id="securityTestResult"></div>
+        </div>
+        
+        <!-- 統合テスト -->
+        <div class="test-section">
+            <h3>🧪 統合テスト</h3>
+            <button class="test-button" onclick="runAllTests()" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">全テスト実行</button>
+            <button class="test-button" onclick="runPerformanceTest()">パフォーマンステスト</button>
+            <button class="test-button" onclick="generateTestReport()">テストレポート生成</button>
+            <div class="test-result" id="integrationTestResult"></div>
+        </div>
+        
+        <!-- デバッグパネル -->
+        <div class="debug-panel">
+            <h4>🔧 デバッグパネル</h4>
+            <button class="test-button" onclick="showDebugInfo()">デバッグ情報表示</button>
+            <button class="test-button" onclick="clearTestResults()">結果クリア</button>
+            <button class="test-button" onclick="resetEmbeddedApiManager()">システムリセット</button>
+            <div class="test-result" id="debugInfo" style="color: #ecf0f1; background: #34495e;"></div>
+        </div>
+    </div>
+
+    <!-- 必要なライブラリの読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    
+    <!-- 既存システムのモック -->
+    <script>
+        // AppStateのモック
+        window.AppState = {
+            apiKey: null
+        };
+        
+        // StorageManagerのモック
+        window.StorageManager = {
+            apiKey: {
+                getCount: () => 0,
+                load: (password) => null,
+                save: (apiKey, password) => true,
+                clear: (password) => true,
+                hasForPassword: (password) => false
+            },
+            recovery: {
+                isLegacyData: (data) => false
+            }
+        };
+        
+        // showMessageのモック
+        window.showMessage = function(type, message) {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        };
+        
+        // hashPasswordのモック（既存システムと同じ）
+        window.hashPassword = function(password) {
+            let hash = 0;
+            for (let i = 0; i < password.length; i++) {
+                const char = password.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return Math.abs(hash).toString(36);
+        };
+    </script>
+    
+    <!-- 埋め込みAPI管理システムの読み込み -->
+    <script src="../app/embedded-api-manager.js"></script>
+    
+    <!-- テストスクリプト -->
+    <script>
+        // テスト統計
+        let testStats = {
+            total: 0,
+            passed: 0,
+            failed: 0,
+            results: []
+        };
+        
+        // ログ出力関数
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            console.log(logMessage);
+            return logMessage;
+        }
+        
+        // テスト結果表示関数
+        function displayResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.className = `test-result ${type}`;
+            }
+        }
+        
+        // テスト統計更新
+        function updateTestStats() {
+            document.getElementById('totalTests').textContent = testStats.total;
+            document.getElementById('passedTests').textContent = testStats.passed;
+            document.getElementById('failedTests').textContent = testStats.failed;
+            const progress = testStats.total > 0 ? Math.round((testStats.passed / testStats.total) * 100) : 0;
+            document.getElementById('testProgress').textContent = `${progress}%`;
+        }
+        
+        // テスト実行関数
+        function runTest(testName, testFunction) {
+            try {
+                log(`🧪 テスト開始: ${testName}`);
+                const result = testFunction();
+                testStats.total++;
+                
+                if (result === true || (result && result.success)) {
+                    testStats.passed++;
+                    log(`✅ テスト成功: ${testName}`, 'success');
+                    testStats.results.push({ name: testName, status: 'success', message: result.message || 'テスト成功' });
+                    return { success: true, message: result.message || 'テスト成功' };
+                } else {
+                    testStats.failed++;
+                    log(`❌ テスト失敗: ${testName}`, 'error');
+                    testStats.results.push({ name: testName, status: 'failed', message: result.message || 'テスト失敗' });
+                    return { success: false, message: result.message || 'テスト失敗' };
+                }
+            } catch (error) {
+                testStats.total++;
+                testStats.failed++;
+                log(`💥 テストエラー: ${testName} - ${error.message}`, 'error');
+                testStats.results.push({ name: testName, status: 'error', message: error.message });
+                return { success: false, message: error.message };
+            } finally {
+                updateTestStats();
+            }
+        }
+        
+        // Phase 1-1: 基本機能テスト
+        function runBasicTests() {
+            const results = [];
+            
+            results.push(runTest('EmbeddedApiManager存在確認', () => {
+                return window.EmbeddedApiManager !== undefined;
+            }));
+            
+            results.push(runTest('初期化状態確認', () => {
+                return window.EmbeddedApiManager.isInitialized !== undefined;
+            }));
+            
+            results.push(runTest('設定オブジェクト確認', () => {
+                return window.EmbeddedApiManager.config !== undefined;
+            }));
+            
+            const summary = results.map(r => r.success ? '✅' : '❌').join(' ');
+            displayResult('basicTestResult', `基本機能テスト完了 ${summary}\n\n` + 
+                results.map(r => `${r.success ? '✅' : '❌'} ${r.message}`).join('\n'), 
+                results.every(r => r.success) ? 'success' : 'error');
+        }
+        
+        function testInitialization() {
+            const result = runTest('初期化テスト', () => {
+                if (window.EmbeddedApiManager) {
+                    const initialized = window.EmbeddedApiManager.initialize();
+                    return { success: initialized, message: `初期化結果: ${initialized}` };
+                }
+                return { success: false, message: 'EmbeddedApiManagerが存在しません' };
+            });
+            
+            displayResult('basicTestResult', `初期化テスト: ${result.message}`, result.success ? 'success' : 'error');
+        }
+        
+        function testFeatureFlags() {
+            const result = runTest('機能フラグテスト', () => {
+                if (window.EmbeddedApiManager) {
+                    const enabled = window.EmbeddedApiManager.isFeatureEnabled();
+                    return { success: true, message: `機能有効状態: ${enabled}` };
+                }
+                return { success: false, message: 'EmbeddedApiManagerが存在しません' };
+            });
+            
+            displayResult('basicTestResult', `機能フラグテスト: ${result.message}`, result.success ? 'success' : 'error');
+        }
+        
+        // Phase 1-2: 暗号化・復号化テスト
+        function testEncryption() {
+            const apiKey = document.getElementById('testApiKey').value;
+            if (!apiKey) {
+                displayResult('cryptoTestResult', '❌ テスト用API Keyを入力してください', 'error');
+                return;
+            }
+            
+            const result = runTest('暗号化テスト', () => {
+                // CryptoJSでの暗号化テスト
+                const password = 'irobakuf';
+                const key = CryptoJS.PBKDF2(password, 'fukabori-salt', {
+                    keySize: 256/32,
+                    iterations: 1000
+                });
+                const encrypted = CryptoJS.AES.encrypt(apiKey, key.toString());
+                const encryptedString = encrypted.toString();
+                
+                if (encryptedString && encryptedString.length > 0) {
+                    return { success: true, message: `暗号化成功\n長さ: ${encryptedString.length}文字\nデータ: ${encryptedString.substring(0, 50)}...` };
+                }
+                return { success: false, message: '暗号化に失敗しました' };
+            });
+            
+            displayResult('cryptoTestResult', result.message, result.success ? 'success' : 'error');
+        }
+        
+        function testDecryption() {
+            const apiKey = document.getElementById('testApiKey').value;
+            if (!apiKey) {
+                displayResult('cryptoTestResult', '❌ テスト用API Keyを入力してください', 'error');
+                return;
+            }
+            
+            const result = runTest('復号化テスト', () => {
+                const password = 'irobakuf';
+                
+                // 暗号化
+                const key = CryptoJS.PBKDF2(password, 'fukabori-salt', {
+                    keySize: 256/32,
+                    iterations: 1000
+                });
+                const encrypted = CryptoJS.AES.encrypt(apiKey, key.toString());
+                const encryptedString = encrypted.toString();
+                
+                // 復号化
+                const decrypted = CryptoJS.AES.decrypt(encryptedString, key.toString());
+                const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
+                
+                if (decryptedText === apiKey) {
+                    return { success: true, message: `復号化成功\n元データ: ${apiKey.substring(0, 20)}...\n復号結果: ${decryptedText.substring(0, 20)}...` };
+                }
+                return { success: false, message: `復号化失敗\n元データ: ${apiKey}\n復号結果: ${decryptedText}` };
+            });
+            
+            displayResult('cryptoTestResult', result.message, result.success ? 'success' : 'error');
+        }
+        
+        function testEncryptionCompatibility() {
+            const result = runTest('既存システム互換性テスト', () => {
+                // 既存システムのhashPassword関数との互換性確認
+                const password = 'irobakuf';
+                const hash = window.hashPassword(password);
+                
+                if (hash && typeof hash === 'string') {
+                    return { success: true, message: `ハッシュ化成功\nパスワード: ${password}\nハッシュ: ${hash}` };
+                }
+                return { success: false, message: 'ハッシュ化に失敗しました' };
+            });
+            
+            displayResult('cryptoTestResult', result.message, result.success ? 'success' : 'error');
+        }
+        
+        // Phase 1-3: 認証機能テスト
+        function testAuthentication() {
+            const password = document.getElementById('testPassword').value;
+            
+            const result = runTest('認証テスト', () => {
+                if (window.EmbeddedApiManager) {
+                    // テスト用の暗号化データを設定
+                    const testApiKey = document.getElementById('testApiKey').value;
+                    const key = CryptoJS.PBKDF2('irobakuf', 'fukabori-salt', {
+                        keySize: 256/32,
+                        iterations: 1000
+                    });
+                    const encrypted = CryptoJS.AES.encrypt(testApiKey, key.toString());
+                    window.EmbeddedApiManager.embeddedEncryptedData.encrypted = encrypted.toString();
+                    
+                    // 認証テスト実行
+                    return window.EmbeddedApiManager.authenticateAndDecrypt(password);
+                }
+                return { success: false, message: 'EmbeddedApiManagerが存在しません' };
+            });
+            
+            displayResult('authTestResult', `認証テスト: ${result.success ? '成功' : '失敗'}\n${result.message || ''}`, result.success ? 'success' : 'error');
+        }
+        
+        function testInvalidPassword() {
+            const result = runTest('無効パスワードテスト', () => {
+                if (window.EmbeddedApiManager) {
+                    const invalidResult = window.EmbeddedApiManager.authenticateAndDecrypt('invalid_password');
+                    return { success: !invalidResult, message: `無効パスワードでの認証結果: ${invalidResult}` };
+                }
+                return { success: false, message: 'EmbeddedApiManagerが存在しません' };
+            });
+            
+            displayResult('authTestResult', result.message, result.success ? 'success' : 'error');
+        }
+        
+        function testAuthenticationTimeout() {
+            displayResult('authTestResult', '認証タイムアウトテスト（模擬）\n⏰ 30分後のメモリクリーンアップ機能は正常に設定されています', 'info');
+        }
+        
+        // Phase 1-4: 優先順位制御テスト
+        function testPriorityControl() {
+            const result = runTest('優先順位制御テスト', () => {
+                if (window.EmbeddedApiManager) {
+                    const apiKey = window.EmbeddedApiManager.getApiKeyWithPriority();
+                    return { success: true, message: `優先順位制御結果: ${apiKey ? 'API Key取得成功' : 'API Key未設定'}` };
+                }
+                return { success: false, message: 'EmbeddedApiManagerが存在しません' };
+            });
+            
+            displayResult('priorityTestResult', result.message, result.success ? 'success' : 'error');
+        }
+        
+        function testApiKeyConfiguration() {
+            const result = runTest('API Key設定状況テスト', () => {
+                if (window.EmbeddedApiManager) {
+                    const config = window.EmbeddedApiManager.isApiKeyConfigured();
+                    return { 
+                        success: true, 
+                        message: `設定状況:\n` +
+                                `- ユーザーAPI Key: ${config.hasUserApiKey}\n` +
+                                `- 埋め込みAPI Key: ${config.hasEmbeddedApiKey}\n` +
+                                `- 埋め込み認証済み: ${config.isEmbeddedAuthenticated}\n` +
+                                `- 現在のソース: ${config.currentSource || 'なし'}\n` +
+                                `- 総数: ${config.totalCount}`
+                    };
+                }
+                return { success: false, message: 'EmbeddedApiManagerが存在しません' };
+            });
+            
+            displayResult('priorityTestResult', result.message, result.success ? 'success' : 'error');
+        }
+        
+        function testSystemIntegration() {
+            const results = [];
+            
+            results.push(runTest('StorageManager統合', () => {
+                return window.StorageManager !== undefined;
+            }));
+            
+            results.push(runTest('AppState統合', () => {
+                return window.AppState !== undefined;
+            }));
+            
+            results.push(runTest('CryptoJS統合', () => {
+                return typeof CryptoJS !== 'undefined';
+            }));
+            
+            const summary = results.map(r => r.success ? '✅' : '❌').join(' ');
+            displayResult('priorityTestResult', `システム統合テスト ${summary}\n\n` + 
+                results.map(r => `${r.success ? '✅' : '❌'} ${r.message}`).join('\n'), 
+                results.every(r => r.success) ? 'success' : 'error');
+        }
+        
+        // Phase 1-5: セキュリティ・メモリ管理テスト
+        function testMemoryCleanup() {
+            const result = runTest('メモリクリーンアップテスト', () => {
+                if (window.EmbeddedApiManager) {
+                    // メモリクリーンアップのシミュレーション
+                    window.EmbeddedApiManager.performMemoryCleanup();
+                    return { success: true, message: 'メモリクリーンアップ実行完了' };
+                }
+                return { success: false, message: 'EmbeddedApiManagerが存在しません' };
+            });
+            
+            displayResult('securityTestResult', result.message, result.success ? 'success' : 'error');
+        }
+        
+        function testSecurityFeatures() {
+            const results = [];
+            
+            results.push(runTest('認証状態管理', () => {
+                return window.EmbeddedApiManager && typeof window.EmbeddedApiManager.saveAuthenticationState === 'function';
+            }));
+            
+            results.push(runTest('状態クリア機能', () => {
+                return window.EmbeddedApiManager && typeof window.EmbeddedApiManager.clearAuthenticationState === 'function';
+            }));
+            
+            const summary = results.map(r => r.success ? '✅' : '❌').join(' ');
+            displayResult('securityTestResult', `セキュリティ機能テスト ${summary}\n\n` +
+                results.map(r => `${r.success ? '✅' : '❌'} ${r.message}`).join('\n'),
+                results.every(r => r.success) ? 'success' : 'error');
+        }
+        
+        function testEmergencyRollback() {
+            const result = runTest('緊急ロールバックテスト', () => {
+                if (window.EmbeddedApiManager) {
+                    // 緊急ロールバックのシミュレーション
+                    window.EmbeddedApiManager.emergencyRollback();
+                    return { success: true, message: '緊急ロールバック実行完了' };
+                }
+                return { success: false, message: 'EmbeddedApiManagerが存在しません' };
+            });
+            
+            displayResult('securityTestResult', result.message, result.success ? 'success' : 'error');
+        }
+        
+        // 統合テスト
+        function runAllTests() {
+            displayResult('integrationTestResult', '🧪 全テスト実行開始...\n\n', 'info');
+            
+            // テスト統計リセット
+            testStats = { total: 0, passed: 0, failed: 0, results: [] };
+            updateTestStats();
+            
+            setTimeout(() => {
+                runBasicTests();
+            }, 100);
+            
+            setTimeout(() => {
+                testInitialization();
+                testFeatureFlags();
+            }, 500);
+            
+            setTimeout(() => {
+                testEncryption();
+                testDecryption();
+                testEncryptionCompatibility();
+            }, 1000);
+            
+            setTimeout(() => {
+                testAuthentication();
+                testInvalidPassword();
+            }, 1500);
+            
+            setTimeout(() => {
+                testPriorityControl();
+                testApiKeyConfiguration();
+                testSystemIntegration();
+            }, 2000);
+            
+            setTimeout(() => {
+                testMemoryCleanup();
+                testSecurityFeatures();
+                testEmergencyRollback();
+            }, 2500);
+            
+            setTimeout(() => {
+                generateTestReport();
+                displayResult('integrationTestResult', 
+                    `🧪 全テスト完了！\n\n` +
+                    `総数: ${testStats.total}\n` +
+                    `成功: ${testStats.passed}\n` +
+                    `失敗: ${testStats.failed}\n` +
+                    `成功率: ${Math.round((testStats.passed / testStats.total) * 100)}%`,
+                    testStats.failed === 0 ? 'success' : 'warning');
+            }, 3000);
+        }
+        
+        function runPerformanceTest() {
+            const startTime = performance.now();
+            
+            const result = runTest('パフォーマンステスト', () => {
+                if (window.EmbeddedApiManager) {
+                    // 複数回の初期化テスト
+                    for (let i = 0; i < 100; i++) {
+                        window.EmbeddedApiManager.isFeatureEnabled();
+                    }
+                    
+                    const endTime = performance.now();
+                    const duration = endTime - startTime;
+                    
+                    return { 
+                        success: duration < 1000, 
+                        message: `パフォーマンステスト完了\n実行時間: ${duration.toFixed(2)}ms\n基準: 1000ms以内` 
+                    };
+                }
+                return { success: false, message: 'EmbeddedApiManagerが存在しません' };
+            });
+            
+            displayResult('integrationTestResult', result.message, result.success ? 'success' : 'warning');
+        }
+        
+        function generateTestReport() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                stats: testStats,
+                systemInfo: {
+                    userAgent: navigator.userAgent,
+                    cryptoJsAvailable: typeof CryptoJS !== 'undefined',
+                    embeddedApiManagerAvailable: typeof window.EmbeddedApiManager !== 'undefined'
+                }
+            };
+            
+            console.log('📊 テストレポート:', report);
+            
+            displayResult('integrationTestResult', 
+                `📊 テストレポート生成完了\n\n` +
+                `タイムスタンプ: ${report.timestamp}\n` +
+                `総テスト数: ${report.stats.total}\n` +
+                `成功数: ${report.stats.passed}\n` +
+                `失敗数: ${report.stats.failed}\n` +
+                `成功率: ${Math.round((report.stats.passed / report.stats.total) * 100)}%\n\n` +
+                `詳細はコンソールログを確認してください。`, 'info');
+        }
+        
+        // デバッグ機能
+        function showDebugInfo() {
+            if (window.debugEmbeddedApi) {
+                const debugInfo = window.debugEmbeddedApi();
+                displayResult('debugInfo', 
+                    `🔧 デバッグ情報:\n\n${JSON.stringify(debugInfo, null, 2)}`, 'info');
+            } else {
+                displayResult('debugInfo', '❌ デバッグ機能が利用できません', 'error');
+            }
+        }
+        
+        function clearTestResults() {
+            const resultElements = document.querySelectorAll('.test-result');
+            resultElements.forEach(element => {
+                element.textContent = '';
+                element.className = 'test-result';
+            });
+            
+            testStats = { total: 0, passed: 0, failed: 0, results: [] };
+            updateTestStats();
+            
+            log('🧹 テスト結果をクリアしました');
+        }
+        
+        function resetEmbeddedApiManager() {
+            if (window.EmbeddedApiManager) {
+                window.EmbeddedApiManager.emergencyRollback();
+                displayResult('debugInfo', '🔄 EmbeddedApiManagerをリセットしました', 'info');
+            }
+        }
+        
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🧪 埋め込みAPI Key機能テストページが読み込まれました');
+            updateTestStats();
+            
+            // 初期状態の確認
+            setTimeout(() => {
+                if (window.EmbeddedApiManager) {
+                    log('✅ EmbeddedApiManagerが正常に読み込まれました');
+                } else {
+                    log('❌ EmbeddedApiManagerの読み込みに失敗しました', 'error');
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html> 

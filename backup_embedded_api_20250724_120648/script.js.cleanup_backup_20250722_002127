@@ -157,72 +157,6 @@ function initializeMigrationSystem() {
     console.log('✅ 段階的移行システム初期化完了');
 }
 
-// 📝 リアルタイム文字起こし編集システム初期化
-async function initializeTranscriptEditSystem() {
-    try {
-        console.log('📝 TranscriptEditManager初期化開始...');
-        
-        // TranscriptEditManagerクラスの存在確認
-        if (typeof window.TranscriptEditManager !== 'function') {
-            console.warn('⚠️ TranscriptEditManagerクラスが見つかりません');
-            return false;
-        }
-        
-        // EditableTranscriptUIクラスの存在確認
-        if (typeof window.EditableTranscriptUI !== 'function') {
-            console.warn('⚠️ EditableTranscriptUIクラスが見つかりません');
-            return false;
-        }
-        
-        // TranscriptEditManagerインスタンス作成
-        window.transcriptEditManager = new window.TranscriptEditManager();
-        
-        // 初期化実行
-        const initialized = await window.transcriptEditManager.initialize();
-        if (!initialized) {
-            console.error('❌ TranscriptEditManager初期化失敗');
-            return false;
-        }
-        
-        // EditableTranscriptUIとの連携設定
-        if (window.transcriptEditManager.transcriptDisplay) {
-            window.transcriptEditManager.editableUI = new window.EditableTranscriptUI(
-                window.transcriptEditManager.transcriptDisplay
-            );
-            
-            // カスタムイベントリスナー設定
-            window.transcriptEditManager.transcriptDisplay.addEventListener('transcriptEditComplete', async (event) => {
-                const newText = event.detail.text;
-                await window.transcriptEditManager.finishEditing(newText);
-            });
-            
-            window.transcriptEditManager.transcriptDisplay.addEventListener('transcriptEditCancel', async () => {
-                await window.transcriptEditManager.cancelEditing();
-            });
-            
-            console.log('✅ EditableTranscriptUIとの連携設定完了');
-        }
-        
-        // グローバル状態更新
-        if (window.AppState) {
-            window.AppState.transcriptEditEnabled = true;
-        }
-        
-        console.log('✅ transcript編集システム初期化完了');
-        return true;
-        
-    } catch (error) {
-        console.error('❌ transcript編集システム初期化エラー:', error);
-        
-        // 緊急フォールバック: システム無効化
-        if (window.transcriptEditManager) {
-            window.transcriptEditManager.emergencyDisable();
-        }
-        
-        return false;
-    }
-}
-
 // 🧪 開発者向けテスト機能
 window.testMigrationSystem = function() {
     console.log('🧪 段階的移行システムテスト開始');
@@ -495,6 +429,7 @@ window.voiceRecognitionController = {
 
 // 🔧 新しい音声システムは以下を使用:
 // - window.VoiceModule (app/unified-state-manager/voice-module.js)
+// - window.VoiceUIManager (app/voice-ui-manager.js)
 // - window.VoiceSystemInitializer (app/voice-error-handler.js)
 
 // =================================================================================
@@ -808,7 +743,6 @@ const MIC_STATES = {
 // State: アプリケーション状態管理
 const AppState = {
     apiKey: null,
-    apiKeySource: null,         // 🔐 新機能: 'user' | 'embedded' | null
     currentTheme: '',
     sessionActive: false,
     currentSpeaker: SPEAKERS.NULL,
@@ -3305,20 +3239,7 @@ async function setupApiKey() {
 async function testApiConnection() {
     console.log('🔍 testApiConnection が実行されました');
     
-    // 🔐 埋め込みAPI Key統合: 優先順位制御でAPI Key取得
-    let apiKeyToTest = AppState.apiKey;
-    
-    if (!apiKeyToTest && window.StorageManager && window.StorageManager.apiKey.getWithPriority) {
-        apiKeyToTest = window.StorageManager.apiKey.getWithPriority();
-        if (apiKeyToTest) {
-            console.log('🏢 埋め込みAPI Keyでテスト実行');
-            // AppStateも更新
-            AppState.apiKey = apiKeyToTest;
-            AppState.apiKeySource = 'embedded';
-        }
-    }
-    
-    if (!apiKeyToTest) {
+    if (!AppState.apiKey) {
         console.log('APIキーが設定されていません');
         return false;
     }
@@ -3329,7 +3250,7 @@ async function testApiConnection() {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${apiKeyToTest}`,
+                'Authorization': `Bearer ${AppState.apiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -3558,127 +3479,156 @@ function handleModalBackgroundClick(event) {
 function toggleMicrophone() {
     console.log('💡 toggleMicrophone が実行されました');
     
-    // 📝 編集システムに手動操作を通知
-    if (window.transcriptEditManager) {
-        window.transcriptEditManager.lastManualActionTime = Date.now();
-        console.log('📝 編集システムに手動操作を通知');
-    }
-    
-    try {
-        // 🔧 統一状態管理システム - 正しいアクセス方法
-        if (!window.unifiedStateManager) {
-            throw new Error('統一状態管理システムが未初期化');
-        }
-        
-        const voiceModule = window.unifiedStateManager.modules.get('voice');
-        if (!voiceModule) {
-            throw new Error('音声モジュールが利用不可 - 統一状態管理システム未初期化');
-        }
-        
+    // 🎤 統一状態管理システム優先使用 - 安全な参照方法
+    if (window.UnifiedStateManager && window.UnifiedStateManager.modules && window.UnifiedStateManager.modules.get('voice')) {
+        const voiceModule = window.UnifiedStateManager.modules.get('voice');
         const state = voiceModule.getState();
         console.log('🔄 統一状態管理システム使用:', state.recognitionState);
         
         if (state.recognitionState === 'active') {
-            console.log('⏸️ 手動一時停止（透明継続無効）');
-            voiceModule.pauseRecognition();
-        } else if (state.recognitionState === 'paused' || state.recognitionState === 'idle' || state.recognitionState === 'stopping') {
-            console.log('▶️ 手動再開');
-            voiceModule.resumeRecognition();
+            console.log('🛑 音声認識停止');
+            voiceModule.stopRecognition();
+        } else if (state.recognitionState === 'idle' || state.recognitionState === 'stopping') {
+            console.log('🎤 音声認識開始');
+            voiceModule.startRecognition();
         }
-        
-        // UI更新
-        updatePauseResumeButton();
-        
-    } catch (error) {
-        console.error('❌ 音声制御エラー:', error.message);
-        console.log('🔄 音声認識システム初期化中の可能性があります - 再試行してください');
-        
-        // フォールバック: 直接音声認識を試行
-        if (window.recognition) {
-            try {
-                window.recognition.stop();
-                console.log('🔄 フォールバック音声認識停止');
-            } catch (fallbackError) {
-                console.log('🎤 フォールバック音声認識開始試行');
-                // 通常は何もしない（システム初期化待ち）
-            }
-        }
+        return;
+    } else {
+        console.log('⚠️ 統一状態管理システム未初期化 - 従来システムを使用');
+    }
+    
+    // 🔧 旧システムフォールバック（統一状態管理システム未初期化時のみ）
+    if (!stateManager) {
+        console.error('❌ StateManagerが未初期化（統一状態管理システムも利用不可）');
+        return;
+    }
+    
+    const state = stateManager.getState();
+    
+    if (state.recognition === 'active') {
+        stateManager.stopRecognition();
+    } else {
+        stateManager.startRecognition();
     }
 }
 
-// 🔧 レガシー関数は削除 - toggleMicrophoneに統一
+function startRealtimeRecognition() {
+    console.log('🎤 音声認識を開始します（新システム）');
+    
+    if (!stateManager) {
+        console.error('❌ StateManagerが未初期化');
+        return;
+    }
+    
+    stateManager.startRecognition();
+}
+
+function stopRealtimeRecognition() {
+    console.log('🎤 音声認識を停止します（新システム）');
+    
+    if (!stateManager) {
+        console.error('❌ StateManagerが未初期化');
+        return;
+    }
+    
+    stateManager.stopRecognition();
+}
 
 // =================================================================================
-// VOICE CONTROL - シンプル音声制御システム
+// VOICE UI INTEGRATION - 既存VoiceUIManagerシステムとの連携
 // =================================================================================
 
 /**
- * 一時停止ボタンのシンプルUI更新
- * UnifiedStateManagerの状態のみに基づく軽量実装
+ * VoiceUIManagerとの連携による一時停止/再開処理
+ * 既存の完成度の高いシステムを活用
  */
-function updatePauseResumeButton() {
+function handleVoiceUIToggle() {
+    console.log('🎤 VoiceUIManager連携による一時停止/再開処理');
+    
+    // VoiceUIManagerが利用可能かチェック
+    if (window.voiceUIManager && window.voiceUIManager.isInitialized) {
+        console.log('✅ VoiceUIManager利用可能 - 既存システム実行');
+        window.voiceUIManager.handleToggleClick();
+        
+        // ボタン表示を即座に更新
+        updatePauseResumeButtonFromVoiceUI();
+        
+    } else if (window.VoiceUIManager) {
+        console.log('🔄 VoiceUIManager未初期化 - 初期化試行');
+        try {
+            window.voiceUIManager = new window.VoiceUIManager();
+            window.voiceUIManager.initialize().then(() => {
+                if (window.voiceUIManager.isInitialized) {
+                    window.voiceUIManager.handleToggleClick();
+                    updatePauseResumeButtonFromVoiceUI();
+                } else {
+                    toggleMicrophone(); // フォールバック
+                }
+            });
+        } catch (error) {
+            console.warn('⚠️ VoiceUIManager初期化失敗, toggleMicrophoneにフォールバック:', error);
+            toggleMicrophone();
+        }
+        
+    } else {
+        console.log('⚠️ VoiceUIManagerが利用できません - toggleMicrophoneにフォールバック');
+        toggleMicrophone();
+    }
+}
+
+/**
+ * VoiceUIManagerの状態に基づいてボタン表示を更新
+ * 既存システムの状態管理を活用
+ */
+function updatePauseResumeButtonFromVoiceUI() {
     const pauseBtn = document.getElementById('pauseResumeBtn');
     if (!pauseBtn) return;
     
     try {
         let isActive = false;
+        let userPaused = false;
         
-        // 🔧 統一状態管理システム - 正しいアクセス方法
-        if (window.unifiedStateManager) {
-            const voiceModule = window.unifiedStateManager.modules.get('voice');
-            if (voiceModule) {
+        // VoiceUIManagerから状態取得
+        if (window.voiceUIManager && window.voiceUIManager.voiceModule) {
+            const state = window.voiceUIManager.voiceModule.getState();
+            isActive = state && state.recognitionState === 'active';
+            userPaused = window.voiceUIManager.userPausedManually;
+        } else {
+            // フォールバック: 統一状態管理システム直接確認
+            if (window.UnifiedStateManager && window.UnifiedStateManager.modules && window.UnifiedStateManager.modules.get('voice')) {
+                const voiceModule = window.UnifiedStateManager.modules.get('voice');
                 const state = voiceModule.getState();
                 isActive = state && state.recognitionState === 'active';
-                
-                // paused状態の場合は明示的に再開表示
-                if (state && state.recognitionState === 'paused') {
-                    isActive = false; // 一時停止中は再開ボタンを表示
-                }
             }
         }
         
         // ボタンの表示とスタイルを更新
-        if (isActive) {
+        if (isActive && !userPaused) {
             // 音声認識中 = 一時停止可能
             pauseBtn.innerHTML = '⏸️ 一時停止';
             pauseBtn.style.backgroundColor = ''; // 通常色（CSSデフォルト）
             pauseBtn.style.color = '';
         } else {
-            // 音声認識停止中 = 再開可能
+            // 音声認識停止中/一時停止中 = 再開可能
             pauseBtn.innerHTML = '▶️ 再開';
             pauseBtn.style.backgroundColor = '#4CAF50'; // 緑色
             pauseBtn.style.color = 'white';
         }
         
+        console.log(`🎨 ボタン更新: ${isActive && !userPaused ? '一時停止' : '再開'}, active=${isActive}, userPaused=${userPaused}`);
+        
     } catch (error) {
-        // エラーは静かにログのみ
-        console.debug('一時停止ボタン更新エラー:', error);
+        console.warn('⚠️ ボタン更新エラー:', error);
     }
-}
-
-/**
- * 一時停止ボタンの定期更新を開始
- * セッション開始時に呼び出される
- */
-function startPauseButtonMonitoring() {
-    if (window.pauseButtonMonitoringInterval) {
-        clearInterval(window.pauseButtonMonitoringInterval);
-    }
-    
-    window.pauseButtonMonitoringInterval = setInterval(() => {
-        updatePauseResumeButton();
-    }, 1000); // 1秒間隔で更新（軽量化）
-    
-    console.log('✅ 一時停止ボタン監視開始');
 }
 
 // 🔧 監視システム統合完了: VoiceUIManagerの既存500ms監視に統合済み
 // setupPauseResumeButtonMonitoring() - 削除（重複監視の除去）
 
-// 🔧 統一システム対応: AppState変化時の一時停止ボタン更新
+// AppState変化イベントでの即座更新は保持（重要な状態変化対応）
 if (typeof window !== 'undefined') {
     window.addEventListener('appStateChanged', () => {
-        setTimeout(() => updatePauseResumeButton(), 100);
+        setTimeout(() => updatePauseResumeButtonFromVoiceUI(), 100);
     });
 }
 
@@ -3840,8 +3790,8 @@ window.handleModalBackgroundClick = handleModalBackgroundClick;
 window.startSession = startSession;
 window.toggleMicrophone = toggleMicrophone;
 // window.forceStopAllActivity = forceStopAllActivity; // マッチポンプ設計除去のため削除
-window.updatePauseResumeButton = updatePauseResumeButton;
-window.startPauseButtonMonitoring = startPauseButtonMonitoring;
+window.handleVoiceUIToggle = handleVoiceUIToggle;
+window.updatePauseResumeButtonFromVoiceUI = updatePauseResumeButtonFromVoiceUI;
 window.endConversationSession = endConversationSession;
 window.downloadMarkdownReport = downloadMarkdownReport;
 window.downloadKnowledgeFile = downloadKnowledgeFile;
@@ -4471,11 +4421,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         initializeMigrationSystem();
         console.log('✅ 段階的移行システム初期化完了');
         
-        // 📝 リアルタイム文字起こし編集システムの初期化
-        console.log('✏️ transcript編集システム初期化開始...');
-        await initializeTranscriptEditSystem();
-        console.log('✅ transcript編集システム初期化完了');
-        
     } catch (error) {
         console.error('❌ 初期化エラー:', error);
         window.showMessage('error', 'アプリケーションの初期化に失敗しました。ページを再読み込みしてください。');
@@ -4616,7 +4561,26 @@ document.addEventListener('DOMContentLoaded', async function() {
         SmartVoicePanelManager.init();
     }
     
-    // 🔧 VoiceUIManager削除完了 - 統一状態管理システムに完全移行
+    // 🎨 新UI: VoiceUIManagerの初期化を無効化（ログイン画面での表示を防ぐ）
+    // メイン画面遷移時にのみ手動で初期化する
+    /*
+    if (typeof VoiceUIManager !== 'undefined') {
+        try {
+            console.log('🎨 VoiceUIManager初期化開始');
+            window.voiceUIManager = new VoiceUIManager();
+            const voiceUISuccess = await window.voiceUIManager.initialize();
+            if (voiceUISuccess) {
+                console.log('✅ VoiceUIManager初期化完了');
+            } else {
+                console.warn('⚠️ VoiceUIManager初期化失敗');
+            }
+        } catch (error) {
+            console.error('❌ VoiceUIManager初期化エラー:', error);
+        }
+    } else {
+        console.warn('⚠️ VoiceUIManager が見つかりません');
+    }
+    */
     
     console.log('✅ 初期化完了（状態管理・知見管理・SessionController・スマート音声パネル・新UI機能付き）');
 });
@@ -6700,17 +6664,6 @@ async function initializeFileManager() {
 
 // 音声システムの自動初期化
 document.addEventListener('DOMContentLoaded', function() {
-    // 🔧 統一状態管理システムの初期化（音声システム前に実行）
-    setTimeout(async () => {
-        console.log('🏗️ 統一状態管理システム初期化開始');
-        try {
-            await initializeUnifiedStateManager();
-            console.log('✅ 統一状態管理システム初期化完了');
-        } catch (error) {
-            console.error('❌ 統一状態管理システム初期化エラー:', error);
-        }
-    }, 30);
-    
     // 少し遅延させて他のシステムの初期化を待つ
     setTimeout(() => {
         console.log('🚀 音声システム自動初期化開始');

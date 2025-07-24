@@ -1,0 +1,639 @@
+/**
+ * 統一状態管理システム - スタイル
+ * ユーザー向け状態表示とガイダンスのスタイル
+ */
+
+/* =================================================================================
+   基本レイアウト
+   ================================================================================= */
+
+.unified-status-display {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 300px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 1000;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.unified-status-display:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.user-guidance-display {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 600px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 1000;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    transition: all 0.3s ease;
+}
+
+/* =================================================================================
+   ステータス表示
+   ================================================================================= */
+
+.status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.status-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.status-toggle {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #666;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.status-toggle:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #333;
+}
+
+.status-content {
+    padding: 16px 20px;
+}
+
+.status-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 15px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+/* 🎨 新デザイン要件: 右パネル背景変化（話者による色変化 + 脈動効果） */
+.status-section.nehori-speaking {
+    background: linear-gradient(135deg, 
+        rgba(139, 92, 246, 0.2) 0%, 
+        rgba(139, 92, 246, 0.1) 50%, 
+        rgba(139, 92, 246, 0.05) 100%
+    ) !important;
+    animation: pulse-nehori 2s ease-in-out infinite;
+}
+
+.status-section.hahori-speaking {
+    background: linear-gradient(135deg, 
+        rgba(6, 182, 212, 0.2) 0%, 
+        rgba(6, 182, 212, 0.1) 50%, 
+        rgba(6, 182, 212, 0.05) 100%
+    ) !important;
+    animation: pulse-hahori 2s ease-in-out infinite;
+}
+
+.status-section.user-speaking {
+    background: linear-gradient(135deg, 
+        rgba(34, 197, 94, 0.2) 0%, 
+        rgba(34, 197, 94, 0.1) 50%, 
+        rgba(34, 197, 94, 0.05) 100%
+    ) !important;
+    animation: pulse-user 2s ease-in-out infinite;
+}
+
+@keyframes pulse-nehori {
+    0%, 100% { 
+        background: linear-gradient(135deg, 
+            rgba(139, 92, 246, 0.2) 0%, 
+            rgba(139, 92, 246, 0.1) 50%, 
+            rgba(139, 92, 246, 0.05) 100%
+        ) !important;
+    }
+    50% { 
+        background: linear-gradient(135deg, 
+            rgba(139, 92, 246, 0.35) 0%, 
+            rgba(139, 92, 246, 0.25) 50%, 
+            rgba(139, 92, 246, 0.15) 100%
+        ) !important;
+    }
+}
+
+@keyframes pulse-hahori {
+    0%, 100% { 
+        background: linear-gradient(135deg, 
+            rgba(6, 182, 212, 0.2) 0%, 
+            rgba(6, 182, 212, 0.1) 50%, 
+            rgba(6, 182, 212, 0.05) 100%
+        ) !important;
+    }
+    50% { 
+        background: linear-gradient(135deg, 
+            rgba(6, 182, 212, 0.35) 0%, 
+            rgba(6, 182, 212, 0.25) 50%, 
+            rgba(6, 182, 212, 0.15) 100%
+        ) !important;
+    }
+}
+
+@keyframes pulse-user {
+    0%, 100% { 
+        background: linear-gradient(135deg, 
+            rgba(34, 197, 94, 0.2) 0%, 
+            rgba(34, 197, 94, 0.1) 50%, 
+            rgba(34, 197, 94, 0.05) 100%
+        ) !important;
+    }
+    50% { 
+        background: linear-gradient(135deg, 
+            rgba(34, 197, 94, 0.35) 0%, 
+            rgba(34, 197, 94, 0.25) 50%, 
+            rgba(34, 197, 94, 0.15) 100%
+        ) !important;
+    }
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.status-item label {
+    font-weight: 500;
+    color: #555;
+}
+
+.status-value {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    min-width: 60px;
+    transition: all 0.2s ease;
+}
+
+/* ステータス値の色分け */
+.status-value.active {
+    background: #10b981;
+    color: white;
+}
+
+.status-value.inactive {
+    background: #6b7280;
+    color: white;
+}
+
+.status-value.loading {
+    background: #f59e0b;
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+.status-value.error {
+    background: #ef4444;
+    color: white;
+}
+
+.status-value.idle {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.status-value.paused {
+    background: #8b5cf6;
+    color: white;
+}
+
+.status-value.online {
+    background: #10b981;
+    color: white;
+}
+
+.status-value.offline {
+    background: #ef4444;
+    color: white;
+}
+
+/* =================================================================================
+   ユーザーガイダンス
+   ================================================================================= */
+
+.guidance-content {
+    padding: 20px;
+}
+
+.user-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.message-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.message-text {
+    flex: 1;
+}
+
+#user-message-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.action-text {
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+.available-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+}
+
+.action-button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.action-button:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.action-button:active {
+    transform: translateY(0);
+}
+
+.action-button:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 特定のアクションボタンのスタイル */
+.action-button[id*="start"] {
+    background: #10b981;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.action-button[id*="start"]:hover {
+    background: #059669;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.action-button[id*="stop"] {
+    background: #ef4444;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.action-button[id*="stop"]:hover {
+    background: #dc2626;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.action-button[id*="pause"] {
+    background: #8b5cf6;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.action-button[id*="pause"]:hover {
+    background: #7c3aed;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.action-button[id*="resume"] {
+    background: #06b6d4;
+    box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
+}
+
+.action-button[id*="resume"]:hover {
+    background: #0891b2;
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
+}
+
+/* =================================================================================
+   通知システム
+   ================================================================================= */
+
+.notification-container {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 320px;
+    z-index: 1100;
+    pointer-events: none;
+}
+
+.notification {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 12px;
+    opacity: 0;
+    transform: translateX(-100%);
+    transition: all 0.3s ease;
+    pointer-events: auto;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.notification.hide {
+    opacity: 0;
+    transform: translateX(-100%);
+}
+
+.notification-content {
+    display: flex;
+    align-items: flex-start;
+    padding: 16px;
+    gap: 12px;
+}
+
+.notification-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.notification-message {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #374151;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.notification-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #374151;
+}
+
+/* 通知タイプ別のスタイル */
+.notification-info {
+    border-left: 4px solid #3b82f6;
+}
+
+.notification-success {
+    border-left: 4px solid #10b981;
+}
+
+.notification-warning {
+    border-left: 4px solid #f59e0b;
+}
+
+.notification-error {
+    border-left: 4px solid #ef4444;
+}
+
+/* =================================================================================
+   レスポンシブデザイン
+   ================================================================================= */
+
+@media (max-width: 768px) {
+    .unified-status-display {
+        position: static;
+        width: 100%;
+        margin: 10px;
+        border-radius: 8px;
+    }
+    
+    .user-guidance-display {
+        position: static;
+        width: 100%;
+        margin: 10px;
+        border-radius: 8px;
+        transform: none;
+    }
+    
+    .notification-container {
+        width: calc(100% - 40px);
+        left: 20px;
+        right: 20px;
+    }
+    
+    .available-actions {
+        flex-direction: column;
+    }
+    
+    .action-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .unified-status-display {
+        margin: 5px;
+        font-size: 12px;
+    }
+    
+    .user-guidance-display {
+        margin: 5px;
+    }
+    
+    .guidance-content {
+        padding: 15px;
+    }
+    
+    #user-message-text {
+        font-size: 16px;
+    }
+    
+    .action-text {
+        font-size: 13px;
+    }
+    
+    .action-button {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+}
+
+/* =================================================================================
+   アニメーション
+   ================================================================================= */
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
+
+/* 初期表示時のアニメーション */
+.unified-status-display,
+.user-guidance-display {
+    animation: slideIn 0.5s ease;
+}
+
+/* =================================================================================
+   ダークモード対応
+   ================================================================================= */
+
+@media (prefers-color-scheme: dark) {
+    .unified-status-display,
+    .user-guidance-display {
+        background: rgba(31, 41, 55, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .status-header h3 {
+        color: #f9fafb;
+    }
+    
+    .status-toggle {
+        color: #9ca3af;
+    }
+    
+    .status-toggle:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #f9fafb;
+    }
+    
+    .status-item label {
+        color: #d1d5db;
+    }
+    
+    #user-message-text {
+        color: #f9fafb;
+    }
+    
+    .action-text {
+        color: #9ca3af;
+    }
+    
+    .notification {
+        background: #374151;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .notification-message {
+        color: #d1d5db;
+    }
+    
+    .notification-close {
+        color: #6b7280;
+    }
+    
+    .notification-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #d1d5db;
+    }
+}
+
+/* =================================================================================
+   アクセシビリティ
+   ================================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* フォーカス表示の改善 */
+.action-button:focus,
+.status-toggle:focus,
+.notification-close:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* 高コントラストモード */
+@media (prefers-contrast: high) {
+    .unified-status-display,
+    .user-guidance-display {
+        border: 2px solid #000;
+    }
+    
+    .action-button {
+        border: 2px solid #000;
+    }
+} 

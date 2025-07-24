@@ -466,47 +466,8 @@
 
                     <!-- ステップ1: API KEY入力 -->
                     <div id="setupStep1" class="setup-step">
-                        <!-- 🔐 企業パスワード認証オプション -->
-                        <div id="corporateAuthSection" style="background: rgba(255, 165, 0, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #ffa500; display: block;">
-                            <h3 style="margin-bottom: 15px; color: var(--text-primary);">🏢 企業配布版 - パスワード認証</h3>
-                            
-                            <div style="background: rgba(0, 120, 255, 0.1); border: 1px solid rgba(0, 120, 255, 0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
-                                <div style="font-size: 14px; color: var(--text-primary); font-weight: bold; margin-bottom: 8px;">
-                                    📌 この深堀くんは企業配布版です
-                                </div>
-                                <div style="font-size: 12px; color: var(--text-secondary);">
-                                    企業パスワード「<strong>irobakuf</strong>」を入力すると、事前設定されたAPI Keyで深堀くんをご利用いただけます。個人のAPI Keyをお持ちの場合は、「👤 個人設定に切り替え」をクリックしてください。
-                                </div>
-                            </div>
-                            
-                            <div style="margin-bottom: 15px;">
-                                <input type="password" id="corporatePasswordInput" class="setup-input" placeholder="企業パスワード「irobakuf」を入力" style="width: 100%; margin-bottom: 10px;" value="irobakuf">
-                                <div style="font-size: 12px; color: var(--text-secondary);">
-                                    ※ パスワードは上記に事前入力されています。そのまま認証ボタンをクリックしてください。
-                                </div>
-                            </div>
-                            
-                            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                                <button onclick="authenticateCorporatePassword()" class="glass-button" id="corporateAuthButton" style="background: linear-gradient(135deg, #ffa500, #ff8c00); color: white;">
-                                    🔐 企業パスワード認証
-                                </button>
-                                <button onclick="toggleCorporateAuth(false)" class="glass-button" style="font-size: 12px;">
-                                    👤 個人設定に切り替え
-                                </button>
-                            </div>
-                            
-                            <div id="corporateAuthResult" style="margin-top: 15px; padding: 10px; border-radius: 8px; display: none;">
-                                <!-- 認証結果がここに表示される -->
-                            </div>
-                        </div>
-                        
-                        <div id="personalApiKeySection" style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px; display: none;">
-                            <h3 style="margin-bottom: 15px; color: var(--text-primary);">
-                                個人用 OpenAI API KEY
-                                <button onclick="toggleCorporateAuth(true)" class="glass-button" style="float: right; font-size: 12px; padding: 5px 10px;">
-                                    🏢 企業版に戻る
-                                </button>
-                            </h3>
+                        <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 15px; color: var(--text-primary);">OpenAI API KEY</h3>
                             
                             <div style="margin-bottom: 15px;">
                                 <input type="password" id="apiKeySetupInput" class="setup-input" placeholder="sk-で始まるAPIキーを入力してください" style="width: 100%; margin-bottom: 10px;">
@@ -539,22 +500,13 @@
                     <!-- ステップ2: パスワード設定 -->
                     <div id="setupStep2" class="setup-step" style="display: none;">
                         <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
-                            <h3 style="margin-bottom: 15px; color: var(--text-primary);">ローカルログインパスワード設定</h3>
-                            
-                            <div id="corporateStep2Notice" style="background: rgba(0, 120, 255, 0.1); border: 1px solid rgba(0, 120, 255, 0.3); border-radius: 10px; padding: 15px; margin-bottom: 15px; display: none;">
-                                <div style="font-size: 14px; color: var(--text-primary); font-weight: bold; margin-bottom: 8px;">
-                                    🏢 企業版API Key設定完了
-                                </div>
-                                <div style="font-size: 12px; color: var(--text-secondary);">
-                                    企業版API Keyの設定が完了しました。次にローカルでのログインに使用するパスワードを設定してください。
-                                </div>
-                            </div>
+                            <h3 style="margin-bottom: 15px; color: var(--text-primary);">暗号化パスワード設定</h3>
                             
                             <div style="margin-bottom: 15px;">
-                                <input type="password" id="apiPasswordSetupInput" class="setup-input" placeholder="ローカルログイン用パスワードを入力" style="width: 100%; margin-bottom: 10px;">
+                                <input type="password" id="apiPasswordSetupInput" class="setup-input" placeholder="暗号化パスワードを入力" style="width: 100%; margin-bottom: 10px;">
                                 <input type="password" id="apiPasswordConfirmInput" class="setup-input" placeholder="パスワードを再入力して確認" style="width: 100%; margin-bottom: 10px;">
                                 <div style="font-size: 12px; color: var(--text-secondary);">
-                                    ※ このパスワードは深堀くんへのログイン時に使用します。忘れないよう注意してください
+                                    ※ このパスワードでAPIキーを暗号化します。忘れないよう注意してください
                                 </div>
                             </div>
                             
@@ -1095,8 +1047,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <!-- ユーティリティ関数 -->
     <script src="app/utils.js?v=0.7.5"></script>
-    <!-- 🔐 埋め込みAPI Key管理システム（企業配布向け機能） -->
-    <script src="app/embedded-api-manager.js?v=0.7.5"></script>
     <!-- 🔧 統一状態管理システム（モジュール化版） -->
     <script src="app/unified-state-manager/voice-module.js?v=0.7.5"></script>
     <script src="app/unified-state-manager/ui-module.js?v=0.7.5"></script>

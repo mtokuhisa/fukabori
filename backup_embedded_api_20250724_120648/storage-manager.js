@@ -482,123 +482,17 @@ function migrateAllEncryptedData() {
 }
 
 // =================================================================================
-// 🔐 EMBEDDED API KEY PRIORITY CONTROL - 埋め込みAPI Key優先順位制御
-// =================================================================================
-
-/**
- * 🎯 API Key取得（優先順位制御付き）
- * 
- * 優先順位:
- * 1. 設定画面API Key (最優先)
- * 2. 埋め込み企業API Key
- * 3. 未設定
- * 
- * @returns {string|null} 現在有効なAPI Key
- */
-function getApiKeyWithPriority() {
-    try {
-        console.log('🔍 デバッグ: API Key優先順位制御開始');
-        
-        // 1. 設定画面API Key（最優先）
-        const userApiKeyCount = getSavedApiKeyCount();
-        console.log('🔍 デバッグ: ユーザーAPI Key数:', userApiKeyCount);
-        
-        if (userApiKeyCount > 0) {
-            console.log('🔑 設定画面API Keyを使用（最優先）');
-            return null; // 既存システムにフォールバック
-        }
-        
-        // 2. 埋め込み企業API Key
-        console.log('🔍 デバッグ: 埋め込みAPI Keyチェック中...');
-        console.log('🔍 デバッグ: EmbeddedApiManager存在:', !!window.EmbeddedApiManager);
-        
-        if (window.EmbeddedApiManager) {
-            console.log('🔍 デバッグ: 認証状態:', window.EmbeddedApiManager.isAuthenticated);
-            console.log('🔍 デバッグ: 埋め込みAPI Key存在:', !!window.EmbeddedApiManager.embeddedApiKey);
-            
-            if (window.EmbeddedApiManager.isAuthenticated && window.EmbeddedApiManager.embeddedApiKey) {
-                console.log('🏢 埋め込み企業API Keyを使用');
-                return window.EmbeddedApiManager.embeddedApiKey;
-            }
-        }
-        
-        // 3. 未設定
-        console.log('⚠️ API Keyが設定されていません');
-        return null;
-        
-    } catch (error) {
-        console.error('❌ API Key優先順位制御エラー:', error);
-        console.error('❌ エラースタック:', error.stack);
-        return null;
-    }
-}
-
-/**
- * 🔍 API Key設定状況確認（拡張版）
- * 
- * @returns {Object} API Key設定状況
- */
-function isApiKeyConfiguredExtended() {
-    const result = {
-        hasUserApiKey: false,
-        hasEmbeddedApiKey: false,
-        isEmbeddedAuthenticated: false,
-        currentSource: null,
-        totalCount: 0,
-        priority: null
-    };
-    
-    try {
-        // 設定画面API Key確認
-        const userApiKeyCount = getSavedApiKeyCount();
-        if (userApiKeyCount > 0) {
-            result.hasUserApiKey = true;
-            result.currentSource = 'user';
-            result.priority = 1;
-            result.totalCount += userApiKeyCount;
-        }
-        
-        // 埋め込みAPI Key確認
-        if (window.EmbeddedApiManager) {
-            const embeddedConfig = window.EmbeddedApiManager.isApiKeyConfigured();
-            result.hasEmbeddedApiKey = embeddedConfig.hasEmbeddedApiKey;
-            result.isEmbeddedAuthenticated = embeddedConfig.isEmbeddedAuthenticated;
-            
-            if (embeddedConfig.isEmbeddedAuthenticated && !result.hasUserApiKey) {
-                result.currentSource = 'embedded';
-                result.priority = 2;
-                result.totalCount += 1;
-            }
-        }
-        
-        // 優先順位設定
-        if (!result.currentSource) {
-            result.priority = 0; // 未設定
-        }
-        
-        return result;
-        
-    } catch (error) {
-        console.error('❌ API Key設定状況確認エラー:', error);
-        return result;
-    }
-}
-
-// =================================================================================
 // STORAGE MANAGER OBJECT - StorageManagerオブジェクト
 // =================================================================================
 
 const StorageManager = {
-    // APIキー管理（拡張版）
+    // APIキー管理
     apiKey: {
         save: saveEncryptedApiKey,
         load: loadEncryptedApiKey,
         clear: clearSavedApiKey,
         hasForPassword: hasApiKeyForPassword,
-        getCount: getSavedApiKeyCount,
-        // 🔐 埋め込みAPI Key統合機能
-        getWithPriority: getApiKeyWithPriority,
-        isConfiguredExtended: isApiKeyConfiguredExtended
+        getCount: getSavedApiKeyCount
     },
     
     // パスワード管理
@@ -663,11 +557,7 @@ window.attemptDataRecovery = attemptDataRecovery;
 window.migrateAllEncryptedData = migrateAllEncryptedData;
 window.isLegacyEncryptedData = isLegacyEncryptedData;
 
-// 埋め込みAPI Key統合関数の公開
-window.getApiKeyWithPriority = getApiKeyWithPriority;
-window.isApiKeyConfiguredExtended = isApiKeyConfiguredExtended;
-
 // StorageManagerオブジェクトの公開
 window.StorageManager = StorageManager;
 
-console.log('✅ StorageManager読み込み完了 - 後方互換性対応版 + 埋め込みAPI Key統合'); 
+console.log('✅ StorageManager読み込み完了 - 後方互換性対応版'); 

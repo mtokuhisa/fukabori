@@ -14,21 +14,13 @@ const ApiKeySetupModule = {
     // =================================================================================
 
     /**
-     * APIキーが設定されているかどうかを判定（拡張版）
+     * APIキーが設定されているかどうかを判定
      * @returns {boolean} APIキーが設定されているかどうか
      */
     isApiKeyConfigured() {
         try {
-            // 拡張版API Key設定状況確認を使用
-            if (window.StorageManager && window.StorageManager.apiKey.isConfiguredExtended) {
-                const config = window.StorageManager.apiKey.isConfiguredExtended();
-                console.log(`🔍 APIキー設定チェック (拡張版):`, config);
-                return config.totalCount > 0;
-            }
-            
-            // フォールバック: 従来の方式
             const apiKeyCount = window.getSavedApiKeyCount ? window.getSavedApiKeyCount() : 0;
-            console.log(`🔍 APIキー設定チェック (従来版): ${apiKeyCount}個のAPIキーが保存済み`);
+            console.log(`🔍 APIキー設定チェック: ${apiKeyCount}個のAPIキーが保存済み`);
             return apiKeyCount > 0;
         } catch (error) {
             console.error('❌ APIキー設定チェックエラー:', error);
@@ -392,12 +384,8 @@ const ApiKeySetupModule = {
                 // Step表示を更新
                 this.updateStep0Visibility();
                 
-                // 成功メッセージ（企業版か個人版かを判定）
-                const isEmbeddedApiKey = window.AppState?.apiKeySource === 'embedded';
-                const message = isEmbeddedApiKey 
-                    ? '✅ 企業版深堀くんの設定が完了しました！ログインできます'
-                    : '✅ APIキー設定が完了しました！ログインできます';
-                window.showMessage('success', message);
+                // 成功メッセージ
+                window.showMessage('success', '✅ APIキー設定が完了しました！ログインできます');
                 
                 console.log('✅ APIキー設定完了');
                 
@@ -574,201 +562,6 @@ const ApiKeySetupModule = {
         } catch (error) {
             console.error('❌ 対応ファイル形式モーダル閉じるエラー:', error);
         }
-    },
-
-    // =================================================================================
-    // 🔐 埋め込みAPI Key企業認証機能
-    // =================================================================================
-
-    /**
-     * 企業認証セクションの表示切り替え
-     * @param {boolean} show 表示するかどうか
-     */
-    toggleCorporateAuth(show) {
-        try {
-            const corporateSection = document.getElementById('corporateAuthSection');
-            const personalSection = document.getElementById('personalApiKeySection');
-            
-            if (corporateSection) {
-                corporateSection.style.display = show ? 'block' : 'none';
-                console.log(`🏢 企業認証セクション: ${show ? '表示' : '非表示'}`);
-                
-                // フォーカス設定（企業版表示時は認証ボタンにフォーカス）
-                if (show) {
-                    const authButton = document.getElementById('corporateAuthButton');
-                    if (authButton) {
-                        setTimeout(() => authButton.focus(), 100);
-                    }
-                }
-            }
-            
-            if (personalSection) {
-                personalSection.style.display = show ? 'none' : 'block';
-                console.log(`👤 個人設定セクション: ${show ? '非表示' : '表示'}`);
-                
-                // 個人設定表示時のフォーカス設定
-                if (!show) {
-                    const apiKeyInput = document.getElementById('apiKeySetupInput');
-                    if (apiKeyInput) {
-                        setTimeout(() => apiKeyInput.focus(), 100);
-                    }
-                }
-            }
-            
-            console.log(`🔄 UI切り替え完了: ${show ? '企業版' : '個人版'}`);
-        } catch (error) {
-            console.error('❌ 企業認証セクション切り替えエラー:', error);
-        }
-    },
-
-    /**
-     * 企業パスワード認証処理
-     */
-    async authenticateCorporatePassword() {
-        try {
-            const passwordInput = document.getElementById('corporatePasswordInput');
-            const authButton = document.getElementById('corporateAuthButton');
-            const result = document.getElementById('corporateAuthResult');
-            
-            if (!passwordInput || !authButton || !result) {
-                console.error('❌ 企業認証UI要素が見つかりません');
-                return;
-            }
-            
-            const password = passwordInput.value.trim();
-            
-            // バリデーション
-            if (!password) {
-                this.showCorporateAuthResult('error', '企業パスワードを入力してください');
-                return;
-            }
-            
-            // 埋め込みAPI Manager確認
-            if (!window.EmbeddedApiManager) {
-                this.showCorporateAuthResult('error', '埋め込みAPI Key機能が利用できません');
-                return;
-            }
-            
-            // 認証処理中の表示
-            authButton.disabled = true;
-            authButton.textContent = '🔐 認証中...';
-            this.showCorporateAuthResult('info', '企業パスワードを認証中...');
-            
-            try {
-                // 企業パスワード認証実行
-                const authenticated = await window.EmbeddedApiManager.authenticateAndDecrypt(password);
-                
-                if (authenticated) {
-                    this.showCorporateAuthResult('success', '✅ 企業パスワード認証成功！次にローカルログインパスワードを設定します...');
-                    
-                    // 成功時の処理
-                    passwordInput.value = '';
-                    
-                    // 企業版API KeyをcurrentApiKeyForSetupに設定
-                    if (window.EmbeddedApiManager && window.EmbeddedApiManager.embeddedApiKey) {
-                        this.currentApiKeyForSetup = window.EmbeddedApiManager.embeddedApiKey;
-                        console.log('🔑 企業版API Key設定完了');
-                        
-                        // Step1完了状態に設定
-                        const proceedButton = document.getElementById('proceedStep2Button');
-                        if (proceedButton) {
-                            proceedButton.disabled = false;
-                            proceedButton.style.opacity = '1';
-                        }
-                        
-                        // テスト結果表示を更新
-                        this.showApiTestResult('success', '✅ 企業版API Keyテスト成功');
-                    }
-                    
-                    // Step0の表示状態を更新
-                    this.updateStep0Visibility();
-                    
-                    // AppStateの更新
-                    if (window.AppState && window.StorageManager) {
-                        const embeddedApiKey = window.StorageManager.apiKey.getWithPriority();
-                        if (embeddedApiKey) {
-                            window.AppState.apiKey = embeddedApiKey;
-                            window.AppState.apiKeySource = 'embedded';
-                        }
-                    }
-                    
-                    // Step1完了してStep2（パスワード設定）に進む
-                    setTimeout(() => {
-                        // Step1を完了状態にする
-                        const step1 = document.getElementById('setupStep1');
-                        const step2 = document.getElementById('setupStep2');
-                        const stepText = document.getElementById('setupStepText');
-                        const corporateNotice = document.getElementById('corporateStep2Notice');
-                        
-                        if (step1) step1.style.display = 'none';
-                        if (step2) step2.style.display = 'block';
-                        if (stepText) stepText.textContent = 'ステップ 2/2: ローカルログインパスワード設定';
-                        if (corporateNotice) corporateNotice.style.display = 'block';
-                        
-                        // パスワード入力にフォーカス
-                        const passwordInput = document.getElementById('apiPasswordSetupInput');
-                        if (passwordInput) {
-                            setTimeout(() => passwordInput.focus(), 100);
-                        }
-                        
-                        console.log('🔄 企業認証完了 - Step2（パスワード設定）へ進行');
-                    }, 1500);
-                    
-                    console.log('✅ 企業パスワード認証完了');
-                    
-                } else {
-                    this.showCorporateAuthResult('error', '❌ 企業パスワードが正しくありません');
-                    console.log('❌ 企業パスワード認証失敗');
-                }
-                
-            } catch (authError) {
-                console.error('❌ 企業認証エラー:', authError);
-                this.showCorporateAuthResult('error', `❌ 認証エラー: ${authError.message}`);
-            }
-            
-        } catch (error) {
-            console.error('❌ 企業パスワード認証処理エラー:', error);
-            this.showCorporateAuthResult('error', '認証処理に失敗しました');
-        } finally {
-            // ボタン状態を復元
-            const authButton = document.getElementById('corporateAuthButton');
-            if (authButton) {
-                authButton.disabled = false;
-                authButton.textContent = '🔐 企業パスワード認証';
-            }
-        }
-    },
-
-    /**
-     * 企業認証結果表示
-     * @param {string} type 結果タイプ ('success', 'error', 'info')
-     * @param {string} message メッセージ
-     */
-    showCorporateAuthResult(type, message) {
-        try {
-            const result = document.getElementById('corporateAuthResult');
-            if (!result) return;
-            
-            result.style.display = 'block';
-            result.textContent = message;
-            
-            // スタイルを設定
-            if (type === 'success') {
-                result.style.background = 'rgba(76, 175, 80, 0.2)';
-                result.style.border = '1px solid #4caf50';
-                result.style.color = '#4caf50';
-            } else if (type === 'error') {
-                result.style.background = 'rgba(244, 67, 54, 0.2)';
-                result.style.border = '1px solid #f44336';
-                result.style.color = '#f44336';
-            } else {
-                result.style.background = 'rgba(33, 150, 243, 0.2)';
-                result.style.border = '1px solid #2196f3';
-                result.style.color = '#2196f3';
-            }
-        } catch (error) {
-            console.error('❌ 企業認証結果表示エラー:', error);
-        }
     }
 };
 
@@ -799,9 +592,6 @@ window.testApiKeySetup = () => ApiKeySetupModule.testApiKeySetup();
 window.proceedToStep2 = () => ApiKeySetupModule.proceedToStep2();
 window.backToStep1 = () => ApiKeySetupModule.backToStep1();
 window.completeApiKeySetup = () => ApiKeySetupModule.completeApiKeySetup();
-// 🔐 埋め込みAPI Key企業認証機能のグローバル公開
-window.toggleCorporateAuth = (show) => ApiKeySetupModule.toggleCorporateAuth(show);
-window.authenticateCorporatePassword = () => ApiKeySetupModule.authenticateCorporatePassword();
 
 // モジュール自体も公開（必要に応じて）
 window.ApiKeySetupModule = ApiKeySetupModule;
