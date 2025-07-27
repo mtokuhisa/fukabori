@@ -1,0 +1,131 @@
+{
+  "package_path": "/Users/tokuhisamasaki/AIdev/深堀アプリ",
+  "verification_date": "2025-07-26T17:40:32.594899",
+  "results": {
+    "required_files": {
+      "status": "pass",
+      "details": {
+        "existing_files": [
+          "深堀くん.html",
+          "app/style.css",
+          "app/script.js",
+          "config/app_settings.js",
+          "assets/fukabori_logo.png",
+          "manifest.json"
+        ],
+        "missing_files": [],
+        "existing_folders": [
+          "app",
+          "config",
+          "assets",
+          "pages"
+        ],
+        "missing_folders": []
+      }
+    },
+    "excluded_files": {
+      "status": "fail",
+      "details": {
+        "found_excluded_items": [
+          "tests",
+          "backups",
+          "tools",
+          "docs",
+          "reports",
+          "test-delete-fix.js",
+          "quick-test.js",
+          "voice-delete-integration-test.js",
+          "version-verification-test.js"
+        ],
+        "found_backup_files": [
+          "app/script.js.backup",
+          "backup_embedded_api_20250724_120648/script.js.backup",
+          "backups/complete_rollback_safety_20250721_040416/script.js.backup",
+          "backups/script-backups/script.js.backup",
+          "backups/phase1_domutils_20250705_163030/script.js.backup",
+          "app/script_tester_removed.js.bak",
+          "app/script_step1.js.bak",
+          "backup_embedded_api_20250724_120648/script_tester_removed.js.bak",
+          "backup_embedded_api_20250724_120648/script_step1.js.bak",
+          "backups/complete_rollback_safety_20250721_040416/script.js.bak",
+          "backups/complete_rollback_safety_20250721_040416/script_tester_removed.js.bak",
+          "backups/complete_rollback_safety_20250721_040416/script_step1.js.bak",
+          "backups/script-backups/script.js.bak",
+          "backups/transcript_ui_refinements_20250716_024300/script_tester_removed.js.bak",
+          "backups/transcript_ui_refinements_20250716_024300/script_step1.js.bak",
+          "backups/phase1_start_20250721_042020/script_tester_removed.js.bak",
+          "backups/phase1_start_20250721_042020/script_step1.js.bak",
+          "app/script.js.broken",
+          "backup_embedded_api_20250724_120648/script.js.broken",
+          "backups/深堀くん_production_backup.html"
+        ]
+      }
+    },
+    "relative_paths": {
+      "status": "pass",
+      "details": {
+        "correct_paths": [
+          "script: ./config/app_settings.js",
+          "script: ./config/app_config_loader.js",
+          "script: ./config/prompts.js",
+          "script: ./config/voice_config.js",
+          "script: ./app/utils.js?v=0.7.5",
+          "script: ./app/embedded-api-manager.js?v=0.7.5",
+          "script: ./app/unified-state-manager/voice-module.js?v=0.7.5",
+          "script: ./app/unified-state-manager/ui-module.js?v=0.7.5",
+          "script: ./app/unified-state-manager/core.js?v=0.7.5",
+          "script: ./app/unified-state-manager.js?v=0.7.5",
+          "script: ./app/state-integration-adapter.js?v=0.7.5",
+          "script: ./app/ui-state-display.js?v=0.7.5",
+          "script: ./app/voice-core.js?v=0.7.5",
+          "script: ./app/ui-manager.js?v=0.7.5",
+          "script: ./app/ui-screens.js?v=0.7.5",
+          "script: ./app/ui-basic.js?v=0.7.5",
+          "script: ./app/ui-advanced.js?v=0.7.5",
+          "script: ./app/storage-manager.js?v=0.7.5",
+          "script: ./app/file-processing.js?v=0.7.5",
+          "script: ./app/knowledge-system.js?v=0.7.5",
+          "script: ./app/session-controller.js?v=0.7.5",
+          "script: ./app/data-manager.js?v=0.7.5",
+          "script: ./app/file-manager.js?v=0.7.5",
+          "script: ./app/ai-manager.js?v=0.7.5",
+          "script: ./app/knowledge-file-manager-interface.js?v=0.7.5",
+          "script: ./app/api-key-setup.js?v=0.7.5",
+          "script: ./app/session-manager.js?v=0.7.5",
+          "script: ./app/session-start-manager.js?v=0.7.5",
+          "script: ./app/phase-manager.js?v=0.7.5",
+          "script: ./app/voice-phase2-manager.js?v=0.7.5",
+          "script: ./app/voice-error-handler.js?v=0.7.5",
+          "script: ./app/voice-processing-manager.js?v=0.7.5",
+          "script: ./app/transcript-edit-manager.js?v=0.7.6",
+          "script: ./app/editable-transcript-ui.js?v=0.7.6",
+          "script: ./app/script.js?v=0.7.5",
+          "link: ./manifest.json",
+          "link: ./favicon.ico",
+          "link: ./assets/fukabori_logo.png",
+          "link: ./app/style.css?v=0.7.5",
+          "link: ./app/unified-state-manager/styles.css?v=0.7.5",
+          "img: ./assets/fukabori_logo_main.png",
+          "img: ./assets/fukabori_logo.png",
+          "img: ./assets/nehori_avatar.png",
+          "img: ./assets/hahori_avatar.png"
+        ],
+        "path_issues": []
+      }
+    },
+    "html_links": {
+      "status": "pass",
+      "details": {
+        "valid_links": [
+          "./pages/overview.html",
+          "./pages/screenshots.html",
+          "./pages/technical.html",
+          "./pages/changelog.html",
+          "./pages/faq.html"
+        ],
+        "broken_links": []
+      }
+    },
+    "overall_score": 3
+  }
+}

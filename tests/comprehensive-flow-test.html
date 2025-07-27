@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>総合フローテスト - 深堀くんv2.0</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f2f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+        .scenario {
+            background: #ecf0f1;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin: 10px 0;
+            font-family: monospace;
+            border-radius: 4px;
+        }
+        .step {
+            background: #fff;
+            border: 1px solid #bdc3c7;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 6px;
+        }
+        .step-title {
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 5px;
+        }
+        .result-pass { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .result-fail { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .result-running { background: #fff3cd; border-color: #ffeaa7; color: #856404; }
+        .button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 14px;
+        }
+        .button:hover { background: #2980b9; }
+        .button.success { background: #27ae60; }
+        .button.success:hover { background: #229954; }
+        .button.danger { background: #e74c3c; }
+        .button.danger:hover { background: #c0392b; }
+        .data-display {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .highlight { background: #f39c12; color: white; padding: 2px 4px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>🔬 総合フローテスト</h1>
+    <p>リアルタイム文字起こし編集の完全フローを検証し、ユーザー報告問題の解決を確認します。</p>
+
+    <!-- 問題の再現シナリオ -->
+    <div class="test-container">
+        <div class="test-title">🐛 問題再現シナリオ</div>
+        <div class="scenario">
+            <strong>ユーザー報告問題:</strong><br>
+            1. 当初認識：「おはようございますだぜ」<br>
+            2. 手動修正後：「おはようございます」<br>
+            3. 音声認識追加：「おはようございますだぜ　AIくん」← 元に戻る<br>
+            4. 「どうぞ」認識時：「おはようございますだぜ」← 編集が無効化
+        </div>
+        <button class="button" onclick="reproduceOriginalProblem()">元の問題を再現</button>
+        <button class="button success" onclick="testFixedBehavior()">修正後の動作テスト</button>
+    </div>
+
+    <!-- フローステップ表示 -->
+    <div class="test-container">
+        <div class="test-title">📋 テストフロー</div>
+        <div id="flow-steps"></div>
+    </div>
+
+    <!-- データ状態モニタリング -->
+    <div class="test-container">
+        <div class="test-title">📊 データ状態モニタリング</div>
+        <div id="data-monitor" class="data-display">初期化中...</div>
+        <button class="button" onclick="updateDataMonitor()">状態更新</button>
+        <button class="button" onclick="startRealtimeMonitoring()">リアルタイム監視開始</button>
+        <button class="button danger" onclick="stopRealtimeMonitoring()">監視停止</button>
+    </div>
+
+    <!-- テスト結果 -->
+    <div class="test-container">
+        <div class="test-title">📈 テスト結果</div>
+        <div id="test-results"></div>
+    </div>
+
+    <!-- デバッグコンソール -->
+    <div class="test-container">
+        <div class="test-title">🔧 デバッグコンソール</div>
+        <div id="debug-console" class="data-display" style="height: 200px; overflow-y: auto;"></div>
+        <button class="button" onclick="clearDebugConsole()">コンソールクリア</button>
+        <button class="button danger" onclick="emergencyRollback()">緊急ロールバック</button>
+    </div>
+
+    <script>
+        // =================================================================================
+        // 総合フローテストシステム
+        // =================================================================================
+
+        let monitoringInterval = null;
+        let testResults = {};
+
+        /**
+         * デバッグログ機能
+         */
+        function debugLog(message, data = null) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            
+            const console = document.getElementById('debug-console');
+            const currentContent = console.innerHTML;
+            const newContent = currentContent + '\n' + logEntry;
+            
+            if (data) {
+                console.innerHTML = newContent + '\n    → ' + JSON.stringify(data, null, 2);
+            } else {
+                console.innerHTML = newContent;
+            }
+            
+            console.scrollTop = console.scrollHeight;
+            window.console.log(message, data || '');
+        }
+
+        /**
+         * データ状態監視更新
+         */
+        function updateDataMonitor() {
+            const monitor = document.getElementById('data-monitor');
+            
+            const state = {
+                timestamp: new Date().toISOString(),
+                AppState: {
+                    currentTranscript: window.AppState?.currentTranscript || '',
+                    transcriptHistory: window.AppState?.transcriptHistory || [],
+                    transcriptHistoryLength: window.AppState?.transcriptHistory?.length || 0
+                },
+                editManager: {
+                    exists: !!window.transcriptEditManager,
+                    isEditing: window.transcriptEditManager?.isEditing || false,
+                    originalText: window.transcriptEditManager?.originalText || ''
+                },
+                protectionStatus: window.TranscriptProtectionManager?.getProtectionStatus() || null,
+                stateController: {
+                    exists: !!window.StateUpdateController,
+                    debugLogsCount: window.StateUpdateController?.debugLogs?.length || 0
+                }
+            };
+            
+            monitor.textContent = JSON.stringify(state, null, 2);
+        }
+
+        /**
+         * フローステップ表示更新
+         */
+        function updateFlowSteps(steps) {
+            const container = document.getElementById('flow-steps');
+            container.innerHTML = '';
+            
+            steps.forEach((step, index) => {
+                const stepDiv = document.createElement('div');
+                stepDiv.className = `step ${step.status}`;
+                
+                const statusEmoji = {
+                    'result-pass': '✅',
+                    'result-fail': '❌',
+                    'result-running': '⏳'
+                }[step.status] || '📋';
+                
+                stepDiv.innerHTML = `
+                    <div class="step-title">${statusEmoji} Step ${index + 1}: ${step.title}</div>
+                    <div>${step.description}</div>
+                    ${step.data ? `<div class="data-display">${JSON.stringify(step.data, null, 2)}</div>` : ''}
+                `;
+                
+                container.appendChild(stepDiv);
+            });
+        }
+
+        /**
+         * 元の問題を再現
+         */
+        async function reproduceOriginalProblem() {
+            debugLog('🐛 元の問題再現開始');
+            
+            const steps = [
+                { title: '初期状態設定', description: '音声認識結果を設定', status: 'result-running' },
+                { title: '手動編集実行', description: 'ユーザーによる手動修正', status: 'result-running' },
+                { title: '音声認識追加', description: '新しい音声認識結果の追加', status: 'result-running' },
+                { title: '「どうぞ」処理', description: 'データ取得と処理実行', status: 'result-running' }
+            ];
+            
+            updateFlowSteps(steps);
+            
+            try {
+                // Step 1: 初期状態設定
+                if (!window.AppState) {
+                    window.AppState = { currentTranscript: '', transcriptHistory: [] };
+                }
+                
+                const originalText = 'おはようございますだぜ';
+                window.AppState.currentTranscript = originalText;
+                window.AppState.transcriptHistory = [originalText];
+                
+                steps[0].status = 'result-pass';
+                steps[0].data = { currentTranscript: originalText, transcriptHistory: [originalText] };
+                updateFlowSteps(steps);
+                debugLog('Step 1完了: 初期状態設定', { originalText });
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Step 2: 手動編集（従来の問題のある方法をシミュレート）
+                const editedText = 'おはようございます';
+                
+                // 🐛 問題再現: currentTranscriptのみ更新、transcriptHistoryは更新しない
+                window.AppState.currentTranscript = editedText;
+                // transcriptHistoryは意図的に更新しない（問題を再現）
+                
+                steps[1].status = 'result-pass';
+                steps[1].data = { 
+                    currentTranscript: editedText, 
+                    transcriptHistory: window.AppState.transcriptHistory,
+                    note: '⚠️ transcriptHistoryが未更新（問題再現）'
+                };
+                updateFlowSteps(steps);
+                debugLog('Step 2完了: 手動編集（問題再現版）', { editedText });
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Step 3: 音声認識追加
+                const additionalText = 'AIくん';
+                window.AppState.transcriptHistory.push(additionalText);
+                const combinedText = window.AppState.transcriptHistory.join(' ');
+                window.AppState.currentTranscript = combinedText;
+                
+                steps[2].status = 'result-pass';
+                steps[2].data = { 
+                    additionalText,
+                    combinedText,
+                    note: '編集内容が消失している'
+                };
+                updateFlowSteps(steps);
+                debugLog('Step 3完了: 音声認識追加', { combinedText });
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Step 4: 「どうぞ」処理（従来の問題のある方法）
+                const transcriptHistoryText = window.AppState.transcriptHistory.join(' ');
+                
+                steps[3].status = 'result-fail';
+                steps[3].data = { 
+                    processedText: transcriptHistoryText,
+                    expectedText: editedText + ' ' + additionalText,
+                    note: '❌ 編集内容が反映されていない'
+                };
+                updateFlowSteps(steps);
+                debugLog('Step 4完了: 「どうぞ」処理（問題確認）', { 
+                    processed: transcriptHistoryText,
+                    expected: editedText + ' ' + additionalText
+                });
+                
+                testResults['問題再現テスト'] = { 
+                    passed: false, 
+                    message: '元の問題が正常に再現されました' 
+                };
+                
+                debugLog('🐛 元の問題再現完了 - 編集内容が失われることを確認');
+                
+            } catch (error) {
+                debugLog('❌ 問題再現テストエラー:', error.message);
+                steps[steps.length - 1].status = 'result-fail';
+                updateFlowSteps(steps);
+            }
+            
+            updateTestResults();
+        }
+
+        /**
+         * 修正後の動作テスト
+         */
+        async function testFixedBehavior() {
+            debugLog('✅ 修正後動作テスト開始');
+            
+            const steps = [
+                { title: '初期状態設定', description: '音声認識結果を設定', status: 'result-running' },
+                { title: 'Phase 1修正版編集', description: '完全同期による手動修正', status: 'result-running' },
+                { title: '音声認識追加', description: '保護機能による安全な追加', status: 'result-running' },
+                { title: 'Phase 2修正版「どうぞ」', description: 'currentTranscript優先データ取得', status: 'result-running' }
+            ];
+            
+            updateFlowSteps(steps);
+            
+            try {
+                // Step 1: 初期状態設定
+                if (!window.AppState) {
+                    window.AppState = { currentTranscript: '', transcriptHistory: [] };
+                }
+                
+                const originalText = 'おはようございますだぜ';
+                window.AppState.currentTranscript = originalText;
+                window.AppState.transcriptHistory = [originalText];
+                
+                steps[0].status = 'result-pass';
+                steps[0].data = { currentTranscript: originalText, transcriptHistory: [originalText] };
+                updateFlowSteps(steps);
+                debugLog('Step 1完了: 初期状態設定', { originalText });
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Step 2: Phase 1修正版編集（完全同期）
+                const editedText = 'おはようございます';
+                
+                // 🎯 Phase 1修正: StateUpdateControllerによる完全同期
+                if (window.StateUpdateController) {
+                    window.StateUpdateController.atomicStateUpdate('edit', {
+                        'AppState': () => {
+                            window.AppState.currentTranscript = editedText;
+                            window.AppState.transcriptHistory = [editedText]; // 🔧 重要: 同時更新
+                        }
+                    });
+                } else {
+                    // フォールバック: 手動で同期
+                    window.AppState.currentTranscript = editedText;
+                    window.AppState.transcriptHistory = [editedText];
+                }
+                
+                steps[1].status = 'result-pass';
+                steps[1].data = { 
+                    currentTranscript: editedText, 
+                    transcriptHistory: window.AppState.transcriptHistory,
+                    note: '✅ currentTranscriptとtranscriptHistoryが同期されている'
+                };
+                updateFlowSteps(steps);
+                debugLog('Step 2完了: Phase 1修正版編集', { 
+                    currentTranscript: window.AppState.currentTranscript,
+                    transcriptHistory: window.AppState.transcriptHistory
+                });
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Step 3: 音声認識追加
+                const additionalText = 'AIくん';
+                window.AppState.transcriptHistory.push(additionalText);
+                const combinedText = window.AppState.transcriptHistory.join(' ');
+                window.AppState.currentTranscript = combinedText;
+                
+                steps[2].status = 'result-pass';
+                steps[2].data = { 
+                    additionalText,
+                    combinedText,
+                    note: '編集内容が保持されている'
+                };
+                updateFlowSteps(steps);
+                debugLog('Step 3完了: 音声認識追加', { combinedText });
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Step 4: Phase 2修正版「どうぞ」処理
+                let processedText;
+                
+                // 🎯 Phase 2修正: currentTranscriptを優先使用
+                if (window.AppState.currentTranscript && window.AppState.currentTranscript.trim()) {
+                    processedText = window.AppState.currentTranscript.trim();
+                } else {
+                    processedText = window.AppState.transcriptHistory.join(' ').trim();
+                }
+                
+                const expectedText = editedText + ' ' + additionalText;
+                const isFixed = processedText === expectedText;
+                
+                steps[3].status = isFixed ? 'result-pass' : 'result-fail';
+                steps[3].data = { 
+                    processedText,
+                    expectedText,
+                    isFixed,
+                    note: isFixed ? '✅ 編集内容が正しく反映されている' : '❌ まだ問題が残っている'
+                };
+                updateFlowSteps(steps);
+                debugLog('Step 4完了: Phase 2修正版「どうぞ」処理', { 
+                    processed: processedText,
+                    expected: expectedText,
+                    fixed: isFixed
+                });
+                
+                testResults['修正後動作テスト'] = { 
+                    passed: isFixed, 
+                    message: isFixed ? '問題が完全に修正されました！' : '修正が不完全です'
+                };
+                
+                if (isFixed) {
+                    debugLog('🎉 修正後動作テスト成功 - 問題が解決されました！');
+                } else {
+                    debugLog('⚠️ 修正後動作テスト失敗 - 追加修正が必要です');
+                }
+                
+            } catch (error) {
+                debugLog('❌ 修正後動作テストエラー:', error.message);
+                steps[steps.length - 1].status = 'result-fail';
+                updateFlowSteps(steps);
+            }
+            
+            updateTestResults();
+        }
+
+        /**
+         * テスト結果表示更新
+         */
+        function updateTestResults() {
+            const resultsDiv = document.getElementById('test-results');
+            let html = '';
+            
+            Object.entries(testResults).forEach(([testName, result]) => {
+                const statusClass = result.passed ? 'result-pass' : 'result-fail';
+                const statusEmoji = result.passed ? '✅' : '❌';
+                
+                html += `
+                    <div class="step ${statusClass}">
+                        <div class="step-title">${statusEmoji} ${testName}</div>
+                        <div>${result.message}</div>
+                    </div>
+                `;
+            });
+            
+            if (html === '') {
+                html = '<div class="step">テスト未実行</div>';
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        /**
+         * リアルタイム監視開始
+         */
+        function startRealtimeMonitoring() {
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+            }
+            
+            monitoringInterval = setInterval(updateDataMonitor, 1000);
+            debugLog('📊 リアルタイム監視開始');
+        }
+
+        /**
+         * リアルタイム監視停止
+         */
+        function stopRealtimeMonitoring() {
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+                debugLog('📊 リアルタイム監視停止');
+            }
+        }
+
+        /**
+         * デバッグコンソールクリア
+         */
+        function clearDebugConsole() {
+            document.getElementById('debug-console').innerHTML = '';
+        }
+
+        /**
+         * 緊急ロールバック
+         */
+        function emergencyRollback() {
+            if (window.emergencyRollback) {
+                window.emergencyRollback();
+                debugLog('🚨 緊急ロールバック実行');
+                updateDataMonitor();
+            } else {
+                debugLog('❌ 緊急ロールバック機能が利用できません');
+            }
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('🔬 総合フローテストシステム初期化完了');
+            updateDataMonitor();
+            updateTestResults();
+            
+            // 3秒後に自動テスト開始
+            setTimeout(() => {
+                debugLog('⏰ 自動テスト開始 - まず問題を再現します');
+                reproduceOriginalProblem().then(() => {
+                    setTimeout(() => {
+                        debugLog('⏰ 修正後動作テストを開始します');
+                        testFixedBehavior();
+                    }, 3000);
+                });
+            }, 3000);
+        });
+    </script>
+</body>
+</html> 

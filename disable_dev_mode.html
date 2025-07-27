@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>深堀くん - 開発モード制御</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+        .button {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px 24px;
+            margin: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        .status { 
+            background: rgba(0,0,0,0.2); 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin: 15px 0; 
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 深堀くん - 開発モード制御パネル</h1>
+    
+    <div class="status" id="status">
+        現在の状態を確認中...
+    </div>
+    
+    <button class="button" onclick="enableDevMode()">
+        ✅ 開発モードを有効化 (実験的機能ON)
+    </button>
+    
+    <button class="button" onclick="disableDevMode()">
+        ❌ 開発モードを無効化 (通常モードに戻す)
+    </button>
+    
+    <button class="button" onclick="checkStatus()">
+        📊 現在の状態を確認
+    </button>
+    
+    <button class="button" onclick="goToMainApp()">
+        🏠 深堀くんメインアプリに戻る
+    </button>
+    
+    <div class="status">
+        <strong>⚠️ 注意事項:</strong><br>
+        • 開発モードではSpeech Shortening Engine等の実験的機能が有効になります<br>
+        • 問題が発生した場合は「開発モードを無効化」で元に戻せます<br>
+        • 変更後はページリロードが必要です
+    </div>
+
+    <script>
+        function enableDevMode() {
+            localStorage.setItem('fukabori_dev_mode', 'true');
+            updateStatus();
+            alert('✅ 開発モードを有効化しました。\n深堀くんアプリをリロードしてください。');
+        }
+        
+        function disableDevMode() {
+            localStorage.removeItem('fukabori_dev_mode');
+            // または明示的にfalseに設定
+            localStorage.setItem('fukabori_dev_mode', 'false');
+            updateStatus();
+            alert('❌ 開発モードを無効化しました。\n深堀くんアプリをリロードしてください。');
+        }
+        
+        function checkStatus() {
+            updateStatus();
+        }
+        
+        function updateStatus() {
+            const devMode = localStorage.getItem('fukabori_dev_mode');
+            const status = document.getElementById('status');
+            
+            const statusText = `
+📊 現在の開発モード状態
+━━━━━━━━━━━━━━━━━━━━━━━━
+🔧 開発モード: ${devMode === 'true' ? '✅ 有効' : '❌ 無効'}
+🎭 実験的機能: ${devMode === 'true' ? '✅ 読み込み予定' : '❌ 読み込まれない'}
+📅 確認時刻: ${new Date().toLocaleString()}
+
+${devMode === 'true' ? 
+'⚡ Speech Shortening Engine等が利用可能です' : 
+'📝 通常のフォールバック機能のみ利用可能です'}
+            `.trim();
+            
+            status.textContent = statusText;
+        }
+        
+        function goToMainApp() {
+            window.location.href = '/深堀くん.html';
+        }
+        
+        // ページ読み込み時に状態を表示
+        updateStatus();
+    </script>
+</body>
+</html> 

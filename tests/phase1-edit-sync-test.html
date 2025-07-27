@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1 編集同期テスト - 深堀くんv2.0</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .test-status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .status-pass { background: #d4edda; color: #155724; }
+        .status-fail { background: #f8d7da; color: #721c24; }
+        .status-running { background: #fff3cd; color: #856404; }
+        .log-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover { background: #0056b3; }
+        .button.danger { background: #dc3545; }
+        .button.danger:hover { background: #a71e2a; }
+        .state-display {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Phase 1 編集同期テスト</h1>
+    <p>リアルタイム文字起こし編集機能の状態同期システムをテストします。</p>
+
+    <!-- テスト制御パネル -->
+    <div class="test-container">
+        <div class="test-title">📋 テスト制御パネル</div>
+        <button class="button" onclick="runAllTests()">全テスト実行</button>
+        <button class="button" onclick="runEditSyncTest()">編集同期テスト</button>
+        <button class="button" onclick="runProtectionTest()">保護機能テスト</button>
+        <button class="button" onclick="runRollbackTest()">ロールバックテスト</button>
+        <button class="button danger" onclick="emergencyReset()">緊急リセット</button>
+        <button class="button" onclick="showSystemDiagnostics()">システム診断</button>
+    </div>
+
+    <!-- システム状態表示 -->
+    <div class="test-container">
+        <div class="test-title">🔍 システム状態</div>
+        <div id="system-status" class="state-display">初期化中...</div>
+        <button class="button" onclick="updateSystemStatus()">状態更新</button>
+    </div>
+
+    <!-- テスト結果表示 -->
+    <div class="test-container">
+        <div class="test-title">📊 テスト結果</div>
+        <div id="test-results"></div>
+    </div>
+
+    <!-- ログ出力 -->
+    <div class="test-container">
+        <div class="test-title">📝 実行ログ</div>
+        <div id="log-output" class="log-output"></div>
+        <button class="button" onclick="clearLog()">ログクリア</button>
+    </div>
+
+    <script>
+        // =================================================================================
+        // Phase 1 統合テストシステム
+        // =================================================================================
+
+        let testResults = {};
+        let testLog = [];
+
+        /**
+         * ログ出力機能
+         */
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            testLog.push(logEntry);
+            
+            const logOutput = document.getElementById('log-output');
+            logOutput.innerHTML = testLog.join('\n');
+            logOutput.scrollTop = logOutput.scrollHeight;
+            
+            console.log(message);
+        }
+
+        /**
+         * テスト結果表示更新
+         */
+        function updateTestResults() {
+            const resultsDiv = document.getElementById('test-results');
+            let html = '';
+            
+            Object.entries(testResults).forEach(([testName, result]) => {
+                const statusClass = result.passed ? 'status-pass' : 'status-fail';
+                const statusText = result.passed ? 'PASS' : 'FAIL';
+                
+                html += `
+                    <div class="test-status ${statusClass}">
+                        ${testName}: ${statusText}
+                        ${result.message ? ` - ${result.message}` : ''}
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        /**
+         * システム状態表示更新
+         */
+        function updateSystemStatus() {
+            const statusDiv = document.getElementById('system-status');
+            
+            const status = {
+                timestamp: new Date().toISOString(),
+                appState: {
+                    exists: !!window.AppState,
+                    currentTranscript: window.AppState?.currentTranscript || '',
+                    transcriptHistoryLength: window.AppState?.transcriptHistory?.length || 0
+                },
+                editManager: {
+                    exists: !!window.transcriptEditManager,
+                    isEditing: window.transcriptEditManager?.isEditing || false
+                },
+                stateController: {
+                    exists: !!window.StateUpdateController
+                },
+                protectionManager: {
+                    exists: !!window.TranscriptProtectionManager
+                },
+                emergencyManager: {
+                    exists: !!window.EmergencySystemManager,
+                    backupCount: window.EmergencySystemManager?.backupHistory?.length || 0
+                }
+            };
+            
+            statusDiv.textContent = JSON.stringify(status, null, 2);
+        }
+
+        /**
+         * 編集同期テスト
+         */
+        async function runEditSyncTest() {
+            log('🧪 編集同期テスト開始');
+            
+            try {
+                // 初期状態設定
+                if (!window.AppState) {
+                    window.AppState = {
+                        currentTranscript: '',
+                        transcriptHistory: []
+                    };
+                }
+                
+                // テスト用の初期データ設定
+                const originalText = 'テスト用の元の文章です';
+                const editedText = 'テスト用の編集後文章です';
+                
+                window.AppState.currentTranscript = originalText;
+                window.AppState.transcriptHistory = [originalText];
+                
+                log(`初期状態設定: "${originalText}"`);
+                
+                // モックの編集マネージャー作成
+                if (!window.transcriptEditManager) {
+                    window.transcriptEditManager = {
+                        isEditing: false,
+                        transcriptDisplay: { textContent: originalText },
+                        finishEditing: async function(newText) {
+                            log('モック編集完了処理実行');
+                            
+                            // Phase 1Aの状態同期をシミュレート
+                            if (window.StateUpdateController) {
+                                return window.StateUpdateController.atomicStateUpdate('edit', {
+                                    'AppState': () => {
+                                        window.AppState.currentTranscript = newText;
+                                        window.AppState.transcriptHistory = [newText];
+                                        log(`AppState更新: "${newText}"`);
+                                    }
+                                });
+                            }
+                            return true;
+                        }
+                    };
+                }
+                
+                // 編集完了処理をシミュレート
+                await window.transcriptEditManager.finishEditing(editedText);
+                
+                // 結果検証
+                const currentTranscript = window.AppState.currentTranscript;
+                const transcriptHistory = window.AppState.transcriptHistory;
+                
+                const passed = currentTranscript === editedText && 
+                              transcriptHistory.length === 1 && 
+                              transcriptHistory[0] === editedText;
+                
+                testResults['編集同期テスト'] = {
+                    passed,
+                    message: passed ? 
+                        '状態同期成功' : 
+                        `失敗: current="${currentTranscript}", history=[${transcriptHistory.join(',')}]`
+                };
+                
+                log(passed ? '✅ 編集同期テスト成功' : '❌ 編集同期テスト失敗');
+                
+            } catch (error) {
+                log(`❌ 編集同期テストエラー: ${error.message}`);
+                testResults['編集同期テスト'] = { passed: false, message: error.message };
+            }
+            
+            updateTestResults();
+        }
+
+        /**
+         * 保護機能テスト
+         */
+        async function runProtectionTest() {
+            log('🧪 保護機能テスト開始');
+            
+            try {
+                // 編集中状態のシミュレート
+                if (window.transcriptEditManager) {
+                    window.transcriptEditManager.isEditing = true;
+                    log('編集中状態に設定');
+                }
+                
+                // 保護機能チェック
+                const shouldPrevent = window.TranscriptProtectionManager ? 
+                    window.TranscriptProtectionManager.constructor.shouldPreventVoiceUpdate('test') : 
+                    false;
+                
+                // 編集状態解除
+                if (window.transcriptEditManager) {
+                    window.transcriptEditManager.isEditing = false;
+                }
+                
+                testResults['保護機能テスト'] = {
+                    passed: shouldPrevent,
+                    message: shouldPrevent ? '編集中の保護正常' : '保護機能未動作'
+                };
+                
+                log(shouldPrevent ? '✅ 保護機能テスト成功' : '❌ 保護機能テスト失敗');
+                
+            } catch (error) {
+                log(`❌ 保護機能テストエラー: ${error.message}`);
+                testResults['保護機能テスト'] = { passed: false, message: error.message };
+            }
+            
+            updateTestResults();
+        }
+
+        /**
+         * ロールバックテスト
+         */
+        async function runRollbackTest() {
+            log('🧪 ロールバックテスト開始');
+            
+            try {
+                if (!window.EmergencySystemManager) {
+                    throw new Error('EmergencySystemManagerが存在しません');
+                }
+                
+                // バックアップ作成
+                const backupId = window.EmergencySystemManager.createFullSystemBackup('test');
+                log(`テスト用バックアップ作成: ${backupId}`);
+                
+                // 状態を変更
+                const originalTranscript = window.AppState?.currentTranscript || '';
+                if (window.AppState) {
+                    window.AppState.currentTranscript = 'テスト用変更データ';
+                    log('状態を変更しました');
+                }
+                
+                // ロールバック実行
+                const rollbackSuccess = window.EmergencySystemManager.emergencyRollback(backupId);
+                
+                // 結果検証
+                const restoredTranscript = window.AppState?.currentTranscript || '';
+                const passed = rollbackSuccess && restoredTranscript === originalTranscript;
+                
+                testResults['ロールバックテスト'] = {
+                    passed,
+                    message: passed ? 'ロールバック成功' : `失敗: ${restoredTranscript}`
+                };
+                
+                log(passed ? '✅ ロールバックテスト成功' : '❌ ロールバックテスト失敗');
+                
+            } catch (error) {
+                log(`❌ ロールバックテストエラー: ${error.message}`);
+                testResults['ロールバックテスト'] = { passed: false, message: error.message };
+            }
+            
+            updateTestResults();
+        }
+
+        /**
+         * 全テスト実行
+         */
+        async function runAllTests() {
+            log('🚀 全テスト実行開始');
+            testResults = {};
+            
+            await runEditSyncTest();
+            await runProtectionTest();
+            await runRollbackTest();
+            
+            const totalTests = Object.keys(testResults).length;
+            const passedTests = Object.values(testResults).filter(r => r.passed).length;
+            
+            log(`📊 テスト完了: ${passedTests}/${totalTests} passed`);
+            
+            if (passedTests === totalTests) {
+                log('🎉 全テスト成功！Phase 1実装完了');
+            } else {
+                log('⚠️ 一部テスト失敗 - 修正が必要です');
+            }
+        }
+
+        /**
+         * システム診断表示
+         */
+        function showSystemDiagnostics() {
+            if (window.systemDiagnostics) {
+                const diagnostics = window.systemDiagnostics();
+                log('🔍 システム診断実行完了');
+                console.log('診断結果:', diagnostics);
+            } else {
+                log('❌ システム診断機能が利用できません');
+            }
+        }
+
+        /**
+         * 緊急リセット
+         */
+        function emergencyReset() {
+            if (window.completeReset) {
+                window.completeReset();
+                log('🚨 緊急リセット実行');
+                updateSystemStatus();
+            } else {
+                log('❌ 緊急リセット機能が利用できません');
+            }
+        }
+
+        /**
+         * ログクリア
+         */
+        function clearLog() {
+            testLog = [];
+            document.getElementById('log-output').innerHTML = '';
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            log('📋 Phase 1 統合テストシステム初期化完了');
+            updateSystemStatus();
+            
+            // 2秒後に自動テスト実行
+            setTimeout(() => {
+                log('⏰ 自動テスト開始');
+                runAllTests();
+            }, 2000);
+        });
+    </script>
+</body>
+</html> 

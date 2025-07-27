@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深堀くん - 更新履歴</title>
+    <style>
+        /* 深堀くんテーマシステム対応 */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #667eea;
+            --success-green: #27ae60;
+            --warning-orange: #f39c12;
+            --error-red: #e74c3c;
+        }
+
+        .theme-white {
+            --primary-gradient: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            --glass-bg: rgba(255, 255, 255, 0.4);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #007bff;
+        }
+
+        .theme-blue {
+            --primary-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #667eea;
+        }
+
+        .theme-dark {
+            --primary-gradient: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #ecf0f1;
+            --text-secondary: #bdc3c7;
+            --accent-color: #3498db;
+        }
+
+        .theme-colorful {
+            --primary-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            --glass-bg: rgba(255, 255, 255, 0.3);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --text-primary: #2c3e50;
+            --text-secondary: #34495e;
+            --accent-color: #e74c3c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* バックボタン */
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 関連ページリンク */
+        .related-pages {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            margin-top: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .related-pages h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .related-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .related-link {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 15px 30px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .related-link:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        /* ヘッダーセクション */
+        .header-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .logo-container {
+            margin-bottom: 20px;
+        }
+
+        .logo-placeholder {
+            width: 200px;
+            height: 80px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .logo-image {
+            width: 400px !important;
+            height: 160px !important;
+            max-width: 400px !important;
+            max-height: 160px !important;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .header-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .current-version {
+            background: linear-gradient(135deg, var(--success-green), #2ecc71);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        /* 更新履歴セクション */
+        .changelog-section {
+            background: white;
+            border-radius: 25px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: var(--text-primary);
+            margin-bottom: 30px;
+            text-align: center;
+            border-bottom: 3px solid var(--accent-color);
+            padding-bottom: 15px;
+        }
+
+        .version-entry {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            border-left: 6px solid var(--accent-color);
+            position: relative;
+        }
+
+        .version-entry.latest {
+            border-left-color: var(--success-green);
+            background: linear-gradient(135deg, #e8f5e8, #d4edda);
+        }
+
+        .version-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .version-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .version-date {
+            background: var(--accent-color);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .version-date.latest {
+            background: var(--success-green);
+        }
+
+        .version-badge {
+            background: var(--warning-orange);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: auto;
+        }
+
+        .version-badge.major {
+            background: var(--error-red);
+        }
+
+        .version-badge.minor {
+            background: var(--success-green);
+        }
+
+        .version-badge.patch {
+            background: var(--accent-color);
+        }
+
+        .changes-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .change-item {
+            background: white;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .change-icon {
+            font-size: 1.2rem;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .change-icon.new { color: var(--success-green); }
+        .change-icon.improve { color: var(--accent-color); }
+        .change-icon.fix { color: var(--warning-orange); }
+        .change-icon.remove { color: var(--error-red); }
+
+        .change-text {
+            flex: 1;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .change-category {
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--accent-color);
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        /* 統計セクション */
+        .stats-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .stat-detail {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* 戻るボタン */
+        .back-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 15px 40px;
+            text-decoration: none;
+            color: var(--text-primary);
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 2px solid var(--accent-color);
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .back-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(52, 152, 219, 0.4);
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            .header-title {
+                font-size: 2rem;
+            }
+            
+            .version-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .change-item {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .change-category {
+                margin-left: 0;
+                align-self: flex-start;
+            }
+        }
+
+        /* アニメーション */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .version-entry {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .version-entry:nth-child(1) { animation-delay: 0.1s; }
+        .version-entry:nth-child(2) { animation-delay: 0.2s; }
+        .version-entry:nth-child(3) { animation-delay: 0.3s; }
+        .version-entry:nth-child(4) { animation-delay: 0.4s; }
+        .version-entry:nth-child(5) { animation-delay: 0.5s; }
+
+        /* ローディングメッセージ */
+        .loading-message {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body class="theme-blue">
+    <div class="container">
+        <!-- ヘッダーセクション -->
+        <div class="header-section">
+            <div class="logo-container">
+                <div class="logo-placeholder" id="logoContainer">
+                    🔍 深堀くん
+                </div>
+            </div>
+            <h1 class="header-title">更新履歴</h1>
+            <p class="header-subtitle">深堀くんの進化の軌跡をご覧ください</p>
+            <div class="current-version" id="currentVersion">現在のバージョン: 読み込み中...</div>
+        </div>
+
+        <!-- 統計セクション -->
+        <div class="stats-section">
+            <h2 class="section-title">📊 開発統計</h2>
+            <div class="stats-grid" id="statsGrid">
+                <!-- 統計データはJavaScriptで動的生成 -->
+                <div class="loading-message">📊 統計データを読み込み中...</div>
+            </div>
+        </div>
+
+        <!-- 更新履歴セクション -->
+        <div class="changelog-section">
+            <h2 class="section-title">📝 更新履歴</h2>
+            <div id="changelogContainer">
+                <!-- 更新履歴データはJavaScriptで動的生成 -->
+                <div class="loading-message">📝 更新履歴を読み込み中...</div>
+            </div>
+        </div>
+
+        </div>
+
+        <!-- 戻るボタンセクション -->
+        <div class="back-section">
+            <a href="../深堀くん.html" class="back-button" onclick="return navigateBack()">
+                ← 深堀くんに戻る
+            </a>
+        </div>
+    </div>
+
+    <!-- 設定データファイル読み込み -->
+    <script src="../config/app_settings.js"></script>
+    <!-- 更新履歴データファイル読み込み -->
+    <script src="../config/changelog_data.js"></script>
+    <script src="../config/app_config_loader.js"></script>
+    
+    <script>
+        // データの初期化と表示
+        function initializeData() {
+            try {
+                // JavaScriptファイルからデータを取得
+                let data = [];
+                let config = {};
+                
+                if (window.CHANGELOG_DATA) {
+                    data = window.CHANGELOG_DATA;
+                    console.log('✅ 更新履歴データ読み込み完了:', data.length, '件');
+                } else {
+                    throw new Error('更新履歴データが見つかりません');
+                }
+                
+                if (window.FUKABORI_CONFIG) {
+                    config = window.FUKABORI_CONFIG;
+                    console.log('✅ 設定データ読み込み完了:', config.app.version);
+                } else {
+                    console.warn('⚠️ 設定データが見つかりません（フォールバック使用）');
+                }
+                
+                // 統計情報を生成
+                generateStats(data, config);
+                
+                // 更新履歴を生成  
+                generateChangelog(data);
+                
+                // 現在のバージョンを更新
+                updateCurrentVersion(data[0].version);
+                
+            } catch (error) {
+                console.error('❌ データ初期化エラー:', error);
+                showErrorMessage();
+            }
+        }
+
+        // 統計情報生成
+        function generateStats(data, config = {}) {
+            const statsGrid = document.getElementById('statsGrid');
+            const totalReleases = data.length;
+            const totalCodeLines = config.stats?.totalLines || 5119;
+            const developmentDays = calculateDevelopmentDays(data);
+            const totalFeatures = config.stats?.totalFeatures || 15;
+            
+            statsGrid.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-number">${totalReleases}</div>
+                    <div class="stat-label">リリース回数</div>
+                    <div class="stat-detail">継続的な改善</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${totalCodeLines.toLocaleString()}</div>
+                    <div class="stat-label">総コード行数</div>
+                    <div class="stat-detail">HTML/CSS/JavaScript</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${totalFeatures}+</div>
+                    <div class="stat-label">主要機能</div>
+                    <div class="stat-detail">音声認識・AI対話・知見抽出</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">6</div>
+                    <div class="stat-label">音声キャラクター</div>
+                    <div class="stat-detail">TTS音声合成</div>
+                </div>
+            `;
+        }
+
+        // 開発日数計算
+        function calculateDevelopmentDays(data) {
+            if (data.length < 2) return 1;
+            
+            const firstDate = new Date(data[data.length - 1].date);
+            const lastDate = new Date(data[0].date);
+            const diffTime = Math.abs(lastDate - firstDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            
+            return diffDays;
+        }
+
+        // 更新履歴生成
+        function generateChangelog(data) {
+            const container = document.getElementById('changelogContainer');
+            let html = '';
+            
+            data.forEach((entry, index) => {
+                const isLatest = index === 0;
+                const changes = Array.isArray(entry.changes) ? entry.changes : entry.changes.split('|');
+                const categories = Array.isArray(entry.categories) ? entry.categories : 
+                                  Array.isArray(entry.category) ? entry.category : 
+                                  entry.category ? [entry.category] : 
+                                  entry.categories ? [entry.categories] : ['その他'];
+                
+                html += `
+                    <div class="version-entry ${isLatest ? 'latest' : ''}">
+                        <div class="version-header">
+                            <div class="version-number">${entry.version}</div>
+                            <div class="version-date ${isLatest ? 'latest' : ''}">${formatDate(entry.date)}</div>
+                            <div class="version-badge ${entry.type.toLowerCase()}">${entry.type.toUpperCase()}</div>
+                        </div>
+                        <ul class="changes-list">
+                `;
+                
+                changes.forEach((change, changeIndex) => {
+                    const category = categories[changeIndex] || categories[0] || 'その他';
+                    const icon = getChangeIcon(category);
+                    
+                    html += `
+                        <li class="change-item">
+                            <span class="change-icon ${getChangeIconClass(category)}">${icon}</span>
+                            <span class="change-text">${change.trim()}</span>
+                            <span class="change-category">${category}</span>
+                        </li>
+                    `;
+                });
+                
+                html += `
+                        </ul>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 日付フォーマット
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}.${month}.${day}`;
+        }
+
+        // 変更アイコン取得
+        function getChangeIcon(category) {
+            const icons = {
+                '新機能': '✨',
+                'UI改善': '🔧',
+                'デザイン': '🎨',
+                'UX改善': '🔄',
+                'AI機能': '🧠',
+                '音声機能': '🎵',
+                'バグ修正': '🐛',
+                'セキュリティ': '🔐',
+                'コア機能': '📝',
+                '基盤機能': '🎤'
+            };
+            return icons[category] || '🔧';
+        }
+
+        // 変更アイコンクラス取得
+        function getChangeIconClass(category) {
+            const classes = {
+                '新機能': 'new',
+                'UI改善': 'improve',
+                'デザイン': 'improve',
+                'UX改善': 'improve',
+                'AI機能': 'new',
+                '音声機能': 'improve',
+                'バグ修正': 'fix',
+                'セキュリティ': 'new',
+                'コア機能': 'new',
+                '基盤機能': 'new'
+            };
+            return classes[category] || 'improve';
+        }
+
+        // 現在のバージョン更新
+        function updateCurrentVersion(version) {
+            const element = document.getElementById('currentVersion');
+            element.textContent = `現在のバージョン: ${version}`;
+        }
+
+        // エラーメッセージ表示
+        function showErrorMessage() {
+            document.getElementById('statsGrid').innerHTML = 
+                '<div class="loading-message">❌ 統計データの読み込みに失敗しました</div>';
+            document.getElementById('changelogContainer').innerHTML = 
+                '<div class="loading-message">❌ 更新履歴の読み込みに失敗しました</div>';
+            document.getElementById('currentVersion').textContent = 
+                '現在のバージョン: 読み込みエラー';
+        }
+
+        // テーマ読み込み機能（深堀くんメインアプリと同期）
+        function loadSavedTheme() {
+            const savedTheme = localStorage.getItem('fukabori_theme') || 'blue';
+            document.body.className = `theme-${savedTheme}`;
+            console.log(`✅ 保存されたテーマ「${savedTheme}」を読み込みました`);
+        }
+
+        // ロゴ画像の自動読み込み
+        document.addEventListener('DOMContentLoaded', function() {
+            // テーマを最初に読み込み
+            loadSavedTheme();
+            
+            const logoContainer = document.getElementById('logoContainer');
+            const logoImg = new Image();
+            logoImg.onload = function() {
+                logoContainer.innerHTML = '';
+                logoImg.className = 'logo-image';
+                logoImg.alt = '深堀くんロゴ';
+                logoContainer.appendChild(logoImg);
+                console.log('✅ 更新履歴用ロゴ画像を読み込みました');
+            };
+            logoImg.src = '../assets/fukabori_logo_wb.png';
+
+            // データ初期化実行
+            initializeData();
+
+            console.log('📝 深堀くん更新履歴ページが読み込まれました');
+        });
+
+        // スムーススクロール効果
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // バージョンエントリのアニメーション
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // アニメーション対象の要素を監視
+        document.querySelectorAll('.version-entry, .stat-item').forEach((el, index) => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+            observer.observe(el);
+        });
+
+        console.log('🚀 深堀くん更新履歴 v1.0 ロード完了');
+        console.log('📖 開発の軌跡をご覧いただけます');
+
+        // 戻るボタン機能
+        function navigateBack() {
+            try {
+                // 現在のURLを確認
+                console.log('🔙 戻るボタンクリック - 現在のURL:', window.location.href);
+                
+                // パスを確認
+                const backPath = '../深堀くん.html';
+                console.log('🔙 戻り先パス:', backPath);
+                
+                // ナビゲーション実行
+                window.location.href = backPath;
+                return false; // デフォルトのリンク動作も実行
+            } catch (error) {
+                console.error('❌ 戻るボタンエラー:', error);
+                // エラーの場合はデフォルトのリンク動作を実行
+                return true;
+            }
+        }
+    </script>
+
+        <!-- 関連ページ -->
+        <div class="related-pages">
+            <h2>
+                <span>🔗</span>
+                関連ページ
+            </h2>
+            <div class="related-links">
+                <a href="../深堀くん.html" class="related-link">🚀 深堀くんを使う</a>
+                <a href="overview.html" class="related-link">📖 概要</a>
+                <a href="screenshots.html" class="related-link">📱 画面説明</a>
+                <a href="technical.html" class="related-link">⚙️ 技術仕様</a>
+                <a href="faq.html" class="related-link">❓ よくある質問</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- バックボタン -->
+    <a href="../深堀くん.html" class="back-button" title="深堀くんに戻る">
+        ←
+    </a>
+</body>
+</html>

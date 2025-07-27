@@ -1,0 +1,58 @@
+{
+  "package_name": "深堀くんv0.7.6-SharePoint配布版_20250726_174047",
+  "created_at": "2025-07-26T17:40:47.237111",
+  "zip_path": "/Users/tokuhisamasaki/AIdev/深堀アプリ/深堀くんv0.7.6-SharePoint配布版_20250726_174047.zip",
+  "statistics": {
+    "copied_files": 75,
+    "excluded_files": 7,
+    "total_size": 4158672,
+    "excluded_size": 1477939
+  },
+  "required_files": {
+    "main": [
+      "深堀くん.html"
+    ],
+    "pwa": [
+      "manifest.json",
+      "sw.js",
+      "service-worker.js",
+      "favicon.ico"
+    ],
+    "folders": [
+      "app",
+      "config",
+      "assets",
+      "pages"
+    ]
+  },
+  "excluded_items": {
+    "folders": [
+      "tests",
+      "backups",
+      "tools",
+      "docs",
+      "reports",
+      "画面キャプチャ",
+      "backup_embedded_api_20250724_120640",
+      "backup_embedded_api_20250724_120648"
+    ],
+    "files": [
+      "test-delete-fix.js",
+      "quick-test.js",
+      "voice-delete-integration-test.js",
+      "version-verification-test.js",
+      "disable_dev_mode.html",
+      "package.json",
+      "package-lock.json",
+      "深堀くん_埋め込みAPI実装仕様書.md",
+      "sharepoint-deployment-package-list.md"
+    ],
+    "patterns": [
+      "*.backup",
+      "*.bak",
+      "*.broken",
+      "*.cleanup_backup_*",
+      "*_backup.html"
+    ]
+  }
+}

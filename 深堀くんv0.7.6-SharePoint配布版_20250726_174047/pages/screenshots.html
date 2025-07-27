@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深堀くん - 画面で見る操作ガイド</title>
+    <style>
+        /* 深堀くんテーマシステム対応（メインアプリと完全同期） */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #667eea;
+        }
+
+        .theme-white {
+            --primary-gradient: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            --glass-bg: rgba(255, 255, 255, 0.4);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #007bff;
+        }
+
+        .theme-blue {
+            --primary-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --text-primary: #333;
+            --text-secondary: #666;
+            --accent-color: #667eea;
+        }
+
+        .theme-dark {
+            --primary-gradient: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #ecf0f1;
+            --text-secondary: #bdc3c7;
+            --accent-color: #3498db;
+        }
+
+        .theme-colorful {
+            --primary-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            --glass-bg: rgba(255, 255, 255, 0.3);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --text-primary: #2c3e50;
+            --text-secondary: #34495e;
+            --accent-color: #e74c3c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* ヘッダーセクション */
+        .header-section {
+            text-align: center;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-container {
+            margin-bottom: 20px;
+        }
+
+        .logo-image {
+            width: 400px !important;
+            height: 160px !important;
+            max-width: 400px !important;
+            max-height: 160px !important;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .logo-placeholder {
+            width: 200px;
+            height: 80px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .header-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-subtitle {
+            font-size: 1.4rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        /* ナビゲーションボタン */
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .nav-btn {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 15px 30px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .nav-btn.active {
+            background: var(--accent-color);
+            color: white;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* セクション共通スタイル */
+        .section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 30px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .section-icon {
+            font-size: 2rem;
+            color: var(--accent-color);
+        }
+
+        .section-description {
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            padding: 0 20px;
+        }
+
+        /* 画面キャプチャグリッド */
+        .screenshots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+        }
+
+        .screenshot-item {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+        }
+
+        .screenshot-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .screenshot-image {
+            width: 100%;
+            height: auto;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            max-height: 300px;
+            object-fit: cover;
+        }
+
+        .screenshot-image:hover {
+            transform: scale(1.02);
+        }
+
+        .screenshot-caption {
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .screenshot-description {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* 画像拡大モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 15px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-image {
+            width: 100%;
+            height: auto;
+            border-radius: 15px;
+        }
+
+        .close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            color: white;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .close:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        /* 関連ページリンク */
+        .related-pages {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            margin-top: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .related-pages h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .related-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .related-link {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 15px 30px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .related-link:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            .header-title {
+                font-size: 2rem;
+            }
+            
+            .section-title {
+                font-size: 1.8rem;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .screenshots-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .related-links {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        /* アニメーション */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .screenshot-item {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .screenshot-item:nth-child(1) { animation-delay: 0.1s; }
+        .screenshot-item:nth-child(2) { animation-delay: 0.2s; }
+        .screenshot-item:nth-child(3) { animation-delay: 0.3s; }
+        .screenshot-item:nth-child(4) { animation-delay: 0.4s; }
+        .screenshot-item:nth-child(5) { animation-delay: 0.5s; }
+        .screenshot-item:nth-child(6) { animation-delay: 0.6s; }
+    </style>
+</head>
+<body class="theme-blue">
+    <div class="container">
+        <!-- ヘッダーセクション -->
+        <div class="header-section">
+            <div class="logo-container">
+                <div class="logo-placeholder" id="logoContainer">
+                    🔍 深堀くん
+                </div>
+            </div>
+            <h1 class="header-title">📱 画面で見る操作ガイド</h1>
+            <p class="header-subtitle">
+                深堀くんの使い方を実際の画面で分かりやすくご紹介します。<br>
+                各画面をクリックすると拡大表示されます。
+            </p>
+        </div>
+
+        <!-- 1. 初回セットアップ -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-icon">🚀</span>
+                初回セットアップ
+            </h2>
+            <p class="section-description">
+                深堀くんを初めて使用する際の設定手順です。APIキーの設定からパスワード設定まで、簡単3ステップで完了します。
+            </p>
+            <div class="screenshots-grid">
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/1_1初回ログイン_STEP0_APIKEY設定.jpg" 
+                         alt="初回ログイン STEP0 APIKEY設定" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">STEP0: APIキー設定</div>
+                    <div class="screenshot-description">OpenAI APIキーを入力して認証テストを実行</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/1_2初回ログイン_API入力・テスト.jpg" 
+                         alt="初回ログイン API入力・テスト" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">API入力・テスト</div>
+                    <div class="screenshot-description">APIキーの有効性を自動チェック</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/1_3初回ログイン_パスワード設定.jpg" 
+                         alt="初回ログイン パスワード設定" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">パスワード設定</div>
+                    <div class="screenshot-description">データ暗号化用パスワードを設定</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. セッション開始・ファイル添付 -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-icon">📝</span>
+                セッション開始・ファイル添付
+            </h2>
+            <p class="section-description">
+                2回目以降のログインから、セッション開始までの流れです。ファイル添付による自動テーマ抽出機能も活用できます。
+            </p>
+            <div class="screenshots-grid">
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/2_1STEP0終了、2回目以降のログイン画面.jpg" 
+                         alt="2回目以降のログイン画面" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">2回目以降のログイン</div>
+                    <div class="screenshot-description">設定済みの場合はパスワード入力のみ</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/2_2パスワード入力.jpg" 
+                         alt="パスワード入力" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">パスワード入力</div>
+                    <div class="screenshot-description">暗号化データの復号化</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/2_3ファイル添付.jpg" 
+                         alt="ファイル添付" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">ファイル添付</div>
+                    <div class="screenshot-description">PDF・Word・Excel等の文書をアップロード</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/2_31添付ファイルからテーマを抽出.jpg" 
+                         alt="添付ファイルからテーマを抽出" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">テーマ抽出処理</div>
+                    <div class="screenshot-description">AIが文書内容から話題を自動抽出</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/2_32選択画面.jpg" 
+                         alt="テーマ選択画面" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">テーマ選択</div>
+                    <div class="screenshot-description">抽出されたテーマから話したいものを選択</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/2_33決定画面.jpg" 
+                         alt="テーマ決定画面" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">テーマ決定</div>
+                    <div class="screenshot-description">選択したテーマの詳細確認</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/2_34テーマ学習中表示.jpg" 
+                         alt="テーマ学習中表示" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">テーマ学習中</div>
+                    <div class="screenshot-description">AIがテーマ内容を分析・理解</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/2_4STEP1_2完了_セッション開始.jpg" 
+                         alt="セッション開始" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">セッション開始</div>
+                    <div class="screenshot-description">準備完了・深堀り会話開始</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 設定・テーマ -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-icon">⚙️</span>
+                設定・テーマ
+            </h2>
+            <p class="section-description">
+                アプリの各種設定とテーマ変更機能です。5つのテーマから好みに合わせて選択できます。
+            </p>
+            <div class="screenshots-grid">
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/3_1その他設定画面2.jpg" 
+                         alt="その他設定画面" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">その他設定画面</div>
+                    <div class="screenshot-description">音声・テーマ・システム設定を一括管理</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/3_2その他設定画面_テーマ変更.jpg" 
+                         alt="テーマ変更画面" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">テーマ変更</div>
+                    <div class="screenshot-description">5つのテーマから好みを選択</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/3_31ライトテーマ.jpg" 
+                         alt="ライトテーマ" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">ライトテーマ</div>
+                    <div class="screenshot-description">明るく清潔感のあるホワイトベース</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/3_32ダークテーマ.jpg" 
+                         alt="ダークテーマ" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">ダークテーマ</div>
+                    <div class="screenshot-description">目に優しい暗色系デザイン</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/3_33カラフルテーマ.jpg" 
+                         alt="カラフルテーマ" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">カラフルテーマ</div>
+                    <div class="screenshot-description">鮮やかなグラデーションで楽しく</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/その他設定画面.jpg" 
+                         alt="その他設定画面詳細" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">設定画面詳細</div>
+                    <div class="screenshot-description">詳細な機能設定・カスタマイズ</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. メイン画面・会話 -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-icon">💬</span>
+                メイン画面・会話
+            </h2>
+            <p class="section-description">
+                深堀くんのメイン機能である会話画面です。音声認識による自然な対話と、自動知見抽出機能をご覧ください。
+            </p>
+            <div class="screenshots-grid">
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/4_1メイン画面立ち上がり_マイク許可.jpg" 
+                         alt="メイン画面マイク許可" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">マイク許可</div>
+                    <div class="screenshot-description">音声認識機能のためのマイクアクセス許可</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/4_2メイン画面ウォームアップ_あいさつ.jpg" 
+                         alt="ウォームアップ・あいさつ" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">ウォームアップ</div>
+                    <div class="screenshot-description">AIキャラクターによる親しみやすい挨拶</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/4_3知見抽出_自動保存画面.jpg" 
+                         alt="知見抽出・自動保存" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">知見自動保存</div>
+                    <div class="screenshot-description">品質評価70点以上で自動記録</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/4_4知見抽出_ユーザー判断画面.jpg" 
+                         alt="知見抽出・ユーザー判断" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">知見確認モード</div>
+                    <div class="screenshot-description">曖昧な内容は音声で相談・確認</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. セッション終了 -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-icon">🏁</span>
+                セッション終了
+            </h2>
+            <p class="section-description">
+                会話セッションの終了プロセスです。まとめの生成と知見データのダウンロードが可能です。
+            </p>
+            <div class="screenshots-grid">
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/5_1セッション終了指示_確認.jpg" 
+                         alt="セッション終了指示・確認" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">終了指示・確認</div>
+                    <div class="screenshot-description">セッション終了の意思確認</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/5_2セッション終了まとめ.jpg" 
+                         alt="セッション終了まとめ" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">セッション総括</div>
+                    <div class="screenshot-description">会話内容の要約と抽出知見の一覧表示</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. データ管理・可視化 -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-icon">📊</span>
+                データ管理・可視化
+            </h2>
+            <p class="section-description">
+                知見データのダウンロードと高度インフォグラフィック機能です。Knowledge DNAによる関係性分析も活用できます。
+            </p>
+            <div class="screenshots-grid">
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/6_1知見DL_DLテキスト抜粋.jpg" 
+                         alt="知見ダウンロード・テキスト抜粋" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">知見データDL</div>
+                    <div class="screenshot-description">構造化された知見データをMarkdown形式で保存</div>
+                </div>
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/6_2全知見可視化_生成画面.jpg" 
+                         alt="全知見可視化・生成画面" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">高度可視化機能</div>
+                    <div class="screenshot-description">Vis.js・Chart.jsによる知見関係性ネットワーク</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. その他機能 -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-icon">🔄</span>
+                その他機能
+            </h2>
+            <p class="section-description">
+                ログアウト機能など、その他の便利な機能をご紹介します。
+            </p>
+            <div class="screenshots-grid">
+                <div class="screenshot-item">
+                    <img src="../画面キャプチャ/7_ログイン画面に戻る.jpg" 
+                         alt="ログイン画面に戻る" 
+                         class="screenshot-image"
+                         onclick="openModal(this)">
+                    <div class="screenshot-caption">ログアウト</div>
+                    <div class="screenshot-description">安全なログアウトでログイン画面に戻る</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 関連ページ -->
+        <div class="related-pages">
+            <h2>
+                <span>🔗</span>
+                関連ページ
+            </h2>
+            <div class="related-links">
+                <a href="../深堀くん.html" class="related-link">🚀 深堀くんを使う</a>
+                <a href="overview.html" class="related-link">📖 概要</a>
+                <a href="technical.html" class="related-link">⚙️ 技術仕様</a>
+                <a href="changelog.html" class="related-link">📝 更新履歴</a>
+                <a href="faq.html" class="related-link">❓ よくある質問</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- バックボタン -->
+    <a href="../深堀くん.html" class="back-button" title="深堀くんに戻る">
+        ←
+    </a>
+
+    <!-- 画像拡大モーダル -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <img id="modalImage" class="modal-image" alt="拡大画像">
+        </div>
+    </div>
+
+    <!-- 設定データファイル読み込み -->
+    <script src="../config/app_settings.js"></script>
+    <script src="../config/app_config_loader.js"></script>
+    <script>
+        // テーマ読み込み機能（深堀くんメインアプリと同期）
+        function loadSavedTheme() {
+            const savedTheme = localStorage.getItem('fukabori_theme') || 'blue';
+            document.body.className = `theme-${savedTheme}`;
+            console.log(`✅ 保存されたテーマ「${savedTheme}」を読み込みました`);
+        }
+
+        // 画像拡大モーダル機能
+        function openModal(img) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.style.display = 'block';
+            modalImg.src = img.src;
+            modalImg.alt = img.alt;
+            
+            // ESCキーでモーダルを閉じる
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+        }
+
+        // モーダル背景クリックで閉じる
+        window.onclick = function(event) {
+            const modal = document.getElementById('imageModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // ロゴ画像の自動読み込み
+        document.addEventListener('DOMContentLoaded', function() {
+            // テーマを最初に読み込み
+            loadSavedTheme();
+            
+            // ロゴ画像の読み込み試行
+            const logoContainer = document.getElementById('logoContainer');
+            const logoImg = new Image();
+            logoImg.onload = function() {
+                logoContainer.innerHTML = '';
+                logoImg.className = 'logo-image';
+                logoImg.alt = '深堀くんロゴ';
+                logoContainer.appendChild(logoImg);
+                console.log('✅ 画面説明ページ用ロゴ画像を読み込みました');
+            };
+            logoImg.src = '../assets/fukabori_logo_wb.png';
+
+            // 画像が見つからない場合は、文字表示のままにする（フォールバック）
+            console.log('画面説明ページを初期化しました');
+        });
+
+        // スムーススクロール効果
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // セクションのフェードインアニメーション
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // アニメーション対象の要素を監視
+        document.querySelectorAll('.screenshot-item').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

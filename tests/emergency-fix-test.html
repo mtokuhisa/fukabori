@@ -3,186 +3,498 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>深堀くんv2.0 緊急修復テスト</title>
+    <title>緊急修正動作確認テスト - 深堀くんv2.0</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 20px;
-            background: #f5f5f5;
-            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
         }
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .header {
-            text-align: center;
-            color: #2196F3;
-            margin-bottom: 30px;
-        }
-        .test-section {
+        .test-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 25px;
             margin: 20px 0;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
+        .test-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-pass { background: #4CAF50; box-shadow: 0 0 10px #4CAF50; }
+        .status-fail { background: #f44336; box-shadow: 0 0 10px #f44336; }
+        .status-pending { background: #ff9800; box-shadow: 0 0 10px #ff9800; }
+        .test-step {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .test-step.fail { border-left-color: #f44336; }
+        .test-step.pending { border-left-color: #ff9800; }
         .button {
-            background: #2196F3;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
             color: white;
             border: none;
             padding: 12px 24px;
-            border-radius: 5px;
+            border-radius: 25px;
             cursor: pointer;
-            font-size: 16px;
             margin: 10px 5px;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            transition: all 0.3s ease;
         }
         .button:hover {
-            background: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+        .button.danger {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+        .button.danger:hover {
+            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+        }
+        .code-output {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         .success { color: #4CAF50; }
         .error { color: #f44336; }
+        .warning { color: #ff9800; }
         .info { color: #2196F3; }
-        .warning { color: #FF9800; }
-        #testResults {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 5px;
-            white-space: pre-wrap;
-            font-family: 'Consolas', monospace;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        .status-pass { background: #4CAF50; }
-        .status-fail { background: #f44336; }
-        .status-unknown { background: #9E9E9E; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🚨 深堀くんv2.0 緊急修復テスト</h1>
-            <p>forceStopAllActivity関数除去後の統合テスト</p>
-        </div>
+        <h1>🚨 緊急修正動作確認テスト</h1>
+        <p>編集開始不可問題の修正を検証します。</p>
 
-        <div class="test-section">
-            <h3>📋 テスト概要</h3>
-            <p>マッチポンプ設計の<code>forceStopAllActivity</code>関数を完全除去し、正しいシステムに統一した修復の検証を行います。</p>
-            
-            <h4>修正内容:</h4>
-            <ul>
-                <li>✅ forceStopAllActivity関数の完全削除</li>
-                <li>✅ SessionEndManager.stopAllActivitiesを安全実装に修正</li>
-                <li>✅ toggleMicrophone統一状態管理システム優先に修正</li>
-                <li>✅ HTML一時停止ボタンの修正</li>
-                <li>✅ 削除機能の「どうぞ」待ちシステム確認</li>
-            </ul>
-        </div>
-
-        <div class="test-section">
-            <h3>🧪 テスト実行</h3>
-            <button class="button" onclick="runEmergencyTest()">🚀 緊急修復テスト実行</button>
-            <button class="button" onclick="openMainApp()">🔗 メインアプリ起動</button>
-            <button class="button" onclick="clearResults()">🧹 結果クリア</button>
-        </div>
-
-        <div class="test-section">
-            <h3>📊 テスト結果</h3>
-            <div id="testStatus">
-                <p class="info">テスト待機中... 「緊急修復テスト実行」ボタンをクリックしてください。</p>
+        <!-- 問題概要 -->
+        <div class="test-panel">
+            <div class="test-title">
+                🐛 修正対象問題
             </div>
-            <pre id="testResults"></pre>
+            <div class="test-step">
+                <strong>エラー:</strong> <code>TypeError: window.unifiedStateManager?.getCompleteState is not a function</code><br>
+                <strong>原因:</strong> UnifiedStateManagerの未実装メソッドと命名不整合<br>
+                <strong>影響:</strong> 文字起こし編集開始不可
+            </div>
         </div>
 
-        <div class="test-section">
-            <h3>🔧 デバッグ情報</h3>
-            <div id="debugInfo">
-                <p><strong>テスト環境:</strong></p>
-                <ul>
-                    <li>ユーザーエージェント: <span id="userAgent"></span></li>
-                    <li>現在時刻: <span id="currentTime"></span></li>
-                    <li>ローカルサーバー: http://localhost:8000</li>
-                    <li>メインアプリURL: <a href="http://localhost:8000/深堀くん.html" target="_blank">深堀くん.html</a></li>
-                </ul>
+        <!-- システム依存関係チェック -->
+        <div class="test-panel">
+            <div class="test-title">
+                <span class="status-indicator" id="dependency-status"></span>
+                🔍 依存関係チェック
             </div>
+            <div id="dependency-results"></div>
+            <button class="button" onclick="checkDependencies()">依存関係確認</button>
+        </div>
+
+        <!-- UnifiedStateManagerテスト -->
+        <div class="test-panel">
+            <div class="test-title">
+                <span class="status-indicator" id="unified-status"></span>
+                🏗️ UnifiedStateManager動作テスト
+            </div>
+            <div id="unified-results"></div>
+            <button class="button" onclick="testUnifiedStateManager()">メソッド存在確認</button>
+            <button class="button" onclick="testStateBackupRestore()">バックアップ・復元テスト</button>
+        </div>
+
+        <!-- EmergencySystemManagerテスト -->
+        <div class="test-panel">
+            <div class="test-title">
+                <span class="status-indicator" id="emergency-status"></span>
+                🆘 EmergencySystemManager動作テスト
+            </div>
+            <div id="emergency-results"></div>
+            <button class="button" onclick="testEmergencyBackup()">バックアップ作成テスト</button>
+            <button class="button" onclick="testEmergencyRollback()">ロールバックテスト</button>
+        </div>
+
+        <!-- 編集開始シミュレーションテスト -->
+        <div class="test-panel">
+            <div class="test-title">
+                <span class="status-indicator" id="edit-status"></span>
+                ✏️ 編集開始シミュレーション
+            </div>
+            <div id="edit-results"></div>
+            <button class="button" onclick="simulateEditStart()">編集開始シミュレーション</button>
+            <button class="button danger" onclick="clearAllTests()">テスト結果クリア</button>
+        </div>
+
+        <!-- 総合結果 -->
+        <div class="test-panel">
+            <div class="test-title">
+                📊 総合テスト結果
+            </div>
+            <div id="overall-results"></div>
+            <button class="button" onclick="runAllTests()">全テスト実行</button>
         </div>
     </div>
 
-    <!-- メインアプリの依存関係を読み込み（テスト用） -->
-    <script src="app/script.js"></script>
-    <script src="app/session-manager.js"></script>
-    <script src="app/voice-processing-manager.js"></script>
-    <script src="app/unified-state-manager.js"></script>
-    <script src="emergency-fix-test.js"></script>
-
     <script>
-        // ページ初期化
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('userAgent').textContent = navigator.userAgent;
-            document.getElementById('currentTime').textContent = new Date().toLocaleString('ja-JP');
-            
-            // コンソール出力をキャッチしてページに表示
-            const originalLog = console.log;
-            const resultsDiv = document.getElementById('testResults');
-            
-            console.log = function(...args) {
-                originalLog.apply(console, args);
-                if (resultsDiv) {
-                    resultsDiv.textContent += args.join(' ') + '\n';
-                }
-            };
-        });
+        // =================================================================================
+        // 緊急修正動作確認テストシステム
+        // =================================================================================
 
-        async function runEmergencyTest() {
-            const statusDiv = document.getElementById('testStatus');
-            const resultsDiv = document.getElementById('testResults');
-            
-            statusDiv.innerHTML = '<p class="info">🔄 緊急修復テスト実行中...</p>';
-            resultsDiv.textContent = '';
-            
+        let testResults = {
+            dependencies: null,
+            unified: null,
+            emergency: null,
+            edit: null
+        };
+
+        /**
+         * ログ出力ヘルパー
+         */
+        function createLogEntry(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const typeClass = type === 'success' ? 'success' : 
+                             type === 'error' ? 'error' : 
+                             type === 'warning' ? 'warning' : 'info';
+            return `<div class="${typeClass}">[${timestamp}] ${message}</div>`;
+        }
+
+        /**
+         * 状態インジケーター更新
+         */
+        function updateStatusIndicator(elementId, status) {
+            const indicator = document.getElementById(elementId);
+            indicator.className = `status-indicator status-${status}`;
+        }
+
+        /**
+         * 依存関係チェック
+         */
+        function checkDependencies() {
+            const results = document.getElementById('dependency-results');
+            let output = '';
+            let allPassed = true;
+
+            const dependencies = [
+                { name: 'window.AppState', object: window.AppState },
+                { name: 'window.UnifiedStateManager', object: window.UnifiedStateManager },
+                { name: 'window.TranscriptProtectionManager', object: window.TranscriptProtectionManager },
+                { name: 'window.StateUpdateController', object: window.StateUpdateController },
+                { name: 'window.EmergencySystemManager', object: window.EmergencySystemManager },
+                { name: 'window.transcriptEditManager', object: window.transcriptEditManager }
+            ];
+
+            dependencies.forEach(dep => {
+                const exists = !!dep.object;
+                output += createLogEntry(
+                    `${dep.name}: ${exists ? '✅ 存在' : '❌ 未存在'}`,
+                    exists ? 'success' : 'error'
+                );
+                if (!exists) allPassed = false;
+            });
+
+            testResults.dependencies = allPassed;
+            updateStatusIndicator('dependency-status', allPassed ? 'pass' : 'fail');
+            results.innerHTML = `<div class="code-output">${output}</div>`;
+        }
+
+        /**
+         * UnifiedStateManager動作テスト
+         */
+        function testUnifiedStateManager() {
+            const results = document.getElementById('unified-results');
+            let output = '';
+            let allPassed = true;
+
             try {
-                const results = await emergencyFixTest();
-                
-                // ステータス更新
-                const successRate = `${results.passedTests}/${results.totalTests}`;
-                const statusClass = results.success ? 'success' : 'error';
-                const statusIcon = results.success ? '🟢' : '🔴';
-                
-                statusDiv.innerHTML = `
-                    <p class="${statusClass}">
-                        ${statusIcon} テスト完了: ${successRate} 成功 
-                        (実行時間: ${results.duration}ms)
-                    </p>
-                `;
-                
-                // 結果をローカルストレージに保存
-                localStorage.setItem('emergencyFixTestResults', JSON.stringify(results));
-                
+                // インスタンス存在確認
+                if (!window.UnifiedStateManager) {
+                    output += createLogEntry('❌ UnifiedStateManagerが存在しません', 'error');
+                    allPassed = false;
+                } else {
+                    output += createLogEntry('✅ UnifiedStateManagerインスタンス確認', 'success');
+
+                    // getCompleteStateメソッド確認
+                    if (typeof window.UnifiedStateManager.getCompleteState === 'function') {
+                        output += createLogEntry('✅ getCompleteState()メソッド存在確認', 'success');
+                        
+                        // 実際に呼び出しテスト
+                        try {
+                            const state = window.UnifiedStateManager.getCompleteState();
+                            output += createLogEntry('✅ getCompleteState()実行成功', 'success');
+                            output += createLogEntry(`状態取得結果: ${Object.keys(state).length}個のセクション`, 'info');
+                        } catch (error) {
+                            output += createLogEntry(`❌ getCompleteState()実行エラー: ${error.message}`, 'error');
+                            allPassed = false;
+                        }
+                    } else {
+                        output += createLogEntry('❌ getCompleteState()メソッドが存在しません', 'error');
+                        allPassed = false;
+                    }
+
+                    // restoreCompleteStateメソッド確認
+                    if (typeof window.UnifiedStateManager.restoreCompleteState === 'function') {
+                        output += createLogEntry('✅ restoreCompleteState()メソッド存在確認', 'success');
+                    } else {
+                        output += createLogEntry('❌ restoreCompleteState()メソッドが存在しません', 'error');
+                        allPassed = false;
+                    }
+                }
             } catch (error) {
-                statusDiv.innerHTML = `<p class="error">❌ テスト実行エラー: ${error.message}</p>`;
-                console.error('テスト実行エラー:', error);
+                output += createLogEntry(`❌ UnifiedStateManagerテストエラー: ${error.message}`, 'error');
+                allPassed = false;
             }
+
+            testResults.unified = allPassed;
+            updateStatusIndicator('unified-status', allPassed ? 'pass' : 'fail');
+            results.innerHTML = `<div class="code-output">${output}</div>`;
         }
 
-        function openMainApp() {
-            window.open('http://localhost:8000/深堀くん.html', '_blank');
+        /**
+         * 状態バックアップ・復元テスト
+         */
+        function testStateBackupRestore() {
+            const results = document.getElementById('unified-results');
+            let output = results.innerHTML || '';
+            let testPassed = true;
+
+            try {
+                if (window.UnifiedStateManager && 
+                    typeof window.UnifiedStateManager.getCompleteState === 'function' &&
+                    typeof window.UnifiedStateManager.restoreCompleteState === 'function') {
+                    
+                    // バックアップ作成
+                    const originalState = window.UnifiedStateManager.getCompleteState();
+                    output += createLogEntry('📄 元の状態をバックアップ', 'info');
+
+                    // 状態変更
+                    if (originalState.ui) {
+                        originalState.ui.testFlag = 'TEST_MODIFICATION';
+                    }
+
+                    // 復元テスト
+                    const restored = window.UnifiedStateManager.restoreCompleteState(originalState);
+                    if (restored) {
+                        output += createLogEntry('✅ 状態復元テスト成功', 'success');
+                    } else {
+                        output += createLogEntry('❌ 状態復元テスト失敗', 'error');
+                        testPassed = false;
+                    }
+                } else {
+                    output += createLogEntry('⚠️ 必要なメソッドが不足しているためスキップ', 'warning');
+                }
+            } catch (error) {
+                output += createLogEntry(`❌ バックアップ・復元テストエラー: ${error.message}`, 'error');
+                testPassed = false;
+            }
+
+            results.innerHTML = `<div class="code-output">${output}</div>`;
         }
 
-        function clearResults() {
-            document.getElementById('testResults').textContent = '';
-            document.getElementById('testStatus').innerHTML = '<p class="info">結果をクリアしました。</p>';
+        /**
+         * EmergencySystemManagerバックアップテスト
+         */
+        function testEmergencyBackup() {
+            const results = document.getElementById('emergency-results');
+            let output = '';
+            let testPassed = true;
+
+            try {
+                if (!window.EmergencySystemManager) {
+                    output += createLogEntry('❌ EmergencySystemManagerが存在しません', 'error');
+                    testPassed = false;
+                } else {
+                    // バックアップ作成テスト
+                    const backupId = window.EmergencySystemManager.createFullSystemBackup('test-fix');
+                    if (backupId) {
+                        output += createLogEntry(`✅ バックアップ作成成功 (ID: ${backupId})`, 'success');
+                        
+                        // バックアップ履歴確認
+                        const historyCount = window.EmergencySystemManager.backupHistory?.length || 0;
+                        output += createLogEntry(`📊 バックアップ履歴: ${historyCount}件`, 'info');
+                    } else {
+                        output += createLogEntry('❌ バックアップ作成失敗', 'error');
+                        testPassed = false;
+                    }
+                }
+            } catch (error) {
+                output += createLogEntry(`❌ EmergencySystemManagerテストエラー: ${error.message}`, 'error');
+                testPassed = false;
+            }
+
+            testResults.emergency = testPassed;
+            updateStatusIndicator('emergency-status', testPassed ? 'pass' : 'fail');
+            results.innerHTML = `<div class="code-output">${output}</div>`;
         }
+
+        /**
+         * 緊急ロールバックテスト
+         */
+        function testEmergencyRollback() {
+            const results = document.getElementById('emergency-results');
+            let output = results.innerHTML || '';
+            let testPassed = true;
+
+            try {
+                if (window.EmergencySystemManager && window.EmergencySystemManager.backupHistory.length > 0) {
+                    const rollbackSuccess = window.EmergencySystemManager.emergencyRollback();
+                    if (rollbackSuccess) {
+                        output += createLogEntry('✅ 緊急ロールバックテスト成功', 'success');
+                    } else {
+                        output += createLogEntry('❌ 緊急ロールバックテスト失敗', 'error');
+                        testPassed = false;
+                    }
+                } else {
+                    output += createLogEntry('⚠️ バックアップが存在しないためスキップ', 'warning');
+                }
+            } catch (error) {
+                output += createLogEntry(`❌ ロールバックテストエラー: ${error.message}`, 'error');
+                testPassed = false;
+            }
+
+            results.innerHTML = `<div class="code-output">${output}</div>`;
+        }
+
+        /**
+         * 編集開始シミュレーション
+         */
+        function simulateEditStart() {
+            const results = document.getElementById('edit-results');
+            let output = '';
+            let testPassed = true;
+
+            try {
+                output += createLogEntry('🎬 編集開始シミュレーション開始', 'info');
+
+                // 1. バックアップ作成のシミュレート
+                if (window.EmergencySystemManager) {
+                    try {
+                        const backupId = window.EmergencySystemManager.createFullSystemBackup('edit-start-test');
+                        output += createLogEntry('✅ Step 1: 編集開始前バックアップ作成成功', 'success');
+                    } catch (error) {
+                        output += createLogEntry(`❌ Step 1: バックアップ作成失敗 - ${error.message}`, 'error');
+                        testPassed = false;
+                    }
+                } else {
+                    output += createLogEntry('❌ Step 1: EmergencySystemManagerが利用できません', 'error');
+                    testPassed = false;
+                }
+
+                // 2. 編集マネージャーの確認
+                if (window.transcriptEditManager) {
+                    if (typeof window.transcriptEditManager.startEditing === 'function') {
+                        output += createLogEntry('✅ Step 2: TranscriptEditManager.startEditing()存在確認', 'success');
+                    } else {
+                        output += createLogEntry('❌ Step 2: startEditing()メソッドが存在しません', 'error');
+                        testPassed = false;
+                    }
+                } else {
+                    output += createLogEntry('⚠️ Step 2: TranscriptEditManagerが初期化されていません', 'warning');
+                }
+
+                // 3. 統合テスト
+                if (testPassed) {
+                    output += createLogEntry('🎉 編集開始シミュレーション: 全チェック通過', 'success');
+                    output += createLogEntry('✅ 修正が正常に動作しています', 'success');
+                } else {
+                    output += createLogEntry('⚠️ 編集開始シミュレーション: 一部問題があります', 'warning');
+                }
+
+            } catch (error) {
+                output += createLogEntry(`❌ シミュレーションエラー: ${error.message}`, 'error');
+                testPassed = false;
+            }
+
+            testResults.edit = testPassed;
+            updateStatusIndicator('edit-status', testPassed ? 'pass' : 'fail');
+            results.innerHTML = `<div class="code-output">${output}</div>`;
+        }
+
+        /**
+         * 全テスト実行
+         */
+        function runAllTests() {
+            console.log('🚀 全テスト実行開始');
+            checkDependencies();
+            setTimeout(() => testUnifiedStateManager(), 500);
+            setTimeout(() => testStateBackupRestore(), 1000);
+            setTimeout(() => testEmergencyBackup(), 1500);
+            setTimeout(() => testEmergencyRollback(), 2000);
+            setTimeout(() => simulateEditStart(), 2500);
+            setTimeout(() => updateOverallResults(), 3000);
+        }
+
+        /**
+         * 総合結果更新
+         */
+        function updateOverallResults() {
+            const results = document.getElementById('overall-results');
+            const passCount = Object.values(testResults).filter(r => r === true).length;
+            const totalCount = Object.values(testResults).filter(r => r !== null).length;
+            
+            let output = '';
+            output += createLogEntry(`📊 テスト完了: ${passCount}/${totalCount} 合格`, passCount === totalCount ? 'success' : 'warning');
+            
+            if (passCount === totalCount && totalCount > 0) {
+                output += createLogEntry('🎉 修正完了！編集機能が正常に動作します', 'success');
+            } else {
+                output += createLogEntry('⚠️ 一部のテストが失敗しています。詳細を確認してください。', 'warning');
+            }
+
+            results.innerHTML = `<div class="code-output">${output}</div>`;
+        }
+
+        /**
+         * テスト結果クリア
+         */
+        function clearAllTests() {
+            const resultIds = ['dependency-results', 'unified-results', 'emergency-results', 'edit-results', 'overall-results'];
+            resultIds.forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+            
+            testResults = { dependencies: null, unified: null, emergency: null, edit: null };
+            
+            const statusIds = ['dependency-status', 'unified-status', 'emergency-status', 'edit-status'];
+            statusIds.forEach(id => {
+                updateStatusIndicator(id, 'pending');
+            });
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 緊急修正動作確認テストシステム初期化完了');
+            
+            // 3秒後に自動テスト開始
+            setTimeout(() => {
+                console.log('⏰ 自動テスト開始');
+                runAllTests();
+            }, 3000);
+        });
     </script>
 </body>
 </html> 

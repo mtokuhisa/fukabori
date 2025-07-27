@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift+Enter編集終了機能テスト - 深堀くんv2.0</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .test-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .test-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .demo-transcript {
+            background: rgba(255, 255, 255, 0.4);
+            border: 4px solid #3498db;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            min-height: 60px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .demo-transcript:hover {
+            background: rgba(255, 255, 255, 0.6);
+        }
+        .instruction {
+            background: rgba(52, 152, 219, 0.2);
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .test-step {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .result-log {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 15px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+        .button.secondary {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+        .button.secondary:hover {
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+        }
+        .key-demo {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        .info { color: #2196F3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⌨️ Shift+Enter編集終了機能テスト</h1>
+        <p>日本語IME漢字変換問題を解決するShift+Enter機能の動作確認</p>
+
+        <!-- 機能説明 -->
+        <div class="test-panel">
+            <div class="test-title">
+                📖 実装した機能
+            </div>
+            <div class="test-step">
+                <strong>✅ 修正前:</strong> Enter単体 → 編集終了（IME漢字変換と競合）<br>
+                <strong>🔧 修正後:</strong> <span class="key-demo">Shift+Enter</span> → 編集終了、<span class="key-demo">Enter</span> → IME確定のみ（編集継続）
+            </div>
+            <div class="instruction">
+                <strong>追加機能:</strong><br>
+                • <span class="key-demo">Esc</span> キー → 編集キャンセル<br>
+                • 編集エリア外クリック → 編集確定<br>
+                • リアルタイムガイダンス表示
+            </div>
+        </div>
+
+        <!-- テスト1: 基本操作 -->
+        <div class="test-panel">
+            <div class="test-title">
+                🧪 テスト1: 基本操作確認
+            </div>
+            <div class="instruction">
+                <strong>操作手順:</strong><br>
+                1. 下のテキストをクリックして編集開始<br>
+                2. 文字を入力し、日本語漢字変換でEnterキーを押す<br>
+                3. 編集が継続されることを確認<br>
+                4. <span class="key-demo">Shift+Enter</span> で編集終了
+            </div>
+            <div class="demo-transcript" id="test1-transcript" onclick="startTest1()">
+                これはテスト用のサンプル文字起こしです。クリックして編集を開始してください。
+            </div>
+            <div class="result-log" id="test1-log"></div>
+            <button class="button secondary" onclick="resetTest1()">テスト1リセット</button>
+        </div>
+
+        <!-- テスト2: IME動作確認 -->
+        <div class="test-panel">
+            <div class="test-title">
+                🇯🇵 テスト2: 日本語IME動作確認
+            </div>
+            <div class="instruction">
+                <strong>IMEテスト手順:</strong><br>
+                1. 下のテキストをクリックして編集開始<br>
+                2. 「かんじ」と入力→<span class="key-demo">Enter</span>で「漢字」に変換<br>
+                3. 編集が継続されることを確認<br>
+                4. さらに文字を追加<br>
+                5. <span class="key-demo">Shift+Enter</span> で編集終了
+            </div>
+            <div class="demo-transcript" id="test2-transcript" onclick="startTest2()">
+                IMEテスト: 
+            </div>
+            <div class="result-log" id="test2-log"></div>
+            <button class="button secondary" onclick="resetTest2()">テスト2リセット</button>
+        </div>
+
+        <!-- テスト3: 編集エリア外クリック -->
+        <div class="test-panel">
+            <div class="test-title">
+                🖱️ テスト3: 編集エリア外クリック確認
+            </div>
+            <div class="instruction">
+                <strong>クリック外確定テスト:</strong><br>
+                1. 下のテキストをクリックして編集開始<br>
+                2. 文字を編集<br>
+                3. このパネルの他の場所をクリック<br>
+                4. 編集が自動確定されることを確認
+            </div>
+            <div class="demo-transcript" id="test3-transcript" onclick="startTest3()">
+                編集エリア外クリックテスト用文章です。
+            </div>
+            <div class="result-log" id="test3-log"></div>
+            <button class="button secondary" onclick="resetTest3()">テスト3リセット</button>
+        </div>
+
+        <!-- 総合結果 -->
+        <div class="test-panel">
+            <div class="test-title">
+                📊 テスト結果まとめ
+            </div>
+            <div class="result-log" id="summary-log">
+                テスト待機中... 上のテストを実行してください。
+            </div>
+            <button class="button" onclick="runAllTests()">全テスト自動実行</button>
+            <button class="button secondary" onclick="clearAllLogs()">ログクリア</button>
+        </div>
+    </div>
+
+    <!-- 深堀くんのスクリプト読み込み -->
+    <script src="../app/editable-transcript-ui.js"></script>
+    <script src="../app/transcript-edit-manager.js"></script>
+    <script src="../app/utils.js"></script>
+
+    <script>
+        // =================================================================================
+        // Shift+Enter編集終了機能テストシステム
+        // =================================================================================
+
+        let testResults = {
+            test1: null,
+            test2: null,
+            test3: null
+        };
+
+        let editableUIInstances = {};
+
+        /**
+         * ログ出力ヘルパー
+         */
+        function log(testId, message, type = 'info') {
+            const logElement = document.getElementById(`${testId}-log`);
+            const timestamp = new Date().toLocaleTimeString();
+            const typeClass = type === 'success' ? 'success' : 
+                             type === 'error' ? 'error' : 
+                             type === 'warning' ? 'warning' : 'info';
+            
+            const logEntry = `<div class="${typeClass}">[${timestamp}] ${message}</div>`;
+            logElement.innerHTML += logEntry;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        /**
+         * テスト1: 基本操作確認
+         */
+        function startTest1() {
+            const element = document.getElementById('test1-transcript');
+            log('test1', '🚀 テスト1開始: 基本操作確認', 'info');
+            
+            // EditableTranscriptUI インスタンス作成
+            if (!editableUIInstances.test1) {
+                editableUIInstances.test1 = new EditableTranscriptUI(element);
+            }
+            
+            // 編集開始
+            const success = editableUIInstances.test1.enableEditing();
+            if (success) {
+                log('test1', '✅ 編集モード開始成功', 'success');
+                log('test1', '👉 文字を入力してIME変換→Enterを試してください', 'info');
+                log('test1', '👉 編集継続を確認後、Shift+Enterで終了してください', 'info');
+                
+                // キーイベント監視
+                element.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        if (event.shiftKey) {
+                            log('test1', '🎯 Shift+Enter検知 → 編集終了処理', 'success');
+                            testResults.test1 = true;
+                            updateSummary();
+                        } else {
+                            log('test1', '📝 Enter単体検知 → IME確定のみ（編集継続）', 'info');
+                        }
+                    } else if (event.key === 'Escape') {
+                        log('test1', '❌ Escキー検知 → 編集キャンセル', 'warning');
+                    }
+                });
+                
+                // 編集終了イベント監視
+                element.addEventListener('blur', function() {
+                    log('test1', '🔄 フォーカス離脱 → 編集確定', 'info');
+                });
+                
+            } else {
+                log('test1', '❌ 編集モード開始失敗', 'error');
+                testResults.test1 = false;
+            }
+        }
+
+        /**
+         * テスト2: 日本語IME動作確認
+         */
+        function startTest2() {
+            const element = document.getElementById('test2-transcript');
+            log('test2', '🚀 テスト2開始: 日本語IME動作確認', 'info');
+            
+            if (!editableUIInstances.test2) {
+                editableUIInstances.test2 = new EditableTranscriptUI(element);
+            }
+            
+            const success = editableUIInstances.test2.enableEditing();
+            if (success) {
+                log('test2', '✅ 編集モード開始成功', 'success');
+                log('test2', '🇯🇵 「かんじ」→Enter→「漢字」変換をお試しください', 'info');
+                
+                let imeActive = false;
+                
+                // IME関連イベント監視
+                element.addEventListener('compositionstart', function() {
+                    imeActive = true;
+                    log('test2', '🎌 IME変換開始', 'info');
+                });
+                
+                element.addEventListener('compositionend', function() {
+                    imeActive = false;
+                    log('test2', '🎌 IME変換終了', 'info');
+                });
+                
+                element.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        if (event.shiftKey) {
+                            log('test2', '🎯 Shift+Enter検知 → 編集終了', 'success');
+                            testResults.test2 = true;
+                            updateSummary();
+                        } else {
+                            if (imeActive) {
+                                log('test2', '📝 IME変換中のEnter → 変換確定（編集継続）', 'success');
+                            } else {
+                                log('test2', '📝 Enter単体 → 編集継続', 'info');
+                            }
+                        }
+                    }
+                });
+                
+            } else {
+                log('test2', '❌ 編集モード開始失敗', 'error');
+                testResults.test2 = false;
+            }
+        }
+
+        /**
+         * テスト3: 編集エリア外クリック確認
+         */
+        function startTest3() {
+            const element = document.getElementById('test3-transcript');
+            log('test3', '🚀 テスト3開始: 編集エリア外クリック確認', 'info');
+            
+            if (!editableUIInstances.test3) {
+                editableUIInstances.test3 = new EditableTranscriptUI(element);
+            }
+            
+            const success = editableUIInstances.test3.enableEditing();
+            if (success) {
+                log('test3', '✅ 編集モード開始成功', 'success');
+                log('test3', '👉 文字を編集してから、このパネルの他の場所をクリック', 'info');
+                
+                // フォーカス離脱イベント監視
+                element.addEventListener('blur', function() {
+                    log('test3', '🖱️ 編集エリア外クリック検知 → 自動確定', 'success');
+                    testResults.test3 = true;
+                    updateSummary();
+                });
+                
+            } else {
+                log('test3', '❌ 編集モード開始失敗', 'error');
+                testResults.test3 = false;
+            }
+        }
+
+        /**
+         * テストリセット関数群
+         */
+        function resetTest1() {
+            const element = document.getElementById('test1-transcript');
+            if (editableUIInstances.test1) {
+                editableUIInstances.test1.disableEditing();
+            }
+            element.textContent = 'これはテスト用のサンプル文字起こしです。クリックして編集を開始してください。';
+            document.getElementById('test1-log').innerHTML = '';
+            testResults.test1 = null;
+            log('test1', '🔄 テスト1をリセットしました', 'info');
+        }
+
+        function resetTest2() {
+            const element = document.getElementById('test2-transcript');
+            if (editableUIInstances.test2) {
+                editableUIInstances.test2.disableEditing();
+            }
+            element.textContent = 'IMEテスト: ';
+            document.getElementById('test2-log').innerHTML = '';
+            testResults.test2 = null;
+            log('test2', '🔄 テスト2をリセットしました', 'info');
+        }
+
+        function resetTest3() {
+            const element = document.getElementById('test3-transcript');
+            if (editableUIInstances.test3) {
+                editableUIInstances.test3.disableEditing();
+            }
+            element.textContent = '編集エリア外クリックテスト用文章です。';
+            document.getElementById('test3-log').innerHTML = '';
+            testResults.test3 = null;
+            log('test3', '🔄 テスト3をリセットしました', 'info');
+        }
+
+        /**
+         * 総合結果更新
+         */
+        function updateSummary() {
+            const summaryLog = document.getElementById('summary-log');
+            const passCount = Object.values(testResults).filter(r => r === true).length;
+            const totalCount = Object.values(testResults).filter(r => r !== null).length;
+            
+            let summary = `<div class="info">📊 テスト進行状況: ${passCount}/${totalCount} 合格</div>`;
+            
+            if (testResults.test1 === true) {
+                summary += `<div class="success">✅ テスト1: 基本操作 - 合格</div>`;
+            } else if (testResults.test1 === false) {
+                summary += `<div class="error">❌ テスト1: 基本操作 - 不合格</div>`;
+            }
+            
+            if (testResults.test2 === true) {
+                summary += `<div class="success">✅ テスト2: IME動作 - 合格</div>`;
+            } else if (testResults.test2 === false) {
+                summary += `<div class="error">❌ テスト2: IME動作 - 不合格</div>`;
+            }
+            
+            if (testResults.test3 === true) {
+                summary += `<div class="success">✅ テスト3: 外部クリック - 合格</div>`;
+            } else if (testResults.test3 === false) {
+                summary += `<div class="error">❌ テスト3: 外部クリック - 不合格</div>`;
+            }
+            
+            if (passCount > 0 && passCount === totalCount) {
+                summary += `<div class="success">🎉 全テスト合格！Shift+Enter機能は正常に動作しています</div>`;
+            }
+            
+            summaryLog.innerHTML = summary;
+        }
+
+        /**
+         * 全テスト自動実行
+         */
+        function runAllTests() {
+            log('summary', '🎯 全テスト自動実行開始', 'info');
+            
+            // 各テストを順番に実行
+            startTest1();
+            setTimeout(() => startTest2(), 1000);
+            setTimeout(() => startTest3(), 2000);
+            
+            setTimeout(() => {
+                log('summary', '⏰ 手動テスト実行をお願いします', 'warning');
+                updateSummary();
+            }, 3000);
+        }
+
+        /**
+         * ログクリア
+         */
+        function clearAllLogs() {
+            document.getElementById('test1-log').innerHTML = '';
+            document.getElementById('test2-log').innerHTML = '';
+            document.getElementById('test3-log').innerHTML = '';
+            document.getElementById('summary-log').innerHTML = 'ログをクリアしました。';
+            testResults = { test1: null, test2: null, test3: null };
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 Shift+Enter編集終了機能テストシステム初期化完了');
+            updateSummary();
+        });
+    </script>
+</body>
+</html> 
