@@ -1292,9 +1292,32 @@
     
     <!-- Service Worker 登録 -->
     <script>
-        // Service Worker 登録 (PWA機能) - Electron環境では無効化
+        // Service Worker 登録 (PWA機能) - Electron環境では完全無効化
         const isElectronEnv = navigator.userAgent.toLowerCase().indexOf('electron') > -1;
-        if ('serviceWorker' in navigator && !isElectronEnv) {
+        
+        if (isElectronEnv && 'serviceWorker' in navigator) {
+            // Electron環境: 既存のService Workerを完全削除
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                        registration.unregister();
+                        console.log('🗑️ Electron環境: Service Worker削除 -', registration.scope);
+                    }
+                    
+                    // キャッシュも全て削除
+                    if ('caches' in window) {
+                        caches.keys().then(function(names) {
+                            for (let name of names) {
+                                caches.delete(name);
+                                console.log('🗑️ Electron環境: キャッシュ削除 -', name);
+                            }
+                        });
+                    }
+                    
+                    console.log('✅ Electron環境: Service Worker完全削除完了');
+                });
+            });
+        } else if ('serviceWorker' in navigator && !isElectronEnv) {
             window.addEventListener('load', function() {
                 // 🔄 強制キャッシュクリア - 音声システム更新対応
                 navigator.serviceWorker.getRegistrations().then(function(registrations) {

@@ -1,6 +1,41 @@
 // 深堀くん - Service Worker v0.7.5
 // PWA機能とオフライン対応
 
+// Electron環境では Service Worker を完全無効化
+if (typeof importScripts === 'function') {
+  // Service Worker環境でのElectron判定
+  try {
+    if (self.location.protocol === 'file:' || 
+        self.location.href.includes('app.asar') || 
+        self.location.href.includes('electron') ||
+        self.location.href.includes('AppData')) {
+      console.log('🚫 Service Worker: Electron環境検出 - 動作を完全停止');
+      
+      // 全イベントを無効化
+      self.addEventListener('install', event => {
+        console.log('🚫 Service Worker Install: Electron環境のためスキップ');
+        event.waitUntil(self.skipWaiting());
+      });
+      
+      self.addEventListener('activate', event => {
+        console.log('🚫 Service Worker Activate: Electron環境のためスキップ');
+        event.waitUntil(self.clients.claim());
+      });
+      
+      self.addEventListener('fetch', event => {
+        console.log('🚫 Service Worker Fetch: Electron環境のためスキップ -', event.request.url);
+        // 何もしない - Electronのネイティブ処理に任せる
+        return;
+      });
+      
+      console.log('✅ Service Worker: Electron環境用設定完了');
+      // 以降の処理をスキップ
+    }
+  } catch (error) {
+    console.log('⚠️ Service Worker環境判定エラー:', error);
+  }
+}
+
 const CACHE_NAME = 'fukabori-kun-v0.7.5-emergency-fix';
 const urlsToCache = [
   '/深堀くん.html',
@@ -108,8 +143,12 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Electronでのfile://プロトコルは無視
-  if (event.request.url.startsWith('file://')) {
+  // Electronでのfile://プロトコルとapp.asarパスは完全無視
+  if (event.request.url.startsWith('file://') || 
+      event.request.url.includes('app.asar') ||
+      event.request.url.includes('AppData') ||
+      event.request.url.includes('electron')) {
+    console.log('🚫 Service Worker Fetch: Electron環境パス検出 - 処理をスキップ:', event.request.url);
     return;
   }
 
