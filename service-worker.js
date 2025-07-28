@@ -96,7 +96,7 @@ self.addEventListener('activate', event => {
   );
 });
 
-// ネットワークリクエストの処理
+// ネットワークリクエストの処理（Electron対応）
 self.addEventListener('fetch', event => {
   // Chrome拡張機能のリクエストは無視
   if (event.request.url.startsWith('chrome-extension://')) {
@@ -105,6 +105,11 @@ self.addEventListener('fetch', event => {
   
   // DevToolsのリクエストは無視
   if (event.request.url.includes('/.well-known/appspecific/')) {
+    return;
+  }
+
+  // Electronでのfile://プロトコルは無視
+  if (event.request.url.startsWith('file://')) {
     return;
   }
 
@@ -131,6 +136,9 @@ self.addEventListener('fetch', event => {
             });
           
           return response;
+        }).catch(error => {
+          console.log('⚠️ ネットワークリクエスト失敗:', event.request.url, error);
+          throw error;
         });
       })
       .catch(() => {

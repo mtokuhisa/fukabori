@@ -262,9 +262,22 @@ class VoiceModule {
             this.handleEnd();
         };
         
-        // エラーイベント
+        // エラーイベント（Electron対応）
         this.recognition.onerror = (event) => {
             console.error('❌ 音声認識エラー:', event.error);
+            
+            // Electron環境でのネットワークエラー対応
+            if (event.error === 'network' && navigator.userAgent.toLowerCase().indexOf('electron') > -1) {
+                console.log('⚠️ Electron環境でのネットワークエラー - 自動再試行します');
+                setTimeout(() => {
+                    if (this.isActive) {
+                        console.log('🔄 音声認識を再開します');
+                        this.start();
+                    }
+                }, 2000);
+                return;
+            }
+            
             this.handleError(event);
         };
         

@@ -1364,28 +1364,40 @@
             setTimeout(() => {
                 console.log('🔍 PWA インストール条件の詳細チェック開始...');
                 
-                // 1. Service Worker チェック
-                if ('serviceWorker' in navigator) {
+                // 1. Service Worker チェック（Electron対応）
+                const isElectronApp = navigator.userAgent.toLowerCase().indexOf('electron') > -1;
+                if ('serviceWorker' in navigator && !isElectronApp) {
                     navigator.serviceWorker.ready.then(registration => {
                         console.log('✅ Service Worker: 準備完了');
+                    }).catch(error => {
+                        console.log('⚠️ Service Worker: 準備エラー', error);
                     });
+                } else if (isElectronApp) {
+                    console.log('✅ Service Worker: Electron環境 - ネイティブキャッシュ使用');
                 } else {
                     console.log('❌ Service Worker: 未サポート');
                 }
                 
-                // 2. Manifest チェック
-                fetch('./manifest.json')
-                    .then(response => response.json())
-                    .then(manifest => {
-                        console.log('✅ Manifest: 読み込み成功');
-                        console.log('  - name:', manifest.name);
-                        console.log('  - start_url:', manifest.start_url);
-                        console.log('  - display:', manifest.display);
-                        console.log('  - icons:', manifest.icons.length, '個');
-                    })
-                    .catch(error => {
-                        console.log('❌ Manifest: 読み込み失敗', error);
-                    });
+                // 2. Manifest チェック（Electron対応）
+                const isElectron = navigator.userAgent.toLowerCase().indexOf('electron') > -1;
+                if (isElectron) {
+                    console.log('✅ Manifest: Electron環境 - PWA機能は制限されます');
+                    console.log('  - アプリ名: 深堀くん v0.7.6');
+                    console.log('  - 実行環境: デスクトップアプリ');
+                } else {
+                    fetch('./manifest.json')
+                        .then(response => response.json())
+                        .then(manifest => {
+                            console.log('✅ Manifest: 読み込み成功');
+                            console.log('  - name:', manifest.name);
+                            console.log('  - start_url:', manifest.start_url);
+                            console.log('  - display:', manifest.display);
+                            console.log('  - icons:', manifest.icons.length, '個');
+                        })
+                        .catch(error => {
+                            console.log('❌ Manifest: 読み込み失敗', error);
+                        });
+                }
                 
                 // 3. HTTPS チェック
                 if (location.protocol === 'https:' || location.hostname === 'localhost') {
