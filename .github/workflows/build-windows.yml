@@ -1,0 +1,190 @@
+name: Build Windows Executable
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller cryptography Pillow
+        
+    - name: Create ICO file
+      run: |
+        python -c "
+        from PIL import Image
+        import os
+        if os.path.exists('assets/fukabori_logo.png'):
+            img = Image.open('assets/fukabori_logo.png')
+            img = img.resize((256, 256), Image.Resampling.LANCZOS)
+            img.save('assets/fukabori_logo.ico', format='ICO', sizes=[(256, 256), (128, 128), (64, 64), (32, 32), (16, 16)])
+            print('ICO file created successfully')
+        else:
+            print('PNG file not found, skipping ICO creation')
+        "
+        
+    - name: Create PyInstaller spec
+      run: |
+        echo "# -*- mode: python ; coding: utf-8 -*-" > fukabori-windows.spec
+        echo "" >> fukabori-windows.spec
+        echo "a = Analysis(" >> fukabori-windows.spec
+        echo "    ['tools/virtual_server_launcher.py']," >> fukabori-windows.spec
+        echo "    pathex=[]," >> fukabori-windows.spec
+        echo "    binaries=[]," >> fukabori-windows.spec
+        echo "    datas=[" >> fukabori-windows.spec
+        echo "        ('深堀くん.html', '.')," >> fukabori-windows.spec
+        echo "        ('app', 'app')," >> fukabori-windows.spec
+        echo "        ('config', 'config')," >> fukabori-windows.spec
+        echo "        ('assets', 'assets')," >> fukabori-windows.spec
+        echo "        ('manifest.json', '.')," >> fukabori-windows.spec
+        echo "        ('service-worker.js', '.')," >> fukabori-windows.spec
+        echo "        ('sw.js', '.')," >> fukabori-windows.spec
+        echo "        ('favicon.ico', '.')," >> fukabori-windows.spec
+        echo "    ]," >> fukabori-windows.spec
+        echo "    hiddenimports=[" >> fukabori-windows.spec
+        echo "        'http.server'," >> fukabori-windows.spec
+        echo "        'ssl'," >> fukabori-windows.spec
+        echo "        'webbrowser'," >> fukabori-windows.spec
+        echo "        'socket'," >> fukabori-windows.spec
+        echo "        'threading'," >> fukabori-windows.spec
+        echo "        'subprocess'," >> fukabori-windows.spec
+        echo "        'tempfile'," >> fukabori-windows.spec
+        echo "        'shutil'," >> fukabori-windows.spec
+        echo "        'ipaddress'," >> fukabori-windows.spec
+        echo "        'cryptography'," >> fukabori-windows.spec
+        echo "        'cryptography.hazmat.primitives.serialization'," >> fukabori-windows.spec
+        echo "        'cryptography.hazmat.primitives.asymmetric.rsa'," >> fukabori-windows.spec
+        echo "        'cryptography.hazmat.primitives.hashes'," >> fukabori-windows.spec
+        echo "        'cryptography.x509'," >> fukabori-windows.spec
+        echo "    ]," >> fukabori-windows.spec
+        echo "    hookspath=[]," >> fukabori-windows.spec
+        echo "    hooksconfig={}," >> fukabori-windows.spec
+        echo "    runtime_hooks=[]," >> fukabori-windows.spec
+        echo "    excludes=[]," >> fukabori-windows.spec
+        echo "    noarchive=False," >> fukabori-windows.spec
+        echo "    optimize=0," >> fukabori-windows.spec
+        echo ")" >> fukabori-windows.spec
+        echo "" >> fukabori-windows.spec
+        echo "pyz = PYZ(a.pure)" >> fukabori-windows.spec
+        echo "" >> fukabori-windows.spec
+        echo "exe = EXE(" >> fukabori-windows.spec
+        echo "    pyz," >> fukabori-windows.spec
+        echo "    a.scripts," >> fukabori-windows.spec
+        echo "    []," >> fukabori-windows.spec
+        echo "    exclude_binaries=True," >> fukabori-windows.spec
+        echo "    name='深堀くん'," >> fukabori-windows.spec
+        echo "    debug=False," >> fukabori-windows.spec
+        echo "    bootloader_ignore_signals=False," >> fukabori-windows.spec
+        echo "    strip=False," >> fukabori-windows.spec
+        echo "    upx=True," >> fukabori-windows.spec
+        echo "    console=False," >> fukabori-windows.spec
+        echo "    disable_windowed_traceback=False," >> fukabori-windows.spec
+        echo "    argv_emulation=False," >> fukabori-windows.spec
+        echo "    target_arch='x64'," >> fukabori-windows.spec
+        echo "    codesign_identity=None," >> fukabori-windows.spec
+        echo "    entitlements_file=None," >> fukabori-windows.spec
+        echo "    version=None," >> fukabori-windows.spec
+        echo "    icon='assets/fukabori_logo.ico'," >> fukabori-windows.spec
+        echo ")" >> fukabori-windows.spec
+        echo "" >> fukabori-windows.spec
+        echo "coll = COLLECT(" >> fukabori-windows.spec
+        echo "    exe," >> fukabori-windows.spec
+        echo "    a.binaries," >> fukabori-windows.spec
+        echo "    a.datas," >> fukabori-windows.spec
+        echo "    strip=False," >> fukabori-windows.spec
+        echo "    upx=True," >> fukabori-windows.spec
+        echo "    upx_exclude=[]," >> fukabori-windows.spec
+        echo "    name='深堀くん'," >> fukabori-windows.spec
+        echo ")" >> fukabori-windows.spec
+        
+    - name: Build Windows executable
+      run: |
+        pyinstaller --noconfirm --clean fukabori-windows.spec
+        
+    - name: Create distribution package
+      run: |
+        $date = Get-Date -Format "yyyyMMdd_HHmmss"
+        $packageName = "深堀くんv0.7.6-VirtualServer-Windows配布版_$date"
+        
+        # Create temp directory
+        New-Item -ItemType Directory -Path "temp_$packageName" -Force
+        
+        # Copy executable files
+        Copy-Item -Path "dist/深堀くん" -Destination "temp_$packageName/深堀くん-portable" -Recurse
+        Copy-Item -Path "dist/深堀くん/深堀くん.exe" -Destination "temp_$packageName/深堀くん.exe"
+        
+        # Create README content
+        $readme = "# 深堀くん v0.7.6-VirtualServer - Windows配布版`n`n"
+        $readme += "## 使用方法（3ステップ）`n`n"
+        $readme += "### Step 1: ファイル解凍`n"
+        $readme += "このZIPファイルを任意のフォルダに解凍してください。`n`n"
+        $readme += "### Step 2: 実行`n"
+        $readme += "深堀くん.exe をダブルクリックしてください。`n`n"
+        $readme += "### Step 3: セキュリティ警告対応`n"
+        $readme += "初回起動時、Windows Defenderが警告を表示する場合があります：`n"
+        $readme += "1. 「詳細情報」をクリック`n"
+        $readme += "2. 「実行する」をクリック`n"
+        $readme += "3. ブラウザが自動起動し、深堀くんが利用可能になります`n`n"
+        $readme += "## 特徴`n`n"
+        $readme += "- 1クリック起動: ダブルクリックするだけで利用開始`n"
+        $readme += "- インストール不要: ZIPを解凍するだけ`n"
+        $readme += "- HTTPS接続: マイク許可が1回のみで済みます`n"
+        $readme += "- ポータブル対応: USBメモリからも実行可能`n`n"
+        $readme += "## ファイル構成`n`n"
+        $readme += "深堀くん.exe                    # メイン実行ファイル（ダブルクリック用）`n"
+        $readme += "深堀くん-portable/              # ポータブル版（フォルダごと移動可能）`n"
+        $readme += "├── 深堀くん.exe                # 実行ファイル`n"
+        $readme += "└── _internal/                  # 内部ライブラリ・リソース`n`n"
+        $readme += "## 注意事項`n`n"
+        $readme += "### システム要件`n"
+        $readme += "- OS: Windows 10/11 (x64)`n"
+        $readme += "- メモリ: 2GB以上推奨`n"
+        $readme += "- ディスク: 100MB以上の空き容量`n`n"
+        $readme += "### セキュリティ警告について`n"
+        $readme += "Windows Defenderが「不明な発行元」として警告することがあります。`n"
+        $readme += "これは自己署名実行ファイルのため正常な動作です。`n`n"
+        $readme += "---`n`n"
+        $readme += "作成日: $(Get-Date -Format 'yyyy年MM月dd日')`n"
+        $readme += "バージョン: v0.7.6-VirtualServer`n"
+        $readme += "対象環境: Windows 10/11 x64`n"
+        $readme += "配布形式: 自己完結型実行ファイル`n"
+        
+        Set-Content -Path "temp_$packageName/README.md" -Value $readme -Encoding UTF8
+        
+        # Create ZIP
+        Compress-Archive -Path "temp_$packageName/*" -DestinationPath "$packageName.zip" -Force
+        
+        # Clean up temp directory
+        Remove-Item -Path "temp_$packageName" -Recurse -Force
+        
+        echo "Windows distribution package created: $packageName.zip"
+        
+    - name: Upload Windows executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: fukabori-windows-executable
+        path: "深堀くんv0.7.6-VirtualServer-Windows配布版_*.zip"
+        retention-days: 30
+        
+    - name: Upload raw build
+      uses: actions/upload-artifact@v4
+      with:
+        name: fukabori-windows-raw
+        path: dist/深堀くん/
+        retention-days: 7 

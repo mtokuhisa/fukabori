@@ -1,0 +1,15 @@
+# 深堀くん Windows x64版ビルド用 requirements
+# pip install -r requirements-windows.txt で一括インストール可能
+
+# PyInstaller - 実行ファイル化
+pyinstaller>=6.0.0
+
+# Cryptography - SSL証明書生成
+cryptography>=41.0.0
+
+# Pillow - アイコンファイル変換
+Pillow>=10.0.0
+
+# オプション: 開発・デバッグ用
+# requests>=2.31.0
+# setuptools>=68.0.0 
