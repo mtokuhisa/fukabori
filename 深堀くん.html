@@ -1292,8 +1292,9 @@
     
     <!-- Service Worker 登録 -->
     <script>
-        // Service Worker 登録 (PWA機能)
-        if ('serviceWorker' in navigator) {
+        // Service Worker 登録 (PWA機能) - Electron環境では無効化
+        const isElectronEnv = navigator.userAgent.toLowerCase().indexOf('electron') > -1;
+        if ('serviceWorker' in navigator && !isElectronEnv) {
             window.addEventListener('load', function() {
                 // 🔄 強制キャッシュクリア - 音声システム更新対応
                 navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -1337,27 +1338,33 @@
                     }, 1000);
                 });
             });
+        } else if (isElectronEnv) {
+            console.log('✅ Service Worker: Electron環境のため無効化 - ネイティブキャッシュシステム使用');
         } else {
             console.warn('⚠️ このブラウザはService Workerをサポートしていません');
         }
         
-        // PWA インストール促進
+        // PWA インストール促進 - Electron環境では無効化
         let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('📱 PWA インストール可能 - beforeinstallprompt イベント発生');
-            e.preventDefault();
-            deferredPrompt = e;
-            
-            // インストールボタンを表示する場合はここで処理
-            // 現在はブラウザのデフォルトUI（アドレスバーのアイコン）を使用
-            
-            // デバッグ用：インストール可能状態を確認
-            console.log('🔍 PWA インストール条件チェック:');
-            console.log('  - Service Worker: 登録済み');
-            console.log('  - Manifest: 読み込み済み');
-            console.log('  - HTTPS: localhost (OK)');
-            console.log('  - beforeinstallprompt: 発生');
-        });
+        if (!isElectronEnv) {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                console.log('📱 PWA インストール可能 - beforeinstallprompt イベント発生');
+                e.preventDefault();
+                deferredPrompt = e;
+                
+                // インストールボタンを表示する場合はここで処理
+                // 現在はブラウザのデフォルトUI（アドレスバーのアイコン）を使用
+                
+                // デバッグ用：インストール可能状態を確認
+                console.log('🔍 PWA インストール条件チェック:');
+                console.log('  - Service Worker: 登録済み');
+                console.log('  - Manifest: 読み込み済み');
+                console.log('  - HTTPS: localhost (OK)');
+                console.log('  - beforeinstallprompt: 発生');
+            });
+        } else {
+            console.log('✅ PWA インストール: Electron環境 - 既にネイティブアプリとして動作中');
+        }
         
         // PWA インストール条件の詳細チェック
         window.addEventListener('load', () => {

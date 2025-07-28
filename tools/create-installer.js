@@ -136,8 +136,21 @@ function createWindow() {
     titleBarStyle: 'default'
   });
 
-  // HTMLファイルの読み込み
-  mainWindow.loadFile('深堀くん.html');
+  // HTMLファイルの読み込み（日本語ファイル名対応）
+  const htmlPath = path.join(__dirname, '深堀くん.html');
+  console.log('📁 Loading HTML file:', htmlPath);
+  
+  // loadFileの代わりにloadURLを使用（日本語ファイル名対応）
+  const fileUrl = new URL('file://');
+  fileUrl.pathname = htmlPath;
+  mainWindow.loadURL(fileUrl.href);
+  
+  // エラーハンドリング
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.error('❌ ページ読み込み失敗:', errorCode, errorDescription, validatedURL);
+    console.log('🔄 フォールバック: loadFileメソッドを試行');
+    mainWindow.loadFile('深堀くん.html');
+  });
 
   // ウィンドウの準備完了時に表示
   mainWindow.once('ready-to-show', () => {
