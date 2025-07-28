@@ -5,4 +5,5 @@
 dependency-graph.svg
 
 # macOS
-.DS_Store 
+.DS_Store dist/
+main.js

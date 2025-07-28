@@ -11,19 +11,26 @@ const path = require('path');
 // パッケージ設定
 const packageConfig = {
   "name": "fukabori-app",
-  "version": "0.7.2",
-  "description": "深堀くん - AIインタビューアプリ",
+  "version": "0.7.6",
+  "description": "深堀くんv2.0 - 継続的音声認識システム（安定性向上版）",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
-    "build-win": "electron-builder --win",
-    "build-mac": "electron-builder --mac",
-    "build-linux": "electron-builder --linux"
+    "build-win": "electron-builder --win --x64",
+    "build-win-x64": "electron-builder --win --x64",
+    "build-mac": "electron-builder --mac --x64",
+    "build-mac-x64": "electron-builder --mac --x64",
+    "build-linux": "electron-builder --linux --x64",
+    "build-linux-x64": "electron-builder --linux --x64",
+    "build-all-x64": "electron-builder --win --mac --linux --x64"
   },
   "devDependencies": {
     "electron": "^27.0.0",
     "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0"
   },
   "build": {
     "appId": "com.fukabori.app",
@@ -38,25 +45,63 @@ const packageConfig = {
       "config/**/*",
       "assets/**/*",
       "manifest.json",
-      "sw.js"
+      "sw.js",
+      "service-worker.js"
     ],
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
       "icon": "assets/fukabori_logo.ico"
     },
     "mac": {
-      "target": "dmg",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64"]
+        }
+      ],
       "icon": "assets/fukabori_logo.icns"
     },
     "linux": {
-      "target": "AppImage",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ],
       "icon": "assets/fukabori_logo.png"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "runAfterFinish": false,
+      "artifactName": "${productName}-v${version}-x64-setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-v${version}-x64-portable.${ext}"
+    },
+    "dmg": {
+      "artifactName": "${productName}-v${version}-x64.${ext}"
+    },
+    "appImage": {
+      "artifactName": "${productName}-v${version}-x64.${ext}"
+    },
+    "deb": {
+      "artifactName": "${productName}-v${version}-x64.${ext}"
     }
   }
 };
