@@ -178,6 +178,19 @@ class VoiceModule {
             maxAttempts: 0,
             retryDelay: 0,
             currentAttempt: 0,
+        };
+        
+        // 🚫 Electron環境でのネットワークエラー再試行制御
+        this.electronRetryControl = {
+            maxRetries: 3,              // 最大再試行回数
+            currentRetryCount: 0,       // 現在の再試行回数
+            retryDelay: 2000,          // 初期待機時間（2秒）
+            maxRetryDelay: 30000,      // 最大待機時間（30秒）
+            backoffMultiplier: 2,      // 待機時間の倍率
+            lastRetryTime: 0,          // 最後の再試行時刻
+            consecutiveErrors: 0,      // 連続エラー回数
+            isInCooldown: false,       // クールダウン中フラグ
+            cooldownDuration: 60000,   // クールダウン時間（1分）
             lastAttemptTime: null
         };
         
@@ -239,7 +252,7 @@ class VoiceModule {
     }
     
     setupEventHandlers() {
-        // 開始イベント
+        // 開始イベント（Electron再試行制御リセット付き）
         this.recognition.onstart = () => {
             console.log('🎤 音声認識開始');
             this.updateState({ 
@@ -249,6 +262,13 @@ class VoiceModule {
                 lastActivity: Date.now()
             });
             this.resetAutoRecovery();
+            
+            // Electron環境での再試行制御をリセット（成功時）
+            if (navigator.userAgent.toLowerCase().indexOf('electron') > -1) {
+                this.electronRetryControl.currentRetryCount = 0;
+                this.electronRetryControl.consecutiveErrors = 0;
+                console.log('✅ Electron環境: 音声認識成功 - 再試行制御をリセット');
+            }
         };
         
         // 結果イベント
@@ -262,19 +282,13 @@ class VoiceModule {
             this.handleEnd();
         };
         
-        // エラーイベント（Electron対応）
+        // エラーイベント（Electron対応 - 無限ループ防止）
         this.recognition.onerror = (event) => {
             console.error('❌ 音声認識エラー:', event.error);
             
-            // Electron環境でのネットワークエラー対応
+            // Electron環境でのネットワークエラー対応（制御付き）
             if (event.error === 'network' && navigator.userAgent.toLowerCase().indexOf('electron') > -1) {
-                console.log('⚠️ Electron環境でのネットワークエラー - 自動再試行します');
-                setTimeout(() => {
-                    if (this.isActive) {
-                        console.log('🔄 音声認識を再開します');
-                        this.start();
-                    }
-                }, 2000);
+                this.handleElectronNetworkError();
                 return;
             }
             
@@ -601,6 +615,66 @@ class VoiceModule {
             console.error('❌ 強制再開エラー:', error);
             throw error;
         }
+    }
+    
+    /**
+     * Electron環境でのネットワークエラー専用処理（無限ループ防止）
+     */
+    handleElectronNetworkError() {
+        const now = Date.now();
+        const retryControl = this.electronRetryControl;
+        
+        // クールダウン中の場合は処理をスキップ
+        if (retryControl.isInCooldown) {
+            const remainingCooldown = Math.ceil((retryControl.lastRetryTime + retryControl.cooldownDuration - now) / 1000);
+            console.log(`🚫 Electron環境: クールダウン中（残り${remainingCooldown}秒） - 再試行をスキップ`);
+            return;
+        }
+        
+        // 連続エラー数を増加
+        retryControl.consecutiveErrors++;
+        
+        // 最大再試行回数に達した場合
+        if (retryControl.currentRetryCount >= retryControl.maxRetries) {
+            console.error(`🚫 Electron環境: 最大再試行回数(${retryControl.maxRetries})に達しました`);
+            console.log(`⏰ Electron環境: ${retryControl.cooldownDuration / 1000}秒のクールダウンを開始`);
+            
+            // クールダウン開始
+            retryControl.isInCooldown = true;
+            retryControl.lastRetryTime = now;
+            retryControl.currentRetryCount = 0;
+            
+            // クールダウン終了のタイマー設定
+            setTimeout(() => {
+                retryControl.isInCooldown = false;
+                retryControl.consecutiveErrors = 0;
+                console.log('✅ Electron環境: クールダウン終了 - 再試行が可能になりました');
+            }, retryControl.cooldownDuration);
+            
+            return;
+        }
+        
+        // 再試行回数を増加
+        retryControl.currentRetryCount++;
+        
+        // 指数バックオフで待機時間を計算
+        const currentDelay = Math.min(
+            retryControl.retryDelay * Math.pow(retryControl.backoffMultiplier, retryControl.currentRetryCount - 1),
+            retryControl.maxRetryDelay
+        );
+        
+        console.log(`⚠️ Electron環境: ネットワークエラー (${retryControl.currentRetryCount}/${retryControl.maxRetries})`);
+        console.log(`⏰ Electron環境: ${currentDelay / 1000}秒後に再試行します`);
+        
+        // 指数バックオフで再試行
+        setTimeout(() => {
+            if (this.isActive) {
+                console.log(`🔄 Electron環境: 音声認識を再開します (試行 ${retryControl.currentRetryCount}/${retryControl.maxRetries})`);
+                this.start();
+            } else {
+                console.log('🚫 Electron環境: 音声認識が非アクティブのため再試行をスキップ');
+            }
+        }, currentDelay);
     }
     
     handleError(event) {
